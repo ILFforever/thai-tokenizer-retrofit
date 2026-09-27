@@ -28,7 +28,10 @@ python src/run_baseline.py --docs 120 --pairs 250    # smoke test (~80s)
 | Week 5 evaluation | `python src/evaluate.py`; `python src/run_baseline.py --retrofits --out BASELINE_after` | `results/EVALUATION.md`, `BASELINE_after.md` |
 | Week 6 robustness | `python src/robustness.py` | `results/ROBUSTNESS.md` |
 | Week 6 embeddings | `python src/embed_adapt.py --tokenizer tokenizers/bloom-th5000` | `results/EMBED_ADAPT_*.md` |
-| Qwen side study | `python src/qwen_unreachable.py` | `results/QWEN_UNREACHABLE.md` |
+| Qwen side study | `python src/qwen_unreachable.py`; `python src/qwen_repair.py` | `results/QWEN_UNREACHABLE.md` |
+| Dashboard | `python src/dashboard_data.py && python src/build_dashboard.py` | `results/dashboard.html` |
+| Report page | `python src/build_report_page.py` | `results/report.html` (from `REPORT.md`) |
+| Tests | `python -m pytest tests` | - |
 
 Corpora stream from Hugging Face on first use and are cached in
 `~/.cache/thaitok` (override with `THAITOK_CACHE`). Evaluation always uses

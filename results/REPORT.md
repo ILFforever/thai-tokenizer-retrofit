@@ -140,7 +140,7 @@ documents after them, so nothing is tuned on the text it is scored on.
 | Thai, formal news | `pythainlp/thaisum` | eval 3.0M chars; train 8.0M |
 | Thai, informal social | `pythainlp/wisesight_sentiment` | eval 0.19M chars; train 1.33M (all that remains) |
 | Thai/English matched | `Helsinki-NLP/opus-100` en-th | 3,000 pairs (206k / 230k chars) |
-| English (protect + eval) | `wikimedia/wikipedia` 20231101.en, raw text | protect: docs 0-7,999 (~66M chars); eval: docs 8,000-11,999 |
+| English (protect + eval) | `wikimedia/wikipedia` 20231101.en, raw text | protect: docs 0-7,999 (83.7M chars); eval: docs 8,000-11,999 |
 | Code (protect) | `codeparrot/codeparrot-clean` train | 5,000 files (~50M chars) |
 | Collateral check | Wikipedia zh / ko / ru / ja; `codeparrot-clean-valid` | 200 documents each |
 
@@ -162,8 +162,8 @@ same measure as Petrov et al.'s "premium").
 **Effective context:** Thai characters per 1,000 tokens.
 
 **Cluster-break rate** (replaces Week 1's mark-split rate): the share of Thai
-character clusters - a base character plus its following vowel and tone marks
-- that the final tokens split, measured on byte offsets. Week 1's measure
+character clusters (a base character plus its following vowel and tone marks)
+that the final tokens split, measured on byte offsets. Week 1's measure
 decoded one token at a time, which silently skipped every token that was a
 fragment of a 3-byte Thai character.
 
@@ -263,12 +263,15 @@ least 15% in every domain, English within 1%, effective context up at least
 
 *Source: `src/embed_adapt.py`, `src/qwen_repair.py`.*
 
-On BLOOM-560m (CPU) the retrofit's swapped rows were set in four ways - left
-stale, random (as Csaki et al. did), mean of the base-token embeddings the new
-token used to be split into (FVT, Gee et al. 2022), and mean followed by
-training *only the swapped rows* on Thai text with everything else frozen -
-and scored by bits per character on held-out Thai and English. The same
-repair was applied to Qwen2.5-0.5B's untrained Thai rows (§7.5).
+On BLOOM-560m (CPU), retrofitted with 5,000 Thai entries, the swapped rows
+were set in five ways: left stale; re-drawn at random (as Csaki et al. did);
+set to the mean of the base-token embeddings the new token used to be split
+into (FVT, Gee et al. 2022); and each of the last two followed by training
+*only the swapped rows* on Thai text with every other parameter frozen (200
+Adam steps of 4 × 256 tokens, learning rate 1e-4, gradients clipped). Each
+condition is scored by bits per character on held-out Thai (60 passages per
+domain) and English. The same repair was applied to Qwen2.5-0.5B's untrained
+Thai rows (§7.5).
 
 ## 7. Results
 
@@ -495,13 +498,13 @@ Spread = social tok/100ch ÷ mean of Wikipedia and news.
 | Typhoon-7B | 33.3 | 37.2 | 1.117 |
 
 Base Mistral is character-level for Thai, so it charges every register the
-same (social is even 1.5% cheaper). Any vocabulary that compresses Thai
-compresses formal Thai more, because formal text is more repetitive and
-standardised. The retrofit's spread (1.110) is in line with Typhoon's (1.117).
-What the data *does* show is that the choice of training text matters: a
-vocabulary learned from formal text alone nearly doubles the informal penalty
-(1.211). Equal domain weighting is not a formality - it is what keeps the
-informal gap at Typhoon's level instead of twice it.
+same (social is even 1.5% cheaper). Every vocabulary that compresses Thai
+compresses formal Thai more - presumably because formal text is more
+standardised, though that was not tested. The retrofit's spread (1.110) is in
+line with Typhoon's (1.117). What the data *does* show is that the choice of
+training text matters: a vocabulary learned from formal text alone raises the
+informal premium from +11% to +21%. Equal domain weighting is not a formality -
+it is what keeps the informal gap at Typhoon's level instead of twice it.
 
 ### 8.3 Embedding-row accounting
 
@@ -547,7 +550,7 @@ in comments and strings - not checked).
 **What "no retraining" can honestly mean.** A fixed-size retrofit keeps the
 embedding matrix's shape, so nothing is added and no full pretraining is
 needed. It does not mean zero adaptation: each swapped row still holds the
-vector of the token it used to be, and §7.4 shows that using the retrofit
+vector of the token it used to be, and §7.6 shows that using the retrofit
 without touching those rows is harmful. The defensible claim is: *no
 vocabulary expansion and no full pretraining; only the swapped rows need
 re-initialising and light tuning.*
@@ -559,8 +562,9 @@ GPT-4o or Claude users gain nothing from this method.
 
 **A retrofit is deployment-specific.** "Unused" means unused by the protect
 corpora chosen here (English prose and Python). Entries freed for Thai were
-mostly CJK, Hangul and Cyrillic pieces, so a deployment that also serves those
-languages would pay for the Thai gain (§8.4). The prune list is published so a
+mostly Cyrillic, other-language Latin-script and markup pieces, CJK and
+Hangul, so a deployment that also serves those languages would pay for the
+Thai gain (§8.4). The prune list is published so a
 deployment can check it against its own traffic.
 
 **Scale of the model experiments.** The tokenizer results are for Mistral-7B's
@@ -569,7 +573,9 @@ tokenizer, but the embedding experiments ran on small models that fit a CPU
 character as the only quality measure. They show the direction and rough size
 of the effect, not the downstream task quality of a tuned 7B model.
 
-**Data.** The social domain is small (189k evaluation characters); OPUS-100
+**Data.** The social domain is small (189k evaluation characters) and comes
+from brand-monitoring posts, so brand and product names are over-represented
+(`เบียร์ช้าง`, `โตโยต้า` appear among the added tokens); OPUS-100
 is partly subtitle text and its alignments are noisy; the English protect
 corpus is Wikipedia, so English registers it lacks (chat, legal, informal
 web) could use entries it never saw. All Thai results are per domain because a
@@ -613,9 +619,9 @@ vocabulary's training data.
    without growing the embedding matrix. Under strict English-and-code
    protection Mistral can only free 2,483 slots, and with those it comes
    within a point of Typhoon.
-4. *Who pays.* Informal Thai gains less than formal Thai (spread 1.110, the
-   same as Typhoon's 1.117), and nearly twice as much less if the vocabulary is
-   learned from formal text only (1.211). The freed slots are paid for by
+4. *Who pays.* Informal Thai gains less than formal Thai (an informal
+   premium of +11%, the same as Typhoon's +12%), and the premium rises to
+   +21% if the vocabulary is learned from formal text only. The freed slots are paid for by
    Korean (+39%), Russian (+18%), Chinese (+13%) and Japanese (+10%) text.
 5. *What the rows need.* <!-- CONCLUSION-EMBED -->
 
@@ -632,6 +638,30 @@ vocabulary's training data.
 - Make the cluster-aware variant the default if downstream tools need token
   boundaries that respect Thai clusters; it costs about one point of
   reduction.
+
+## Appendix: reproducing every number
+
+All scripts are in `src/`, all outputs in `results/`; CPU only, public data
+only. Corpora download on first use and are cached in `~/.cache/thaitok`.
+
+| Step | Command | Time on a 16-core laptop |
+| --- | --- | --- |
+| Baseline (Week 1) | `python src/run_baseline.py --docs 1200 --pairs 3000` | ~5 min |
+| Decomposition | `python src/run_decomposition.py` | ~4 min |
+| Candidates | `python src/candidates.py --target Mistral-7B` | ~3 min |
+| Retrofit, strict | `python src/retrofit.py --target Mistral-7B --k 500 1000 2000 3219` | ~10 min (merges then cached) |
+| Retrofit, English-only | `python src/retrofit.py --target Mistral-7B --k 1000 2000 3219 5000 --code-docs 0` | ~13 min |
+| Ablations | `... --k 3219 --mode cluster`; `... --k 3219 --train-domains wikipedia news` | ~10 min each |
+| BLOOM | `python src/retrofit.py --target BLOOM --k 1000 3219 5000 10000` | ~18 min |
+| Acceptance checks | `python src/verify_retrofit.py tokenizers/<name> [--base BLOOM]`, then `--summary` | ~3 min each |
+| Evaluation | `python src/evaluate.py`; `python src/run_baseline.py --retrofits --out BASELINE_after` | ~5 / ~35 min |
+| Robustness | `python src/robustness.py` | ~5 min |
+| Embedding experiment | `python src/embed_adapt.py --tokenizer tokenizers/bloom-th5000` | ~2.5 h |
+| Qwen study | `python src/qwen_unreachable.py`; `python src/qwen_repair.py` | ~5 min; ~1 h |
+| Tests | `python -m pytest tests` | <1 min |
+
+Budgets above the free-slot cap are clipped to it and named by the real
+count (`mistral-7b-th2483`).
 
 ## References
 
