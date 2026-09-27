@@ -110,21 +110,38 @@ def _stream_domain(domain: str):
         )
         field_of = lambda r: r["texts"]
         min_chars = 40  # social posts are legitimately short
-    elif domain == "english":
+    elif domain in ("english", "english_raw"):
         # English prose for the non-regression side of the retrofit: the
         # prune list is built from one slice, English cost is measured on a
-        # later, disjoint slice.
+        # later, disjoint slice. `english_raw` keeps line breaks and spacing:
+        # real text has them, and tokens containing a newline would
+        # otherwise look unused and be pruned.
         ds = load_dataset(
             "wikimedia/wikipedia", "20231101.en", split="train", streaming=True
         )
         field_of = lambda r: r["text"]
+    elif domain == "code":
+        # Public Python source, raw. Protects the code tokens an English
+        # deployment still needs. Train split here; the collateral check in
+        # robustness.py uses the separate validation split.
+        ds = load_dataset(
+            "codeparrot/codeparrot-clean", split="train", streaming=True
+        )
+        field_of = lambda r: r["content"]
     else:
         raise ValueError(f"unknown domain: {domain!r}")
 
+    raw = domain in ("english_raw", "code")
     seen: set[str] = set()
     for row in ds:
-        text = _clean(field_of(row))
-        if domain == "english":
+        if raw:
+            text = field_of(row).replace("\r\n", "\n").strip()
+        else:
+            text = _clean(field_of(row))
+        if domain == "code":
+            if len(text) < min_chars:
+                continue
+        elif domain in ("english", "english_raw"):
             if len(text) < min_chars:
                 continue
             latin = sum(1 for c in text if c.isascii())

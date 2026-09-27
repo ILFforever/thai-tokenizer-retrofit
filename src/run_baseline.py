@@ -155,13 +155,18 @@ def main() -> None:
     ap.add_argument("--docs", type=int, default=1500)
     ap.add_argument("--pairs", type=int, default=3000)
     ap.add_argument("--no-fertility", action="store_true")
+    ap.add_argument("--retrofits", action="store_true",
+                    help="also score this project's retrofitted tokenizers")
+    ap.add_argument("--out", default="BASELINE",
+                    help="report name; CSVs get the same suffix (e.g. BASELINE_after)")
     args = ap.parse_args()
+    suffix = "" if args.out == "BASELINE" else "_" + args.out.split("_", 1)[-1]
 
     RESULTS.mkdir(exist_ok=True)
     t0 = time.time()
 
     print("Loading tokenizers")
-    toks, skipped = load_all()
+    toks, skipped = load_all(retrofits=args.retrofits)
     if not toks:
         raise SystemExit("no tokenizers available")
 
@@ -189,12 +194,12 @@ def main() -> None:
         print(f"  {tok.label}")
 
     d_rows, p_rows = to_rows(domain_results), to_rows(parallel_results)
-    write_csv(RESULTS / "domain_results.csv", d_rows)
-    write_csv(RESULTS / "parallel_results.csv", p_rows)
-    (RESULTS / "BASELINE.md").write_text(
+    write_csv(RESULTS / f"domain_results{suffix}.csv", d_rows)
+    write_csv(RESULTS / f"parallel_results{suffix}.csv", p_rows)
+    (RESULTS / f"{args.out}.md").write_text(
         markdown_report(d_rows, p_rows, notes, skipped), encoding="utf-8"
     )
-    (RESULTS / "run_meta.json").write_text(
+    (RESULTS / f"run_meta{suffix}.json").write_text(
         json.dumps(
             {
                 "docs_per_domain": args.docs,
@@ -208,7 +213,7 @@ def main() -> None:
         ),
         encoding="utf-8",
     )
-    print(f"\nDone in {time.time() - t0:.0f}s -> results/BASELINE.md")
+    print(f"\nDone in {time.time() - t0:.0f}s -> results/{args.out}.md")
 
 
 if __name__ == "__main__":

@@ -4,3 +4,6 @@ __pycache__/
 venv/
 .cache/
 data/
+
+# large retrofitted tokenizers (rebuild with src/retrofit.py)
+tokenizers/bloom-*

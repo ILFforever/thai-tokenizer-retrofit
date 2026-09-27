@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 import tiktoken
@@ -57,9 +58,41 @@ HF_SPECS = [
     ("Mistral-7B", "mistralai/Mistral-7B-v0.1", "common self-hosted base"),
 ]
 
+# This project's retrofits, built by src/retrofit.py. Loaded from the local
+# tokenizers/ folder; skipped (and reported) if not built yet.
+_LOCAL = Path(__file__).parent.parent / "tokenizers"
+
+
+def retrofit_dirs(slug: str = "mistral-7b") -> list[Path]:
+    """Tokenizer folders the latest retrofit runs produced, read from their
+    meta files in results/ - not a folder glob, so a leftover folder from an
+    earlier run can never slip into an evaluation."""
+    import json
+
+    out = []
+    for meta in sorted((Path(__file__).parent.parent / "results").glob(f"retrofit_{slug}*_meta.json")):
+        for run in json.loads(meta.read_text(encoding="utf-8"))["runs"]:
+            p = _LOCAL / run["name"]
+            if p.exists() and p not in out:  # budgets above the cap repeat
+                out.append(p)
+    return out
+
+
+def _retrofit_specs() -> list[tuple[str, str, str]]:
+    """Registry entries for every plain (non-ablation) retrofit built so far."""
+    specs = []
+    for base, slug in (("Mistral-7B", "mistral-7b"), ("BLOOM", "bloom")):
+        for p in retrofit_dirs(slug):
+            rest = p.name.split("-th", 1)[1]
+            if not rest.isdigit():  # ablation variants are evaluated separately
+                continue
+            specs.append((f"{base} +TH{rest}", str(p),
+                          f"this project: {int(rest):,} slots swapped, size fixed"))
+    return specs
+
 
 def load_all(
-    verbose: bool = True, only: list[str] | None = None
+    verbose: bool = True, only: list[str] | None = None, retrofits: bool = False
 ) -> tuple[list[Tok], list[str]]:
     """Return every tokenizer that loaded, plus labels for those that did not.
 
@@ -90,7 +123,8 @@ def load_all(
         except Exception as exc:  # noqa: BLE001 - report and continue
             skipped.append(f"{label} ({type(exc).__name__})")
 
-    for label, repo, note in HF_SPECS:
+    specs = HF_SPECS + (_retrofit_specs() if retrofits or only else [])
+    for label, repo, note in specs:
         if not want(label):
             continue
         try:
@@ -98,7 +132,7 @@ def load_all(
             toks.append(
                 Tok(
                     label=label,
-                    family="open-weight",
+                    family="retrofit" if "+TH" in label else "open-weight",
                     encode=lambda s, _t=hf: _t.encode(s, add_special_tokens=False),
                     decode=lambda ids, _t=hf: _t.decode(ids),
                     vocab_size=len(hf),

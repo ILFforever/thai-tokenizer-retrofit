@@ -407,3 +407,44 @@ def unreachable_thai_tokens(tok: Tok) -> dict:
         "unreachable_thai_tokens": len(unreachable),
         "examples": sorted(unreachable, key=len, reverse=True)[:15],
     }
+
+
+def thai_token_ids(tok: Tok) -> dict[str, dict[int, str]]:
+    """Ids of the Thai vocabulary entries, split by whether the shipped
+    pre-tokenizer can emit them.
+
+    Same test as `unreachable_thai_tokens` (an entry is unreachable when the
+    pre-tokenizer cuts its own string into more than one piece), but keyed by
+    id so a caller can look the rows up in a model's embedding matrix.
+    Returns {"reachable": {id: string}, "unreachable": {id: string}}.
+    Entries that are not valid UTF-8 on their own (byte fragments of a Thai
+    character) are in neither group, exactly as in `unreachable_thai_tokens`.
+    """
+    decoded: dict[int, str] = {}
+    if tok.kind == "tiktoken":
+        for i in range(tok.raw.n_vocab):
+            try:
+                decoded[i] = tok.raw.decode_single_token_bytes(i).decode("utf-8")
+            except (KeyError, UnicodeDecodeError):
+                pass
+    else:
+        import json as _json
+
+        j = _json.loads(tok.raw.backend_tokenizer.to_str())
+        byte_level = "ByteLevel" in _json.dumps(j.get("pre_tokenizer"))
+        u2b = {v: k for k, v in _bytes_to_unicode().items()}
+        for piece, idx in tok.raw.get_vocab().items():
+            if byte_level:
+                try:
+                    decoded[idx] = bytes(u2b[c] for c in piece).decode("utf-8")
+                except (KeyError, UnicodeDecodeError):
+                    pass
+            else:
+                decoded[idx] = piece.replace("▁", " ")
+    out: dict[str, dict[int, str]] = {"reachable": {}, "unreachable": {}}
+    for idx, s in decoded.items():
+        if not _THAI_CH.search(s):
+            continue
+        key = "unreachable" if len(pretoken_spans(tok, s)) > 1 else "reachable"
+        out[key][idx] = s
+    return out

@@ -1,0 +1,131 @@
+{
+  "target": "Mistral-7B",
+  "mode": "plain",
+  "prunable": 2483,
+  "train_domains": [
+    "wikipedia",
+    "news",
+    "social"
+  ],
+  "english_prune_docs": 8000,
+  "english_prune_chars": 83723487,
+  "used_by_english": 26741,
+  "code_prune_docs": 5000,
+  "code_prune_chars": 49600398,
+  "used_by_code": 23471,
+  "used_by_thai": 13582,
+  "used_by_any": 29196,
+  "thai_run_types": 266042,
+  "atoms": [
+    "ๆ",
+    "ฮ",
+    "๊",
+    "ฤ",
+    "ฒ",
+    "ฎ",
+    "ฏ",
+    "ฯ",
+    "๋",
+    "ฑ",
+    "ฬ",
+    "ํ",
+    "ฺ",
+    "฿",
+    "๒",
+    "๕",
+    "๑",
+    "ๅ",
+    "๓",
+    "๔",
+    "๖",
+    "๙",
+    "ฅ",
+    "๗",
+    "๘",
+    "ฃ"
+  ],
+  "bpe_char_cap_per_domain": 4000000,
+  "runs": [
+    {
+      "name": "mistral-7b-th500",
+      "k": 500,
+      "atoms": 26,
+      "merged": 474,
+      "merges_added": 474,
+      "pruned_scripts": {
+        "other": 135,
+        "cjk": 265,
+        "hangul": 84,
+        "ascii": 1,
+        "space": 5,
+        "cyrillic": 7,
+        "latin-ext": 3
+      }
+    },
+    {
+      "name": "mistral-7b-th1000",
+      "k": 1000,
+      "atoms": 26,
+      "merged": 974,
+      "merges_added": 974,
+      "pruned_scripts": {
+        "cyrillic": 18,
+        "ascii": 26,
+        "latin-ext": 36,
+        "other": 230,
+        "hangul": 211,
+        "cjk": 473,
+        "space": 6
+      }
+    },
+    {
+      "name": "mistral-7b-th2000",
+      "k": 2000,
+      "atoms": 26,
+      "merged": 1974,
+      "merges_added": 1974,
+      "pruned_scripts": {
+        "ascii": 477,
+        "cyrillic": 539,
+        "latin-ext": 59,
+        "space": 7,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    },
+    {
+      "name": "mistral-7b-th2483",
+      "k": 2483,
+      "atoms": 26,
+      "merged": 2457,
+      "merges_added": 2457,
+      "pruned_scripts": {
+        "ascii": 675,
+        "space": 9,
+        "cyrillic": 818,
+        "latin-ext": 63,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    },
+    {
+      "name": "mistral-7b-th2483",
+      "k": 2483,
+      "atoms": 26,
+      "merged": 2457,
+      "merges_added": 2457,
+      "pruned_scripts": {
+        "ascii": 675,
+        "space": 9,
+        "cyrillic": 818,
+        "latin-ext": 63,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    }
+  ],
+  "seconds": 632.8
+}

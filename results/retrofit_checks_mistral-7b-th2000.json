@@ -1,0 +1,32 @@
+[
+  {
+    "check": "vocabulary size identical, ids contiguous",
+    "pass": true,
+    "detail": "base 32,000, retrofit 32,000"
+  },
+  {
+    "check": "Thai round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 0, base 0, new failures introduced by retrofit 0"
+  },
+  {
+    "check": "English round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 0, base 0, new failures introduced by retrofit 0"
+  },
+  {
+    "check": "top 100 candidates each encode to one token",
+    "pass": false,
+    "detail": "98/100 single-token; not: เนื่องจาก (2 tokens, base 9), การเลือกตั้ง (2 tokens, base 12)"
+  },
+  {
+    "check": "added tokens used on held-out Thai",
+    "pass": true,
+    "detail": "1,998/2,000 used (99.9%); threshold 95%"
+  },
+  {
+    "check": "English id sequences unchanged (>= 99.5%)",
+    "pass": true,
+    "detail": "9,963/10,000 samples byte-identical (99.63%)"
+  }
+]

@@ -1,0 +1,65 @@
+{
+  "target": "Mistral-7B",
+  "mode": "plain",
+  "prunable": 2483,
+  "train_domains": [
+    "wikipedia",
+    "news"
+  ],
+  "english_prune_docs": 8000,
+  "english_prune_chars": 83723487,
+  "used_by_english": 26741,
+  "code_prune_docs": 5000,
+  "code_prune_chars": 49600398,
+  "used_by_code": 23471,
+  "used_by_thai": 13582,
+  "used_by_any": 29196,
+  "thai_run_types": 219348,
+  "atoms": [
+    "ๆ",
+    "ฤ",
+    "ฮ",
+    "ฎ",
+    "ฒ",
+    "ฏ",
+    "ฯ",
+    "๊",
+    "ฑ",
+    "ฬ",
+    "๋",
+    "ฺ",
+    "ํ",
+    "๒",
+    "๑",
+    "๕",
+    "๓",
+    "ๅ",
+    "๔",
+    "๖",
+    "๘",
+    "๙",
+    "ฅ",
+    "๗",
+    "๎"
+  ],
+  "bpe_char_cap_per_domain": 4000000,
+  "runs": [
+    {
+      "name": "mistral-7b-th2483-wikipedia+news",
+      "k": 2483,
+      "atoms": 25,
+      "merged": 2458,
+      "merges_added": 2458,
+      "pruned_scripts": {
+        "ascii": 675,
+        "space": 9,
+        "cyrillic": 818,
+        "latin-ext": 63,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    }
+  ],
+  "seconds": 562.0
+}

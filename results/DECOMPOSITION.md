@@ -117,9 +117,11 @@ So Week 1's recommendation - retrofit cl100k because its mark-split rate was
 - Qwen2.5 is the opposite: **89% of its excess is the regex.** Its
   vocabulary already contains 2,570 Thai entries, 1,578 of which (61%) its
   own pre-tokenizer can never emit - whole words such as `ประวัติศาสตร์`
-  and `อย่างต่อเนื่อง`. A one-line regex change makes them reachable. Caveat:
-  a token the shipped tokenizer never emits was never seen in training, so
-  its embedding is probably untrained - tested in Week 6.
+  and `อย่างต่อเนื่อง`. A one-line regex change makes them reachable.
+  **But the 1.42x is a token count, not a usable gain:** all 1,578 rows are
+  untrained (they sit on the same vector as Qwen's never-used padding rows),
+  and with the regex fix and no retraining Qwen2.5-0.5B's Thai bits per
+  character get 2-3x *worse* on every domain. See `QWEN_UNREACHABLE.md`.
 - Mistral and BLOOM have **100% vocabulary share**: nothing in the
   pre-tokenizer stands in the way, and a strong Thai vocabulary inside their
   own pre-token pieces reaches 1.13x (Mistral) and 1.24x (BLOOM).

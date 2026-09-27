@@ -58,6 +58,7 @@ MARK_START = re.compile(r"^[ัิ-ฺ็-๎]")
 
 EVAL_DOCS = 1200
 ENGLISH_PRUNE_DOCS = 8000  # english docs [0, 8000) build the prune list
+CODE_PRUNE_DOCS = 5000  # Python files whose tokens are protected too
 ENGLISH_EVAL_SKIP = 8000  # english docs [8000, ...) are held out for Week 5
 BPE_CHAR_CAP = 4_000_000  # Thai training chars per domain for BPE learning
 
@@ -373,7 +374,17 @@ def main() -> None:
     ap.add_argument("--mode", choices=["plain", "cluster"], default="plain",
                     help="cluster: never create a token that starts with a combining mark")
     ap.add_argument("--english-docs", type=int, default=ENGLISH_PRUNE_DOCS)
+    ap.add_argument("--code-docs", type=int, default=CODE_PRUNE_DOCS,
+                    help="Python files whose tokens are also protected (0 = English only)")
+    ap.add_argument("--train-domains", nargs="+", default=DOMAINS,
+                    help="Thai domains the new merges are learned from (ablation: "
+                         "formal-only = wikipedia news)")
     args = ap.parse_args()
+    # `learn_variant` changes the learned merges; `variant` also names the
+    # protection profile, which changes only the prune list.
+    learn_variant = ("-cluster" if args.mode == "cluster" else "") + (
+        "" if sorted(args.train_domains) == sorted(DOMAINS) else "-" + "+".join(args.train_domains))
+    variant = learn_variant + ("-enonly" if args.code_docs == 0 else "")
     t0 = time.time()
 
     from candidates import train_texts
@@ -385,14 +396,20 @@ def main() -> None:
     print(f"{args.target}: vocab {len(bpe.vocab):,}, merges {len(bpe.merges):,}, "
           f"byte_level={bpe.byte_level}", flush=True)
 
-    # 1. usage on English (prune corpus) and Thai (training slices)
-    english = load_thai_domain("english", n_docs=args.english_docs).texts
+    # 1. usage on the protected corpora and on Thai (training slices).
+    #    English is raw text (line breaks kept) and code is raw Python: an
+    #    earlier version used whitespace-normalised English, which made every
+    #    token containing a newline look unused.
+    english = load_thai_domain("english_raw", n_docs=args.english_docs).texts
+    code = load_thai_domain("code", n_docs=args.code_docs).texts if args.code_docs else []
     thai_train = {d: train_texts(d) for d in DOMAINS}
     used_en = usage_counts(tok, english)
+    used_code = usage_counts(tok, code) if code else np.zeros_like(used_en)
     used_th = usage_counts(tok, [t for ts in thai_train.values() for t in ts])
-    used = used_en + used_th
+    used = used_en + used_code + used_th
     order = prune_order(bpe, used)
-    print(f"  used by English: {(used_en > 0).sum():,}; by Thai: {(used_th > 0).sum():,}; "
+    print(f"  used by English: {(used_en > 0).sum():,}; by code: {(used_code > 0).sum():,}; "
+          f"by Thai: {(used_th > 0).sum():,}; by any: {(used > 0).sum():,}; "
           f"prunable: {len(order):,}  ({time.time() - t0:.0f}s)", flush=True)
     kmax = max(args.k)
     if kmax > len(order):
@@ -400,8 +417,8 @@ def main() -> None:
 
     # 2. Thai atoms: characters the base cannot represent as a single token
     #    (byte fallback) are added first - merges cannot involve them otherwise.
-    runs_text = {d: [] for d in DOMAINS}
-    for d in DOMAINS:
+    runs_text = {d: [] for d in args.train_domains}
+    for d in args.train_domains:
         n = 0
         for t in thai_train[d]:
             runs_text[d].append(t)
@@ -433,12 +450,27 @@ def main() -> None:
     def base_segment(run: str) -> list[str]:
         return [t.value for t in seg_model.tokenize(run)]
 
-    existing = set(bpe.vocab) | set(atoms)
-    merges, took_slot, new_tokens, savings = learn_merges(
-        base_segment, runs, kmax - len(atoms), existing,
-        forbid_mark_start=args.mode == "cluster",
-        to_text_fn=lambda s: to_text(bpe, s),
-    )
+    # The learned merges depend only on the Thai text, the base tokenizer
+    # and the mode - not on the prune list - so they are cached and reused.
+    from corpora import CACHE
+
+    cache = CACHE / f"merges_{slug}{learn_variant}_cap{BPE_CHAR_CAP}.json"
+    budget = min(kmax, len(order)) - len(atoms)
+    cached = json.loads(cache.read_text(encoding="utf-8")) if cache.exists() else None
+    if cached and cached["atoms"] == atoms and cached["budget"] >= budget:
+        merges = [tuple(m_) for m_ in cached["merges"]]
+        took_slot, new_tokens, savings = cached["took_slot"], cached["new_tokens"], cached["savings"]
+        print(f"  reusing {len(merges):,} cached merges ({cache.name})", flush=True)
+    else:
+        existing = set(bpe.vocab) | set(atoms)
+        merges, took_slot, new_tokens, savings = learn_merges(
+            base_segment, runs, budget, existing,
+            forbid_mark_start=args.mode == "cluster",
+            to_text_fn=lambda s: to_text(bpe, s),
+        )
+        cache.write_text(json.dumps({"atoms": atoms, "budget": budget, "merges": merges,
+                                     "took_slot": took_slot, "new_tokens": new_tokens,
+                                     "savings": savings}, ensure_ascii=False), encoding="utf-8")
     print(f"  learned {len(merges):,} merges -> {len(new_tokens):,} new tokens "
           f"({time.time() - t0:.0f}s)", flush=True)
 
@@ -467,15 +499,15 @@ def main() -> None:
             merges_k.append(mg)
             slots += took
         tk, pruned = build(bpe, order, toks_k, merges_k)
-        name = f"{slug}-th{k}" + ("-cluster" if args.mode == "cluster" else "")
+        name = f"{slug}-th{k}{variant}"
         save_hf(tk, tok.raw, OUT / name)
         id_to = bpe.id_to_tok
         with (RESULTS / f"prune_list_{name}.csv").open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
-            w.writerow(["id", "token", "text", "script", "english_uses", "thai_uses"])
+            w.writerow(["id", "token", "text", "script", "english_uses", "code_uses", "thai_uses"])
             for t in pruned:
                 i = bpe.vocab[t]
-                w.writerow([i, t, to_text(bpe, t), script_of(to_text(bpe, t)), int(used_en[i]), int(used_th[i])])
+                w.writerow([i, t, to_text(bpe, t), script_of(to_text(bpe, t)), int(used_en[i]), int(used_code[i]), int(used_th[i])])
         new_vocab = json.loads(tk.to_str())["model"]["vocab"]
         with (RESULTS / f"added_tokens_{name}.csv").open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
@@ -487,12 +519,17 @@ def main() -> None:
                         "merges_added": len(merges_k), "pruned_scripts": dict(scripts)})
         print(f"  saved {name}: pruned {len(pruned)} ({dict(scripts.most_common(5))})", flush=True)
 
-    (RESULTS / f"retrofit_{slug}{'-cluster' if args.mode == 'cluster' else ''}_meta.json").write_text(
+    (RESULTS / f"retrofit_{slug}{variant}_meta.json").write_text(
         json.dumps({"target": args.target, "mode": args.mode, "prunable": len(order),
+                    "train_domains": args.train_domains,
                     "english_prune_docs": args.english_docs,
                     "english_prune_chars": sum(map(len, english)),
                     "used_by_english": int((used_en > 0).sum()),
+                    "code_prune_docs": args.code_docs,
+                    "code_prune_chars": sum(map(len, code)),
+                    "used_by_code": int((used_code > 0).sum()),
                     "used_by_thai": int((used_th > 0).sum()),
+                    "used_by_any": int((used > 0).sum()),
                     "thai_run_types": len(runs), "atoms": atoms,
                     "bpe_char_cap_per_domain": BPE_CHAR_CAP,
                     "runs": summary, "seconds": round(time.time() - t0, 1)},
