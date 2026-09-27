@@ -428,7 +428,7 @@ footer { padding-block: 40px 0; color: var(--muted); font-size: 13px; display: g
     <header>
       <div class="eyebrow">10 · Qwen2.5</div>
       <h2>1,578 Thai words in the vocabulary that the model has never seen</h2>
-      <p class="tldr">Qwen2.5 already has Thai words in its vocabulary, but its own pre-tokenizer can never produce them. Fixing the pattern would cut Thai tokens by about 40% - but those rows were never trained.</p>
+      <p class="tldr">Qwen2.5 already has Thai words in its vocabulary, but its own pre-tokenizer can never produce them. Fixing the pattern would cut Thai tokens by up to 42% - but those rows were never trained, and repairing only the rows gets about three quarters of the way back. For Qwen, the one-line fix is not free.</p>
     </header>
     <div class="grid2">
       <div class="card">
@@ -745,6 +745,18 @@ function legend(host, items) {
     col(`Retrofit, ${int(STRICT_K)} slots`, cssv("accent"), STRICT, [["Entries swapped", int(STRICT_K)], ["Protects", "English + code"]], true),
     col("Retrofit, 3,219 slots", cssv("accent"), EQ, [["Entries swapped", "3,219"], ["Protects", "English only"]], false),
     col("Typhoon-7B", cssv("typhoon"), TY, [["Entries added", "3,219"], ["Protects", "everything (expansion)"]], false));
+  const B = DATA.vs_typhoon_bootstrap;
+  if (B) {
+    const rng = key => DOMAINS.map(d => B[`${key} | ${d}`]).filter(Boolean);
+    const span = arr => {
+      const v = arr.map(x => Math.abs(x[0]) * 100).sort((a, b) => a - b);
+      return `${v[0].toFixed(1)}-${v[v.length - 1].toFixed(1)}%`;
+    };
+    const eq = rng("retrofit 3219 (English-only)"), st = rng("retrofit 2483 (strict)");
+    $("#typhoon").append(h("p", { class: "note" },
+      h("strong", {}, "Paired on the same documents: "),
+      `the 3,219-slot retrofit needs ${span(eq)} fewer tokens than Typhoon in every domain; the strict ${int(STRICT_K)}-slot retrofit needs ${span(st)} more. Every 95% bootstrap interval excludes zero.`));
+  }
 })();
 
 /* ---------- 7. fairness ---------- */
@@ -846,28 +858,28 @@ function legend(host, items) {
   barChart($("#ch-qnorm"), rows.map(([label, r, color]) => ({ label, value: r.norm.median, color, tip: `<b>${label}</b><br>median ${r.norm.median.toFixed(3)} (IQR ${r.norm.q1.toFixed(3)}-${r.norm.q3.toFixed(3)})<br>${int(r.collapsed)} of ${int(r.n)} collapsed onto the padding point` })),
     { max: 0.55, fmtV: v => v.toFixed(3), ticks: [0, 0.1, 0.2, 0.3, 0.4, 0.5], fmtT: v => v.toFixed(1) });
   const R = DATA.qwen_repair;
-  const conds = [["shipped", "shipped tokenizer", cssv("base")], ["mark_aware", "pattern fixed, rows untrained", cssv("crit")]];
-  const extra = [];
-  if (R && R.summary) {
-    for (const [k, lab] of [["mean", "pattern fixed + mean-initialised rows"], ["mean+tune", "pattern fixed + mean + row-only tuning"]]) if (R.summary[k]) extra.push([k, lab]);
-  }
+  const conds = [
+    ["shipped", "shipped tokenizer", cssv("base")],
+    ["dead", "pattern fixed, rows untrained", cssv("crit")],
+    ["mean", "pattern fixed + mean-initialised rows", cssv("aqua")],
+    ["tune", "pattern fixed + mean + row-only tuning", cssv("accent")],
+  ].filter(([k]) => k === "shipped" || k === "dead" || (R && R.thai));
   const box = h("div", { class: "bars" });
-  const lg = [];
   for (const d of DOMAINS) {
-    const s = Q.lm[d].summary;
-    const vals = [["shipped", s.bpc_shipped, s.tok100_shipped], ["mark_aware", s.bpc_mark_aware, s.tok100_mark_aware]];
-    for (const [k] of extra) { const r = R.summary[k][d]; if (r) vals.push([k, r.bpc, r.tok100]); }
-    vals.forEach(([k, v, tpc], i) => {
-      const color = k === "shipped" ? cssv("base") : k === "mark_aware" ? cssv("crit") : cssv("accent");
-      const lab = k === "shipped" ? "shipped" : k === "mark_aware" ? "pattern fixed" : k;
-      box.append(h("div", { class: "bar-row" }, h("div", { class: "lab" + (i === 0 ? " strong" : "") }, i === 0 ? DNAME[d] : ""), h("div", { class: "track" }, h("div", { class: "fill", style: { width: (v / 6 * 100) + "%", background: color }, "data-tip": `<b>${DNAME[d]}, ${lab}</b><br>${v.toFixed(2)} bits per character<br>${fmt(tpc)} tokens per 100 characters` })), h("div", { class: "val" }, v.toFixed(2))));
+    const s = Q.lm[d].summary, r = R && R.thai && R.thai[d];
+    const val = { shipped: [s.bpc_shipped, s.tok100_shipped], dead: [s.bpc_mark_aware, s.tok100_mark_aware] };
+    if (r) { val.mean = [r.bpc_mean, r.tok100_mark_aware]; val.tune = [r.bpc_tune, r.tok100_mark_aware]; }
+    conds.forEach(([k, lab, color], i) => {
+      const [v, tpc] = val[k];
+      box.append(h("div", { class: "bar-row" }, h("div", { class: "lab" + (i === 0 ? " strong" : "") }, i === 0 ? DNAME[d] : ""), h("div", { class: "track" }, h("div", { class: "fill", style: { width: (v / 6 * 100) + "%", background: color }, "data-tip": `<b>${DNAME[d]}: ${lab}</b><br>${v.toFixed(2)} bits per character<br>${fmt(tpc)} tokens per 100 characters` })), h("div", { class: "val" }, v.toFixed(2))));
     });
   }
   $("#ch-qbpc").append(box);
-  const L = [["shipped", cssv("base")], ["pattern fixed, rows untrained", cssv("crit")]];
-  if (extra.length) L.push(["pattern fixed, rows repaired", cssv("accent")]);
-  legend($("#lg-qbpc"), L);
-  if (R && R.caption) $("#qbpc-caption").textContent = R.caption;
+  legend($("#lg-qbpc"), conds.map(([, lab, color]) => [lab, color]));
+  if (R && R.english) {
+    const ew = R.english.english_wiki, eo = R.english.english_opus;
+    $("#qbpc-caption").textContent = `Qwen2.5-0.5B, 50 passages of ~600 characters per domain; bits per character does not depend on how the text is split. Mean initialisation wins back about half the loss for free; training only the 1,578 rows (${R.meta.steps} steps, all-Thai text) wins back about three quarters, then stalls - Thai stays 25-52% worse than shipped, and English gets worse (Wikipedia ${ew.bpc_shipped.toFixed(3)} → ${ew.bpc_tune.toFixed(3)}, OPUS ${eo.bpc_shipped.toFixed(3)} → ${eo.bpc_tune.toFixed(3)}) because the repaired rows start taking probability at English positions.`;
+  }
 })();
 
 /* ---------- 11. corrections ---------- */

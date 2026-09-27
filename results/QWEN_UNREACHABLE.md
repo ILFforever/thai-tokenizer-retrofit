@@ -1,9 +1,14 @@
-# Qwen2.5: are the unreachable Thai tokens trained?
+# Qwen2.5: are the unreachable Thai tokens trained, and can they be repaired?
 
-**TL;DR: No. All 1,578 unreachable Thai tokens are untrained. Switching
-Qwen2.5 to the mark-aware regex without retraining cuts Thai tokens by about
-a third, but makes the model 2-3x worse at Thai (bits per character on
-Wikipedia go from 1.42 to 4.30). The regex fix is not free.**
+**TL;DR: No, and not cheaply. All 1,578 unreachable Thai tokens are
+untrained. Switching Qwen2.5 to the mark-aware regex without retraining
+cuts Thai tokens by about a third, but makes the model 2-3x worse at Thai
+(bits per character on Wikipedia go from 1.42 to 4.30). A cheap repair won
+back about three quarters of that loss: each row was set to the average of
+its pieces, then only those 1,578 rows were trained. But Thai is still
+25-52% worse than with the shipped tokenizer, and English got 8-10% worse.
+The regex fix is not free, and repairing only the rows does not make it
+free.**
 
 ## What was tested
 
@@ -83,27 +88,144 @@ It breaks in two ways:
 **Is the result mixed?** No. The regex fix saves tokens, but without
 retraining it breaks the model on every domain.
 
+**3. Repairing only the 1,578 rows wins back about three quarters of the
+loss. Thai still ends up worse than before, and English gets worse.**
+
+Made by `src/qwen_repair.py`. It uses the same passages and the same
+scoring as Test 2, all with the mark-aware tokenizer.
+
+- **Mean init.** Each dead row becomes the average of the rows of the
+  pieces the shipped tokenizer splits that word into (Fast Vocabulary
+  Transfer, Gee et al. 2022). No training.
+- **Mean + tune.** Then only those 1,578 rows are trained, which is 1.04%
+  of the matrix. Everything else is frozen.
+  - Data: Thai training text, 1M characters per domain, taken from after
+    the evaluation slice.
+  - Settings: 200 steps, batch 8 x 256 tokens, Adam, lr 2e-3.
+  - Afterwards, every other weight was checked against the checkpoint.
+    All were bit-identical.
+
+| Domain | Tokens saved | bpc shipped | dead rows | mean init | mean + tune | vs shipped |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| wikipedia | 42% | 1.42 | 4.30 | 2.77 | 2.15 | +52% |
+| news | 34% | 1.78 | 4.69 | 3.20 | 2.53 | +42% |
+| social | 31% | 2.69 | 5.53 | 3.87 | 3.37 | +25% |
+
+| English (no English was used in tuning) | bpc shipped | mean init | mean + tune |
+| --- | ---: | ---: | ---: |
+| Wikipedia, 50 passages | 0.888 | 0.888 | 0.956 (+7.7%) |
+| OPUS-100 sentences, 50 passages | 1.353 | 1.353 | 1.487 (+10.0%) |
+
+- **Mean init alone** wins back about half the loss (51-59%) and leaves
+  English unchanged. It costs nothing, so it should always be the starting
+  point.
+- **Tuning the rows** brings the recovery to 74-76% in every domain. Then
+  it stops. On the quick check (15 passages), Wikipedia bpc was 2.73 at
+  step 0, 2.14 at step 50, 2.05 at step 100, and 2.10 at step 200. More
+  steps of the same kind will not close the gap.
+- **Thai is still worse than with the shipped tokenizer** in every domain.
+  Only 0/50 Wikipedia, 0/50 news and 3/50 social passages come out better,
+  and every 95% interval is well above zero. Predicting a repaired token
+  still costs 9-11 bits.
+- **Why the gap likely stays.** The rest of the network is frozen. It
+  learned Thai as text split into about 1.6x more pieces. Now a third of
+  its input positions hold a whole word it never saw as one position.
+  Changing the rows cannot change how the later layers use them. This
+  explanation fits the plateau, but this run did not test it directly.
+- **English got 8-10% worse.** After tuning, the model gives the 1,578
+  Thai rows 11% (Wikipedia) to 20% (OPUS) of its probability at every
+  English position, against almost none before. The likely cause: the
+  tuning text was all Thai, so nothing taught these rows to stay quiet
+  elsewhere. Because input and output share one matrix, their output side
+  drifted to fire everywhere.
+
+**Answer to "can it be fixed cheaply":** not with this recipe. After mean
+init plus row-only tuning, the mark-aware tokenizer uses 31-42% fewer Thai
+tokens. But the model is 25-52% worse at Thai and 8-10% worse at English.
+A one-line regex change plus training 1,578 rows does not fix Qwen2.5.
+
 ## What it means for the project
 
 - The DECOMPOSITION result "Qwen2.5 regex fix: 2.38x -> 1.42x" is a
-  **token-count result only**. Without retraining you cannot use it.
+  **token-count result only**. Without retraining you cannot use it, and
+  the cheapest repair tried here does not rescue it.
 - This is direct evidence for the narrowed claim in `CLAUDE.md`. On a
   shipped model, rows that never appeared in training are unusable as they
-  are, and they need re-initialising and tuning. Any retrofit that puts new
-  strings into rows will hit the same wall.
-- The fix is still attractive if those 1,578 rows can be repaired cheaply.
-  Qwen2.5-0.5B makes a good CPU-sized test bed for that step. The broken
-  rows and their strings are known exactly, and this script measures the
-  recovery. A simple first try: set each row to the average of the rows of
-  the pieces the shipped tokenizer splits that word into.
+  are, and they need re-initialising and tuning. The repair test sharpens
+  that in two ways:
+  - Mean init is cheap and clearly worth doing.
+  - Row-only tuning has a ceiling, and it needs non-Thai text in the mix,
+    or the tied output rows leak into other languages.
+- The same lessons apply to the Mistral/BLOOM retrofit: swapped rows need
+  mean init, and tuning data that includes English.
+- Untested next steps, if Qwen stays in scope:
+  - Put English text in the row-tuning data, to stop the leak.
+  - Train a small adapter (LoRA) on the layers as well as the rows, to get
+    past the plateau.
+  - Neither is cheap on this CPU.
 
-**Limits.** Only the 0.5B checkpoint was tested. Every Qwen2.5 size ships
-the same tokenizer, so the same rows are unreachable in all of them, but
-the larger models were not checked. There are 50 passages per domain, and
-the social ones are short (6.7k characters). The effect is large enough
-that neither limit changes the conclusion. Bits per character measures how
-well the model predicts text, not task accuracy. Still, no task would
-survive a 2-3x jump.
+**Limits.**
+
+- Only the 0.5B checkpoint was tested. Every Qwen2.5 size ships the same
+  tokenizer, so the same rows are unreachable in all of them, but the
+  larger models were not checked.
+- There are 50 passages per domain, and the social ones are short (6.7k
+  characters). The effects are large enough that neither changes the
+  conclusion.
+- Bits per character measures how well the model predicts text, not task
+  accuracy.
+- The repair was run with one learning rate (2e-3) and one seed. A lower
+  rate might leak less into English. It is unlikely to lift the Thai
+  plateau, because that plateau appeared within 100 steps.
+- The coordinator's settings were 300 steps and a 60-minute budget. Heavy
+  jobs running alongside slowed each step from 17 s to 33 s, so the run
+  used 200 steps and still took 2 hours.
+- The tuned rows were not saved.
+
+## Repair: generated tables
+
+<!-- repair tables: generated by src/qwen_repair.py, replaced on re-run -->
+
+Training: 200 steps x batch 8 x 256-token windows = 409,600 tokens seen, Adam lr 0.002, grad-norm clip 1.0, on 999,875 training characters per domain (1,106,792 mark-aware tokens available). Only the 1,578 dead rows (1.04% of the matrix) were trainable. 8 CPU threads; training 110 min, whole run 123 min.
+
+**Check against the checkpoint: passed.** 1,578 embedding rows changed, 0 of them outside the dead set (max difference there 0); 289 of 289 other weight tensors bit-identical; output head still tied: True.
+
+
+### Thai, bits per character (same 50 passages per domain as Test 2)
+
+*vs shipped* compares mean+tune with the shipped tokenizer on the same passages (negative = repaired model is better); 95% bootstrap interval over passages.
+
+| Domain | tok/100ch shipped | tok/100ch mark-aware | bpc shipped | mark-aware, dead rows | mark-aware, mean init | mark-aware, mean+tune | mean+tune vs shipped | 95% CI | passages better than shipped |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| wikipedia | 55.5 | 32.4 | 1.415 | 4.302 | 2.765 | **2.147** | +0.732 (+52%) | +0.689 to +0.778 | 0/50 |
+| news | 59.6 | 39.3 | 1.776 | 4.687 | 3.196 | **2.528** | +0.752 (+42%) | +0.710 to +0.796 | 0/50 |
+| social | 59.1 | 40.8 | 2.694 | 5.525 | 3.868 | **3.368** | +0.673 (+25%) | +0.590 to +0.745 | 3/50 |
+
+Mean bits per predicted token when the target is one of the repaired tokens: wikipedia 18.6 -> 11.0 (mean) -> 9.3 (tuned); news 19.5 -> 11.1 (mean) -> 10.2 (tuned); social 20.4 -> 11.6 (mean) -> 11.4 (tuned).
+
+
+### Training curve (quick eval: first 15 passages per domain)
+
+| Step | train loss | wikipedia | news | social |
+| --- | ---: | ---: | ---: | ---: |
+| shipped tokenizer (target) | - | 1.318 | 1.850 | 2.380 |
+| mark-aware, dead rows | - | 4.299 | 4.861 | 5.241 |
+| 0 | - | 2.731 | 3.242 | 3.614 |
+| 50 | 5.214 | 2.142 | 2.701 | 3.135 |
+| 100 | 4.909 | 2.053 | 2.694 | 3.137 |
+| 150 | 4.746 | 2.103 | 2.697 | 3.098 |
+| 200 | 4.778 | 2.102 | 2.669 | 3.113 |
+
+### English, bits per character (no English training text was used)
+
+The shipped column is the untouched model with the shipped tokenizer; the others use the repaired rows with the mark-aware tokenizer. *Mass on repaired rows* = average probability the model puts on the 1,578 rows at each position.
+
+| Set | passages | chars | tok/100ch | same ids both tokenizers | bpc shipped | bpc mean | bpc mean+tune | mean+tune vs shipped | 95% CI | mass on repaired rows (shipped / mean / tuned) |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | --- |
+| english_wiki | 50 | 29,618 | 23.4 | True | 0.8875 | 0.8875 | 0.9562 | +0.0687 (+7.74%) | +0.0527 to +0.0859 | 3.8e-07 / 1.7e-05 / 1.1e-01 |
+| english_opus | 50 | 27,007 | 23.5 | True | 1.3526 | 1.3526 | 1.4873 | +0.1347 (+9.96%) | +0.1126 to +0.1589 | 4.7e-07 / 1.9e-05 / 2.0e-01 |
+
+<!-- end of repair tables -->
 
 <!-- generated below this line by src/qwen_unreachable.py; text above is hand-written and preserved on re-run -->
 

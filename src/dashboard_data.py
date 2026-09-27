@@ -144,7 +144,7 @@ def main() -> None:
     data["candidates_top"] = [
         {k: _num(v) for k, v in r.items()} for r in _csv("candidates.csv") if r["level"] == "word"][:40]
 
-    for name in ("evaluation.json", "robustness.json", "qwen_unreachable.json"):
+    for name in ("evaluation.json", "robustness.json", "qwen_unreachable.json", "vs_typhoon_bootstrap.json"):
         p = RESULTS / name
         if p.exists():
             data[name.split(".")[0]] = json.loads(p.read_text(encoding="utf-8"))

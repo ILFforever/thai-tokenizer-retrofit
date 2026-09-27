@@ -473,7 +473,52 @@ news 1.78 → 4.69, social 2.69 → 5.53; worse on 50 of 50 passages in each):
 a third of the new tokens are rows the model has never seen, each costing
 about 19 bits to predict.
 
-<!-- RESULTS-QWEN-REPAIR -->
+**Can the rows be repaired cheaply? Only partly.** Each of the 1,578 rows was
+set to the mean of the embeddings of the pieces the shipped tokenizer splits
+that word into, and then only those rows were trained on Thai text (200 steps
+of 8 × 256 tokens; every other tensor verified bit-identical afterwards):
+
+| Domain | Tokens saved | Shipped | Rows untrained | Mean init | Mean + row tuning |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Wikipedia | 42% | 1.415 | 4.302 | 2.765 | 2.147 (+52% vs shipped) |
+| News | 34% | 1.776 | 4.687 | 3.196 | 2.528 (+42%) |
+| Social | 31% | 2.694 | 5.525 | 3.868 | 3.368 (+25%) |
+
+Mean initialisation wins back about half of the loss for free and leaves
+English untouched; row-only tuning wins back about three quarters, then
+stalls. Thai stays 25-52% worse than with the shipped tokenizer, and because
+the tuning text was all Thai and the matrix is shared between reading and
+predicting, the repaired rows started taking 11-20% of the probability at
+English positions: English bits per character rose 8-10% (Wikipedia 0.888 →
+0.956, OPUS 1.353 → 1.487). **For Qwen2.5 the regex fix plus row repair is
+not enough**; the rest of the network learned Thai in ~1.6x more pieces and
+is frozen here. Mixing English into the tuning data, and adapting more than
+the rows (for example LoRA on the attention layers), are the obvious next
+tests - neither was run.
+
+### 7.6 What the swapped rows need
+
+*Source: `EMBED_ADAPT_bloom-th5000.md`.*
+
+BLOOM-560m was retrofitted with 5,000 Thai entries (2.0% of its 250,680 rows)
+and each way of setting the swapped rows was scored in bits per character on
+60 held-out passages per domain (lower is better):
+
+<!-- EMBED-TABLE -->
+
+- **Leaving the rows as they were is harmful:** Thai bits per character
+  nearly double, because each new Thai token is read and predicted with the
+  vector of an unrelated pruned token.
+- **Random re-initialisation, as Csaki et al. did, is far worse** (about four
+  times the original bits per character) and also hurts English: BLOOM ties
+  its input and output embeddings, so 5,000 random rows compete in every
+  English prediction. Even after 200 steps of row-only tuning it has not caught
+  up with the untrained mean initialisation.
+- **The mean of the old pieces' embeddings recovers almost everything with no
+  training at all**, and leaves English exactly unchanged, while the model
+  reads roughly a third as many Thai tokens.
+
+<!-- EMBED-TUNE -->
 
 ## 8. Robustness, fairness and cost
 
