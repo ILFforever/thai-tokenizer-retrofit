@@ -1,0 +1,1290 @@
+<title>Thai Retrofit Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f5f2; --surface: #fcfcfb; --ink: #111512; --ink-2: #4b504c; --muted: #7d8179;
+  --rule: #dfe1da; --accent: #2a78d6; --accent-soft: #e6f0fb; --code: #eceee8;
+  --display: "Bai Jamjuree", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", "Noto Sans Thai", "Leelawadee UI", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark; --bg: #0e100e; --surface: #181a18; --ink: #f1f3ef; --ink-2: #c3c5bc;
+    --muted: #8d9189; --rule: #2c2f2b; --accent: #3987e5; --accent-soft: #16263b; --code: #242723;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark; --bg: #0e100e; --surface: #181a18; --ink: #f1f3ef; --ink-2: #c3c5bc;
+  --muted: #8d9189; --rule: #2c2f2b; --accent: #3987e5; --accent-soft: #16263b; --code: #242723;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.7 var(--body); -webkit-font-smoothing: antialiased; }
+.layout { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 48px; }
+aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 13.5px; }
+aside .eyebrow { font: 500 11.5px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+aside ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+aside a { display: block; padding: 4px 8px; border-radius: 6px; color: var(--ink-2); text-decoration: none; line-height: 1.35; }
+aside a:hover, aside a:focus-visible { background: var(--surface); color: var(--ink); outline: none; }
+aside .sub a { padding-left: 20px; font-size: 12.5px; color: var(--muted); }
+aside .dash { margin-top: 16px; display: inline-block; font-weight: 500; color: var(--accent); }
+main { min-width: 0; max-width: 76ch; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; letter-spacing: -0.01em; line-height: 1.2; }
+h1 { font-size: clamp(30px, 5vw, 44px); margin: 0 0 12px; font-weight: 700; }
+h2 { font-size: 26px; margin: 56px 0 14px; padding-top: 16px; border-top: 1px solid var(--rule); font-weight: 600; scroll-margin-top: 20px; }
+h3 { font-size: 19px; margin: 36px 0 10px; font-weight: 600; scroll-margin-top: 20px; }
+p { margin: 0 0 14px; }
+main > p:first-of-type { color: var(--ink-2); }
+a { color: var(--accent); }
+strong { font-weight: 600; }
+code { font-family: var(--mono); font-size: .86em; background: var(--code); padding: 1px 5px; border-radius: 4px; }
+ul, ol { padding-left: 22px; margin: 0 0 14px; }
+li { margin-bottom: 6px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 28px 0; }
+blockquote { margin: 0 0 14px; padding: 2px 0 2px 16px; border-left: 3px solid var(--accent); color: var(--ink-2); }
+.tablewrap { overflow-x: auto; margin: 6px 0 18px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.45; }
+th, td { padding: 8px 12px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font: 500 11.5px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .03em; color: var(--muted); background: color-mix(in srgb, var(--bg) 60%, var(--surface)); }
+td[style*="right"], th[style*="right"] { font-variant-numeric: tabular-nums; }
+.tldr { background: var(--accent-soft); border-radius: 12px; padding: 18px 22px 6px; margin: 18px 0 8px; }
+.tldr h2 { border: 0; margin: 0 0 8px; padding: 0; font-size: 18px; }
+.refs p { font-size: 14px; padding-left: 24px; text-indent: -24px; color: var(--ink-2); }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; gap: 12px; padding-inline: 16px; }
+  aside { position: static; max-height: none; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+  aside ol { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  aside .sub { display: none; }
+}
+</style>
+<div class="layout">
+  <aside aria-label="Contents"><div class="eyebrow">Contents</div><ol><li><a href="#tldr">TL;DR</a></li><li><a href="#1-problem">1. Problem</a></li><li><a href="#2-research-questions">2. Research questions</a></li><li><a href="#3-prior-work-and-what-is-new-here">3. Prior work, and what is new here</a></li><li><a href="#4-data">4. Data</a></li><li><a href="#5-metrics">5. Metrics</a></li><li><a href="#6-method">6. Method</a></li><li class="sub"><ol><li><a href="#61-decomposing-the-penalty-week-2">6.1 Decomposing the penalty (Week 2)</a></li><li><a href="#62-candidates-week-3">6.2 Candidates (Week 3)</a></li><li><a href="#63-the-retrofit-week-4">6.3 The retrofit (Week 4)</a></li><li><a href="#64-evaluation-week-5">6.4 Evaluation (Week 5)</a></li><li><a href="#65-embedding-adaptation-week-6">6.5 Embedding adaptation (Week 6)</a></li></ol></li><li><a href="#7-results">7. Results</a></li><li class="sub"><ol><li><a href="#71-the-baseline-reproduces-one-of-its-diagnostics-did-not">7.1 The baseline reproduces; one of its diagnostics did not</a></li><li><a href="#72-where-the-penalty-comes-from">7.2 Where the penalty comes from</a></li><li><a href="#73-what-the-candidates-promise">7.3 What the candidates promise</a></li><li><a href="#74-the-retrofit">7.4 The retrofit</a></li><li><a href="#75-qwen25s-thai-vocabulary-it-cannot-use">7.5 Qwen2.5's Thai vocabulary it cannot use</a></li><li><a href="#76-what-the-swapped-rows-need">7.6 What the swapped rows need</a></li></ol></li><li><a href="#8-robustness-fairness-and-cost">8. Robustness, fairness and cost</a></li><li class="sub"><ol><li><a href="#81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</a></li><li><a href="#82-register-the-retrofit-widens-the-formalinformal-gap-like-every-thai-capable-tokenizer">8.2 Register: the retrofit widens the formal/informal gap, like every Thai-capable tokenizer</a></li><li><a href="#83-embedding-row-accounting">8.3 Embedding-row accounting</a></li><li><a href="#84-who-pays-for-the-freed-slots">8.4 Who pays for the freed slots</a></li></ol></li><li><a href="#9-limitations-and-ethics">9. Limitations and ethics</a></li><li><a href="#10-conclusion-and-next-steps">10. Conclusion and next steps</a></li><li><a href="#appendix-reproducing-every-number">Appendix: reproducing every number</a></li><li><a href="#references">References</a></li></ol><a class="dash" href="https://claude.ai/artifact/2AQJGmJ8gcX2JqMcPPKruJ">Open the results dashboard →</a></aside>
+  <main><h1 id="retrofitting-thai-into-an-open-weight-tokenizer-at-fixed-vocabulary-size">Retrofitting Thai into an open-weight tokenizer at fixed vocabulary size</h1>
+<p>Tanabodhi Mukura (Dean) · CEDT, Chulalongkorn University · AI course project ·
+draft generated 28 September 2026 from the numbers in <code>results/</code></p>
+<div class="tldr"><h2 id="tldr">TL;DR</h2>
+<ul>
+<li><strong>Thai costs Mistral-7B 3.92x as many tokens as English</strong> for the same
+  meaning, and all of that damage is in its vocabulary: its pre-tokenizer
+  never cuts Thai text, so a vocabulary retrofit can reach all of it.</li>
+<li><strong>Swapping 2,483 of its 32,000 entries</strong> (7.8% - every entry that raw
+  English, Python code and Thai never use) for Thai pieces cuts Thai tokens by
+  <strong>64% on Wikipedia, 67% on news and 61% on social posts</strong>, takes the penalty
+  to <strong>1.33x</strong>, and changes English by <strong>+0.01%</strong>. The vocabulary stays the same
+  size. At Typhoon's own budget (3,219) the fixed-size retrofit beats Typhoon's
+  vocabulary expansion on all three domains.</li>
+<li><strong>GPT-4's cl100k and Qwen2.5 cannot be fixed this way.</strong> Their regex matches
+  letters with <code>\p{L}+</code>, which excludes Thai vowel and tone marks, so every
+  mark is cut off its consonant before the vocabulary is consulted. Qwen2.5
+  even holds <strong>1,578 Thai words it can never emit</strong>; all are untrained, so the
+  one-line regex fix alone makes Qwen2.5-0.5B 2-3x <em>worse</em> at Thai.</li>
+<li><strong>The price is real and stated:</strong> informal Thai gains less than formal
+  (spread 1.11, the same as Typhoon; 1.21 if the vocabulary is learned from
+  formal text only), and the freed slots come from other languages - Korean
+  text costs 39% more tokens, Russian 18%, Chinese 13%, Japanese 10%.</li>
+<li><strong>The swapped embedding rows must be re-set, but that is cheap.</strong> On
+  BLOOM-560m, leaving them as they were nearly doubles Thai bits per
+  character and random re-initialisation quadruples it; setting each row to
+  the mean of the pieces it replaces recovers most of the loss with no
+  training, and 200 steps training only those rows ends <em>better</em> than the
+  original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
+  at a third of the tokens, with English unchanged. "No retraining" is
+  narrowed to: no expansion and no pretraining; swapped rows re-set and
+  lightly tuned.</li>
+<li><strong>Several earlier claims did not survive checking</strong> and are corrected here:
+  the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
+  costs more on social text", and the novelty of fixed-size replacement for
+  Thai (Csaki et al. did it in 2023).</li>
+</ul>
+</div><hr />
+<h2 id="1-problem">1. Problem</h2>
+<p>Thai is written without spaces between words and is thinly represented in the
+data most tokenizers were trained on, so the same meaning costs far more
+tokens in Thai than in English. Tokens are what a model is billed, limited and
+timed by: a tokenizer that needs four times as many tokens for Thai makes Thai
+four times as expensive per request, fits a quarter as much Thai into the
+context window, and generates it four times more slowly.</p>
+<p>On 3,000 matched Thai/English sentence pairs (OPUS-100), the Thai penalty -
+Thai tokens per 100 characters divided by English tokens per 100 characters -
+ranges from 4.25x (BLOOM) and 3.92x (Mistral-7B) down to 1.01x (mT5)
+(<code>BASELINE.md</code>). The penalty is worst in open-weight models, which are the
+only ones whose tokenizer a deployment can change at all: a hosted API's
+tokenizer is fixed by the provider.</p>
+<p>The prior Thai answer, Typhoon (SCB 10X), <em>expanded</em> Mistral-7B's vocabulary
+with Thai entries and continued pretraining. That grows the embedding matrix
+and the output layer, which is reasonable if you are training a model anyway.
+This project asks the narrower question a self-hosting team faces: <strong>can an
+existing open-weight tokenizer be made cheap for Thai without growing it</strong> -
+by pruning entries the deployment never uses and putting Thai units in the
+freed slots - and what does that actually cost?</p>
+<h2 id="2-research-questions">2. Research questions</h2>
+<ol>
+<li>How much of each tokenizer's Thai penalty is caused by its pre-tokenizer
+   (a regex problem no vocabulary can fix) and how much by its vocabulary
+   (the problem a retrofit targets)?</li>
+<li>For a tokenizer whose damage is in the vocabulary, how much Thai cost does
+   a fixed-size retrofit remove, per domain, while leaving English untouched?</li>
+<li>How does that compare with vocabulary expansion (Typhoon) on the same base?</li>
+<li>Who pays? Does the retrofit widen the gap between formal and informal
+   Thai, and which other languages lose the freed slots?</li>
+<li>What do the swapped embedding rows need before a model can use them?</li>
+</ol>
+<h2 id="3-prior-work-and-what-is-new-here">3. Prior work, and what is new here</h2>
+<p>Every claim below was checked against the primary source; quotes, page
+numbers and the corrections are in <code>results/REFERENCES.md</code>.</p>
+<p><strong>Tokenizer unfairness.</strong> Petrov et al. (2023) show the same content can cost
+up to 15 times more tokens in some languages, and their Shan example - one
+consonant plus three diacritics becoming nine tokens - is the same mechanism
+this project finds for Thai. Rust et al. (2021) define the per-word fertility
+measure used here as a secondary figure.</p>
+<p><strong>Vocabulary expansion for Thai.</strong> Typhoon (Pipatanakul et al., 2023) trained
+a 5,000-piece Thai SentencePiece model and merged it into Mistral-7B's
+tokenizer. The released tokenizer grows by <strong>3,219</strong> entries (32,000 → 35,219;
+every Mistral id unchanged) - the paper does not explain the gap from 5,000.
+Its reported 2.62x efficiency gain is measured against GPT-4's tokenizer, not
+against Mistral. The expanded embeddings and output layer were then trained
+with LoRA during continued pretraining.</p>
+<p><strong>Fixed-size replacement - including for Thai - already exists.</strong> Csaki et
+al. (2023) replaced about 5,000 of the least frequent tokens of a 50k GPT-2
+vocabulary with Thai BPE tokens, randomly re-initialised the swapped rows, and
+report 73% better Thai fertility with diminishing returns past ~5,000 tokens
+(Typhoon's "5,000" cites them). <strong>The project notes' claim that the method is
+"untested on a non-delimited script" is therefore wrong</strong> and has been
+dropped. BrahmicTokenizer-131K (Shravan, 2026) does the same for Indic
+scripts; its 26.7% headline is measured against a <em>different</em> tokenizer
+(Mistral-Nemo's Tekken) at equal size, not before/after its own retrofit, and
+its first stage <em>shrinks</em> o200k from 200,019 to 131,072 entries - deleting all
+of o200k's Thai tokens along the way.</p>
+<p><strong>Embedding initialisation.</strong> FVT (Gee et al., 2022) initialises a new token
+as the mean of the embeddings of the old tokens it used to be split into;
+WECHSEL (Minixhofer et al., 2022) and FOCUS (Dobler &amp; de Melo, 2023) use
+aligned or auxiliary embedding spaces.</p>
+<p><strong>Pre-tokenization.</strong> Dagan et al. (2024) and Velayuthan &amp; Sarveswaran (2025)
+show the pre-tokenizer regex bounds what a vocabulary can do; the latter show
+GPT-4-style regexes breaking Tamil, Sinhala and Hindi words at vowel signs.</p>
+<p><strong>What this project adds</strong>, relative to that work:</p>
+<ol>
+<li>A per-tokenizer <strong>decomposition</strong> of the Thai penalty into
+   pre-tokenization and vocabulary shares across nine tokenizers, with the
+   specific cause named: <code>\p{L}+</code> in the cl100k and Qwen2.5 regexes excludes
+   Thai combining marks (<code>\p{M}</code>).</li>
+<li>The finding that <strong>Qwen2.5 already contains 1,578 Thai vocabulary entries
+   its own pre-tokenizer can never emit</strong>, that all of them are untrained, and
+   what it takes to make them usable.</li>
+<li>A fixed-size retrofit of a <strong>current public open-weight tokenizer</strong>
+   (Mistral-7B) with <strong>English and code non-regression by construction</strong>
+   (a protect corpus rather than "least frequent"), a merge-safe prune rule,
+   a published prune list, and a like-for-like comparison with Typhoon's
+   expansion of the same base.</li>
+<li><strong>Per-register</strong> results (encyclopaedic, news, informal social), a
+   formal-only ablation, and the <strong>collateral cost</strong> to the languages whose
+   slots are freed.</li>
+<li>A CPU-scale test of what the swapped rows need: stale vs random vs
+   mean-of-parts initialisation, and row-only tuning.</li>
+</ol>
+<h2 id="4-data">4. Data</h2>
+<p>All data is public and openly licensed, streamed from Hugging Face and cached
+locally. <strong>Evaluation always uses the first 1,200 usable documents of each
+Thai domain</strong> (the Week 1 slice); anything that learns from text uses
+documents after them, so nothing is tuned on the text it is scored on.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Source</th>
+<th>Size used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thai, encyclopaedic</td>
+<td><code>wikimedia/wikipedia</code> 20231101.th</td>
+<td>eval 9.1M chars; train 8.0M</td>
+</tr>
+<tr>
+<td>Thai, formal news</td>
+<td><code>pythainlp/thaisum</code></td>
+<td>eval 3.0M chars; train 8.0M</td>
+</tr>
+<tr>
+<td>Thai, informal social</td>
+<td><code>pythainlp/wisesight_sentiment</code></td>
+<td>eval 0.19M chars; train 1.33M (all that remains)</td>
+</tr>
+<tr>
+<td>Thai/English matched</td>
+<td><code>Helsinki-NLP/opus-100</code> en-th</td>
+<td>3,000 pairs (206k / 230k chars)</td>
+</tr>
+<tr>
+<td>English (protect + eval)</td>
+<td><code>wikimedia/wikipedia</code> 20231101.en, raw text</td>
+<td>protect: docs 0-7,999 (83.7M chars); eval: docs 8,000-11,999</td>
+</tr>
+<tr>
+<td>Code (protect)</td>
+<td><code>codeparrot/codeparrot-clean</code> train</td>
+<td>5,000 files (~50M chars)</td>
+</tr>
+<tr>
+<td>Collateral check</td>
+<td>Wikipedia zh / ko / ru / ja; <code>codeparrot-clean-valid</code></td>
+<td>200 documents each</td>
+</tr>
+</tbody>
+</table></div>
+<p>The social domain is small: WiseSight has only ~9,800 usable posts, so its
+evaluation slice is 189k characters. Differences involving social text are
+therefore reported with bootstrap confidence intervals.</p>
+<h2 id="5-metrics">5. Metrics</h2>
+<p><strong>Primary: tokens per 100 characters.</strong> Thai has no whitespace word
+boundaries, so tokens-per-word depends entirely on which word segmenter you
+pick; per-character cost does not. Segmenter-based fertility is reported as a
+secondary figure under two segmenters (<code>newmm</code>, <code>longest</code>) to show how much
+the segmenter moves it.</p>
+<p><strong>Thai penalty:</strong> Thai tok/100ch ÷ English tok/100ch on matched pairs (the
+same measure as Petrov et al.'s "premium").</p>
+<p><strong>Effective context:</strong> Thai characters per 1,000 tokens.</p>
+<p><strong>Cluster-break rate</strong> (replaces Week 1's mark-split rate): the share of Thai
+character clusters (a base character plus its following vowel and tone marks)
+that the final tokens split, measured on byte offsets. Week 1's measure
+decoded one token at a time, which silently skipped every token that was a
+fragment of a 3-byte Thai character.</p>
+<p><strong>Bits per character (BPC):</strong> a model's total negative log-likelihood in bits
+divided by characters. Unlike perplexity it does not depend on how the text was
+split, so it compares one model under two tokenizers fairly.</p>
+<h2 id="6-method">6. Method</h2>
+<h3 id="61-decomposing-the-penalty-week-2">6.1 Decomposing the penalty (Week 2)</h3>
+<p><em>Source: <code>src/pretok.py</code>, <code>src/run_decomposition.py</code>.</em></p>
+<p>A BPE tokenizer works in two stages: a <em>pre-tokenizer</em> cuts the text into
+pieces (with a regex, or on whitespace), then the <em>vocabulary</em> encodes each
+piece on its own. No token can span a pre-token boundary. So for each of nine
+tokenizers the pre-tokenizer was read from its own configuration and run
+directly, and three counterfactual token counts were computed per domain:</p>
+<ul>
+<li><strong>T_regex</strong>: the same vocabulary and merges behind a <em>mark-aware</em> regex
+  (every <code>\p{L}</code> rewritten to <code>[\p{L}\p{M}]</code>, the change o200k made).
+  This is the regex fix on its own.</li>
+<li><strong>T_vocab</strong>: a strong Thai vocabulary (XGLM's) applied <em>inside the
+  tokenizer's own pre-token pieces</em>. This is the best any vocabulary retrofit
+  could do while the pre-tokenizer stays as it is.</li>
+<li><strong>T_ref</strong>: that same strong vocabulary with no pre-tokenizer constraint.</li>
+</ul>
+<p>The gap between the shipped count and T_ref is the excess over a good Thai
+tokenizer. Of that gap, T_vocab − T_ref is lost to the pre-tokenizer (no
+vocabulary recovers it) and the rest is recoverable by vocabulary. The plan's
+original floor - one token per cluster - was dropped because good Thai
+tokenizers already use <em>fewer</em> tokens than there are clusters, which made the
+plan's share formula negative.</p>
+<h3 id="62-candidates-week-3">6.2 Candidates (Week 3)</h3>
+<p><em>Source: <code>src/candidates.py</code>.</em></p>
+<p>Thai training text was segmented into <code>newmm</code> words and Thai Character
+Clusters (TCC). Frequencies were computed per million characters in each
+domain and averaged, so each domain carries equal weight regardless of size.
+Each unit was scored by <code>savings(u) = freq(u) × (base_tokens(u) − 1)</code>, and the
+projected reduction was measured on the held-out evaluation slice per domain.</p>
+<h3 id="63-the-retrofit-week-4">6.3 The retrofit (Week 4)</h3>
+<p><em>Source: <code>src/retrofit.py</code>.</em></p>
+<p><strong>Freeing slots.</strong> A vocabulary entry may be freed only if (a) it is never
+produced when encoding the protect corpora - raw English Wikipedia (line
+breaks kept) and public Python code - nor the Thai training text, (b) it is
+not a special, byte-fallback or base-byte token, and (c) every merge that uses
+it as a part produces an entry that is also being freed, so no kept entry
+loses the path that builds it. Among eligible entries the highest id goes
+first (BPE and SentencePiece assign ids in learning order, so late ids are the
+rarest units). The prune list is published per budget
+(<code>results/prune_list_*.csv</code>).</p>
+<p><strong>Filling slots.</strong> Thai characters the base cannot represent at all (26 for
+Mistral, including the repetition mark <code>ๆ</code> and the tone marks <code>๊ ๋</code>, which
+Mistral spells as three byte tokens) are added first as single-character
+entries. Then BPE training is <em>continued</em> on the Thai training text from the
+base tokenizer's own segmentation: at each step the adjacent pair whose merge
+saves the most tokens (domain-weighted) becomes a new entry, and its merge is
+<strong>appended after all existing merges</strong>. This is the Week 3 greedy-by-savings
+rule applied one slot at a time. It pays for intermediate pieces out of the
+same budget, and it satisfies the plan's requirement that every new token be
+producible, because each one is built from pieces that already exist. Because
+new merges come last, every existing merge keeps its priority and text with no
+Thai in it is segmented exactly as before.</p>
+<p><strong>Rebuild.</strong> The new vocabulary (pruned entries removed, new entries in the
+freed ids, lowest id first) and merge list are assembled with the <code>tokenizers</code>
+library's <code>BPE</code> model and saved as a standard Hugging Face tokenizer folder.
+Vocabulary size is identical by construction.</p>
+<p><strong>A mistake found and fixed.</strong> The first prune list protected only English
+prose (with whitespace collapsed by the corpus loader), so it freed code and
+LaTeX pieces such as <code>func</code>, <code>json</code>, <code>Override</code> and <code>mathcal</code> that an
+English-speaking deployment still needs. The protect corpora are now raw
+English text plus raw Python; this cut Mistral's free slots from 4,471 to
+2,483. The same protect set is also offered without code (the "English-only"
+profile, up to 4,339 slots) to show what the code protection costs Thai.</p>
+<h3 id="64-evaluation-week-5">6.4 Evaluation (Week 5)</h3>
+<p><em>Source: <code>src/evaluate.py</code>, <code>src/verify_retrofit.py</code>.</em></p>
+<p>Every tokenizer is scored on held-out text only: the Thai evaluation slice per
+domain, the OPUS-100 pairs, and 4,000 raw English Wikipedia documents disjoint
+from the protect corpus. Changes carry 95% percentile-bootstrap intervals over
+documents (1,000 resamples). Acceptance follows the plan: Thai tokens down at
+least 15% in every domain, English within 1%, effective context up at least
+15%.</p>
+<h3 id="65-embedding-adaptation-week-6">6.5 Embedding adaptation (Week 6)</h3>
+<p><em>Source: <code>src/embed_adapt.py</code>, <code>src/qwen_repair.py</code>.</em></p>
+<p>On BLOOM-560m (CPU), retrofitted with 5,000 Thai entries, the swapped rows
+were set in five ways: left stale; re-drawn at random (as Csaki et al. did);
+set to the mean of the base-token embeddings the new token used to be split
+into (FVT, Gee et al. 2022); and each of the last two followed by training
+<em>only the swapped rows</em> on Thai text with every other parameter frozen (200
+Adam steps of 4 × 256 tokens, learning rate 1e-4, gradients clipped). Each
+condition is scored by bits per character on held-out Thai (60 passages per
+domain) and English. The same repair was applied to Qwen2.5-0.5B's untrained
+Thai rows (§7.5).</p>
+<h2 id="7-results">7. Results</h2>
+<h3 id="71-the-baseline-reproduces-one-of-its-diagnostics-did-not">7.1 The baseline reproduces; one of its diagnostics did not</h3>
+<p>Re-running the Week 1 harness reproduced all 36 result rows exactly
+(<code>BASELINE.md</code>). Two of Week 1's interpretations did not survive:</p>
+<ul>
+<li><strong>The "mark-split rate" was not a pre-tokenization measure.</strong> It decoded
+  one token id at a time, so byte-level fragments of Thai characters decoded
+  to <code>U+FFFD</code> and were never counted, and it could not separate a
+  pre-tokenizer cut from a missing merge. It led Week 1 to recommend
+  cl100k as a retrofit target - the opposite of what §7.2 finds.</li>
+<li><strong>"Every tokenizer costs more on social than on news" is false</strong> for the
+  three most expensive tokenizers (Mistral 96.9 vs 99.9 tok/100ch, BLOOM 93.9
+  vs 98.9, GPT-4 89.2 vs 93.7). It holds for every tokenizer that has Thai
+  vocabulary to lose, and for the strong-vocabulary reference (32.0 vs 28.6),
+  so the informal-Thai premium appears once a tokenizer can compress Thai at
+  all; a character-level tokenizer pays the same everywhere.</li>
+</ul>
+<h3 id="72-where-the-penalty-comes-from">7.2 Where the penalty comes from</h3>
+<p><em>Source: <code>DECOMPOSITION.md</code>.</em></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tokenizer</th>
+<th style="text-align: right;">Penalty</th>
+<th style="text-align: right;">Pre-tokenizer cuts consonant|mark</th>
+<th style="text-align: right;">Regex fix alone</th>
+<th style="text-align: right;">Best vocabulary alone</th>
+<th style="text-align: right;">Pre-tok share of excess</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BLOOM</td>
+<td style="text-align: right;">4.25x</td>
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">4.25x</td>
+<td style="text-align: right;">1.24x</td>
+<td style="text-align: right;">0%</td>
+</tr>
+<tr>
+<td>GPT-4 (cl100k)</td>
+<td style="text-align: right;">3.94x</td>
+<td style="text-align: right;"><strong>100%</strong></td>
+<td style="text-align: right;">3.94x</td>
+<td style="text-align: right;">2.25x</td>
+<td style="text-align: right;">38%</td>
+</tr>
+<tr>
+<td>Mistral-7B</td>
+<td style="text-align: right;">3.92x</td>
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">3.92x</td>
+<td style="text-align: right;">1.13x</td>
+<td style="text-align: right;">0%</td>
+</tr>
+<tr>
+<td>Qwen2.5</td>
+<td style="text-align: right;">2.38x</td>
+<td style="text-align: right;"><strong>100%</strong></td>
+<td style="text-align: right;"><strong>1.42x</strong></td>
+<td style="text-align: right;">2.25x</td>
+<td style="text-align: right;"><strong>89%</strong></td>
+</tr>
+<tr>
+<td>GPT-4o (o200k)</td>
+<td style="text-align: right;">1.92x</td>
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">1.92x</td>
+<td style="text-align: right;">1.27x</td>
+<td style="text-align: right;">1%</td>
+</tr>
+<tr>
+<td>Typhoon-7B</td>
+<td style="text-align: right;">1.26x</td>
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">1.26x</td>
+<td style="text-align: right;">1.13x</td>
+<td style="text-align: right;">0%</td>
+</tr>
+<tr>
+<td>XGLM / mT5 / WangchanBERTa</td>
+<td style="text-align: right;">1.16x / 1.01x / 0.42x</td>
+<td style="text-align: right;">0%</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">n/a (already near reference)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Penalty on 3,000 OPUS-100 pairs; "regex fix" and "best vocabulary" recompute
+the Thai side only. Per-domain tables are in <code>DECOMPOSITION.md</code> and agree.</p>
+<ul>
+<li><strong>cl100k and Qwen2.5 cut every consonant away from its vowel or tone mark
+  in the pre-tokenizer</strong>, because their regex matches letters with <code>\p{L}+</code>
+  and Thai marks are <code>\p{M}</code>. Every other tokenizer cuts none (o200k added
+  <code>\p{M}</code> to its regex).</li>
+<li><strong>cl100k needs both fixes.</strong> Its vocabulary was learned behind the broken
+  regex, so it has no entries spanning a consonant and its mark: fixing the
+  regex alone changes nothing (92.4 → 92.3 tok/100ch on Wikipedia), and a
+  perfect vocabulary alone stops at 2.25x.</li>
+<li><strong>Qwen2.5 is the opposite:</strong> 89% of its excess is the regex, and the regex
+  fix alone takes its token count from 2.38x to 1.42x - because its
+  vocabulary already holds Thai words it cannot reach (§7.5).</li>
+<li><strong>Mistral-7B and BLOOM carry all of their damage in the vocabulary</strong>, where
+  a retrofit can reach it: a strong Thai vocabulary inside their own
+  pre-token pieces would bring them to 1.13x and 1.24x.</li>
+</ul>
+<p><strong>Target chosen: Mistral-7B.</strong> Its damage is all vocabulary, it is the most
+expensive fixable open-weight tokenizer after BLOOM, and Typhoon is Mistral-7B
+<em>expanded</em> - so a fixed-size retrofit of the same base gives a like-for-like
+comparison. BLOOM (250k entries) is the secondary target because its 560M
+checkpoint runs on a CPU for the embedding experiment.</p>
+<h3 id="73-what-the-candidates-promise">7.3 What the candidates promise</h3>
+<p><em>Source: <code>CANDIDATES.md</code>.</em></p>
+<p>If each of the top-N <code>newmm</code> words became a single token, Mistral's held-out
+Thai tokens would fall by about 37% at N = 1,000 and 58% at N = 5,000, with
+the marginal gain dropping from 17% per thousand (500-1,000) to 2.4% per
+thousand (4,000-5,000) - the diminishing returns Csaki et al. and Typhoon
+report. Thai Character Clusters saturate at about 40%: there are only ~5,000
+distinct clusters, so they are the right <em>atom</em> but too small a <em>target</em>. The
+ranking is register-sensitive: <code>ไม่</code> (not) and <code>แล้ว</code> (already) are five times
+more frequent in social text than in Wikipedia, and the repetition mark <code>ๆ</code> -
+which Mistral cannot encode as one token at all - four times.</p>
+<p>This projection turned out to be <strong>pessimistic</strong>, not the upper bound it was
+first taken for. It assumes each slot buys one whole word; BPE instead builds
+pieces that are shared by thousands of words (<code>ที่</code>, <code>การ</code>) and can span word
+boundaries (<code>เมื่อวันที่</code>), so the real retrofit beat it at every budget -
+at 500 slots, 47% fewer tokens on Wikipedia against a projected 28%.</p>
+<h3 id="74-the-retrofit">7.4 The retrofit</h3>
+<p><em>Source: <code>RETROFIT_CHECKS.md</code>, <code>EVALUATION.md</code>.</em></p>
+<p><strong>How many slots can Mistral free?</strong> Of its 32,000 entries, raw English
+Wikipedia uses 26,741, Python code 23,471 and the Thai training text 13,582;
+29,196 are used by at least one. After the merge-safety rule, <strong>2,483 entries
+(7.8%) can be freed</strong> without touching anything English, code or Thai uses.
+Dropping the code protection raises that to 4,339 - the "English-only"
+profile, reported separately because it has a cost (§8.4). Even the strict
+profile frees fewer slots than Typhoon added (3,219): a 32k vocabulary is
+tight when English and code are protected.</p>
+<p><strong>Acceptance (Week 4).</strong> Every retrofit - 500 to 2,483 slots, both ablations,
+the English-only profile and four BLOOM budgets (1,000-10,000) - keeps the
+vocabulary size identical, round-trips 10,000 held-out Thai and 10,000
+held-out English samples with zero failures, and uses at least 99.3% of its
+added tokens on held-out Thai. At 2,483 slots, 98 of the top-100 Week 3
+candidates encode to a single token; the two that do not (<code>เนื่องจาก</code>,
+<code>การเลือกตั้ง</code>) cost 2 tokens instead of 9 and 12. This is a near-miss on
+the plan's literal criterion, caused by the method: BPE continuation adds
+one merge at a time, and the last merge of a long word saves only one token
+per occurrence, so it ranks below other merges. At 3,219 slots (English-only)
+and on BLOOM from 3,219 up, all 100 are single tokens.</p>
+<p><strong>Thai cost on held-out text</strong> (tokens per 100 characters; change vs base
+Mistral with 95% bootstrap interval):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tokenizer</th>
+<th style="text-align: right;">Vocabulary</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">Penalty</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mistral-7B (base)</td>
+<td style="text-align: right;">32,000</td>
+<td style="text-align: right;">96.8</td>
+<td style="text-align: right;">99.9</td>
+<td style="text-align: right;">96.9</td>
+<td style="text-align: right;">3.92x</td>
+</tr>
+<tr>
+<td>+ 500 slots</td>
+<td style="text-align: right;">32,000</td>
+<td style="text-align: right;">51.1 (−47.2%)</td>
+<td style="text-align: right;">50.1 (−49.9%)</td>
+<td style="text-align: right;">52.8 (−45.5%)</td>
+<td style="text-align: right;">1.91x</td>
+</tr>
+<tr>
+<td>+ 1,000 slots</td>
+<td style="text-align: right;">32,000</td>
+<td style="text-align: right;">42.9 (−55.7%)</td>
+<td style="text-align: right;">41.8 (−58.2%)</td>
+<td style="text-align: right;">45.6 (−52.9%)</td>
+<td style="text-align: right;">1.63x</td>
+</tr>
+<tr>
+<td>+ 2,000 slots</td>
+<td style="text-align: right;">32,000</td>
+<td style="text-align: right;">36.3 (−62.4%)</td>
+<td style="text-align: right;">35.1 (−64.9%)</td>
+<td style="text-align: right;">39.4 (−59.3%)</td>
+<td style="text-align: right;">1.39x</td>
+</tr>
+<tr>
+<td><strong>+ 2,483 slots (strict)</strong></td>
+<td style="text-align: right;"><strong>32,000</strong></td>
+<td style="text-align: right;"><strong>34.5 (−64.4% [−64.7, −64.0])</strong></td>
+<td style="text-align: right;"><strong>33.4 (−66.6% [−66.8, −66.4])</strong></td>
+<td style="text-align: right;"><strong>37.7 (−61.1% [−61.6, −60.6])</strong></td>
+<td style="text-align: right;"><strong>1.33x</strong></td>
+</tr>
+<tr>
+<td>+ 3,219 slots (English-only)</td>
+<td style="text-align: right;">32,000</td>
+<td style="text-align: right;">32.6 (−66.3%)</td>
+<td style="text-align: right;">31.4 (−68.6%)</td>
+<td style="text-align: right;">35.8 (−63.0%)</td>
+<td style="text-align: right;">1.26x</td>
+</tr>
+<tr>
+<td>+ 4,339 slots (English-only)</td>
+<td style="text-align: right;">32,000</td>
+<td style="text-align: right;">30.7 (−68.3%)</td>
+<td style="text-align: right;">29.4 (−70.6%)</td>
+<td style="text-align: right;">33.9 (−65.0%)</td>
+<td style="text-align: right;">1.19x</td>
+</tr>
+<tr>
+<td>Typhoon-7B (+3,219, expanded)</td>
+<td style="text-align: right;">35,219</td>
+<td style="text-align: right;">34.0 (−64.9%)</td>
+<td style="text-align: right;">32.6 (−67.4%)</td>
+<td style="text-align: right;">37.2 (−61.6%)</td>
+<td style="text-align: right;">1.26x</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>English cost does not move.</strong> Tokens per 100 characters change by +0.01%
+on 4,000 held-out raw English Wikipedia documents and +0.11% on the OPUS-100
+English side at 2,483 slots (Typhoon: +0.06% and +0.06%). 99.55% of 10,000
+English samples get byte-identical token ids, so for them the model's input
+is exactly what it was before.</p>
+<p><strong>Effective context almost triples.</strong> Thai characters per 1,000 tokens go
+from about 1,000 to 2,901 (Wikipedia), 2,997 (news) and 2,655 (social) at
+2,483 slots.</p>
+<p><strong>Fixed size versus expansion.</strong> At the <em>same</em> budget as Typhoon (3,219
+slots, English-only profile) the fixed-size retrofit is cheaper than Typhoon
+on all three domains (−66.3 / −68.6 / −63.0% vs −64.9 / −67.4 / −61.6%) and
+ties it on the matched-content penalty (1.26x), without growing the
+embedding matrix. Under the strict profile, with 736 fewer slots, it is
+within 0.5-0.8 points of Typhoon. Paired on the same documents
+(<code>vs_typhoon_bootstrap.json</code>, 2,000 resamples), the 3,219-slot retrofit needs
+<strong>3.7-4.2% fewer tokens than Typhoon</strong> in every domain and the strict 2,483-slot
+retrofit <strong>1.3-2.5% more</strong>; every one of these intervals excludes zero. The
+comparison is of tokenizers only: Typhoon also continued pretraining its
+model, which this project does not.</p>
+<p><strong>Week 5 acceptance: all pass.</strong> Every budget clears all three targets in
+every domain (Thai ≥15% fewer, English within 1%, context ≥ +15%), by a wide
+margin.</p>
+<p><strong>Ablations at 2,483 slots.</strong></p>
+<ul>
+<li><em>Cluster-aware</em> (never create a token that begins with a vowel or tone
+  mark): 0 such tokens instead of 211, at a cost of about 1 point of
+  reduction (−63.2 / −65.3 / −59.5%). Worth considering if downstream tools
+  care that token boundaries respect clusters.</li>
+<li><em>Formal-only</em> (merges learned from Wikipedia and news only): about 0.5
+  points better on those two domains, <strong>3 points worse on social</strong>
+  (−58.1% vs −61.1%). Its vocabulary spends slots on royal titles, politics
+  and Wikipedia boilerplate (<code>เกล้าเจ้าอยู่หัว</code>, <code>ผู้แทนราษฎร</code>,
+  <code>แหล่งข้อมูลอื่น</code>) where the equal-weight vocabulary has everyday words
+  (<code>ไม่ได้</code>, <code>วันนี้</code>, <code>ตอนนี้</code>, <code>แบบนี้</code>, <code>ลูกค้า</code>).</li>
+</ul>
+<p><strong>BLOOM</strong>, the secondary target, has far more room: of its 250,680 entries
+only 77,741 are used by English, code or Thai, and 170,347 can be freed. From
+<code>BASELINE_after.md</code> (the Week 1 harness re-run with every retrofit added):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tokenizer</th>
+<th style="text-align: right;">Swapped</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">Penalty</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BLOOM (base)</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">94.9</td>
+<td style="text-align: right;">98.9</td>
+<td style="text-align: right;">93.9</td>
+<td style="text-align: right;">4.25x</td>
+</tr>
+<tr>
+<td>BLOOM + 1,000</td>
+<td style="text-align: right;">0.4%</td>
+<td style="text-align: right;">44.1</td>
+<td style="text-align: right;">44.1</td>
+<td style="text-align: right;">46.2</td>
+<td style="text-align: right;">1.91x</td>
+</tr>
+<tr>
+<td>BLOOM + 3,219</td>
+<td style="text-align: right;">1.3%</td>
+<td style="text-align: right;">33.4</td>
+<td style="text-align: right;">33.3</td>
+<td style="text-align: right;">36.1</td>
+<td style="text-align: right;">1.50x</td>
+</tr>
+<tr>
+<td>BLOOM + 5,000</td>
+<td style="text-align: right;">2.0%</td>
+<td style="text-align: right;">30.4</td>
+<td style="text-align: right;">30.1</td>
+<td style="text-align: right;">33.2</td>
+<td style="text-align: right;">1.38x</td>
+</tr>
+<tr>
+<td>BLOOM + 10,000</td>
+<td style="text-align: right;">4.0%</td>
+<td style="text-align: right;">26.7</td>
+<td style="text-align: right;">26.2</td>
+<td style="text-align: right;">29.4</td>
+<td style="text-align: right;"><strong>1.22x</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>At 10,000 slots - 4% of its vocabulary - BLOOM's Thai penalty falls below
+Typhoon's (1.26x). All four BLOOM retrofits pass every Week 4 check,
+including all top-100 candidates as single tokens from 3,219 slots up.</p>
+<p><strong>Cluster breaks.</strong> The share of Thai clusters split by the final tokens
+falls from 22% to 3.1% (Wikipedia) for Mistral at 2,483 slots - the same as
+Typhoon (3.1%) - and from 39% to 3.1% for BLOOM at 10,000.</p>
+<h3 id="75-qwen25s-thai-vocabulary-it-cannot-use">7.5 Qwen2.5's Thai vocabulary it cannot use</h3>
+<p><em>Source: <code>QWEN_UNREACHABLE.md</code>.</em></p>
+<p>Qwen2.5's vocabulary contains 2,570 Thai entries. <strong>1,578 of them (61%) can
+never be produced by its own pre-tokenizer</strong>, because each contains a
+consonant followed by a mark and the regex always cuts there - whole words
+such as <code>ประวัติศาสตร์</code> (history) and <code>อย่างต่อเนื่อง</code> (continuously). Over
+12.4M characters of Thai the shipped tokenizer emits them zero times.</p>
+<p>In Qwen2.5-0.5B (input and output embeddings tied) <strong>all 1,578 rows are
+untrained</strong>: every one sits on the same vector as the 271 padding rows no
+token ever uses (norm 0.301, within 0.1% of the padding centroid), while the
+992 reachable Thai rows look like any other trained row (median norm 0.447).
+A whole-vocabulary check finds the same for all 1,673 entries the
+pre-tokenizer can never produce - Thai, Arabic with vowel marks, full-width
+digits - with no exceptions.</p>
+<p>So the one-line regex fix from §7.2 is <strong>not free</strong>. Behind a mark-aware
+regex, Qwen2.5-0.5B's Thai token count drops by 31-42%, but its bits per
+character get 2-3 times <em>worse</em> on every domain (Wikipedia 1.42 → 4.30,
+news 1.78 → 4.69, social 2.69 → 5.53; worse on 50 of 50 passages in each):
+a third of the new tokens are rows the model has never seen, each costing
+about 19 bits to predict.</p>
+<p><strong>Can the rows be repaired cheaply? Only partly.</strong> Each of the 1,578 rows was
+set to the mean of the embeddings of the pieces the shipped tokenizer splits
+that word into, and then only those rows were trained on Thai text (200 steps
+of 8 × 256 tokens; every other tensor verified bit-identical afterwards):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Domain</th>
+<th style="text-align: right;">Tokens saved</th>
+<th style="text-align: right;">Shipped</th>
+<th style="text-align: right;">Rows untrained</th>
+<th style="text-align: right;">Mean init</th>
+<th style="text-align: right;">Mean + row tuning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wikipedia</td>
+<td style="text-align: right;">42%</td>
+<td style="text-align: right;">1.415</td>
+<td style="text-align: right;">4.302</td>
+<td style="text-align: right;">2.765</td>
+<td style="text-align: right;">2.147 (+52% vs shipped)</td>
+</tr>
+<tr>
+<td>News</td>
+<td style="text-align: right;">34%</td>
+<td style="text-align: right;">1.776</td>
+<td style="text-align: right;">4.687</td>
+<td style="text-align: right;">3.196</td>
+<td style="text-align: right;">2.528 (+42%)</td>
+</tr>
+<tr>
+<td>Social</td>
+<td style="text-align: right;">31%</td>
+<td style="text-align: right;">2.694</td>
+<td style="text-align: right;">5.525</td>
+<td style="text-align: right;">3.868</td>
+<td style="text-align: right;">3.368 (+25%)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Mean initialisation wins back about half of the loss for free and leaves
+English untouched; row-only tuning wins back about three quarters, then
+stalls. Thai stays 25-52% worse than with the shipped tokenizer, and because
+the tuning text was all Thai and the matrix is shared between reading and
+predicting, the repaired rows started taking 11-20% of the probability at
+English positions: English bits per character rose 8-10% (Wikipedia 0.888 →
+0.956, OPUS 1.353 → 1.487). <strong>For Qwen2.5 the regex fix plus row repair is
+not enough</strong>; the rest of the network learned Thai in ~1.6x more pieces and
+is frozen here. Mixing English into the tuning data, and adapting more than
+the rows (for example LoRA on the attention layers), are the obvious next
+tests - neither was run.</p>
+<h3 id="76-what-the-swapped-rows-need">7.6 What the swapped rows need</h3>
+<p><em>Source: <code>EMBED_ADAPT_bloom-th5000.md</code>.</em></p>
+<p>BLOOM-560m was retrofitted with 5,000 Thai entries (2.0% of its 250,680 rows)
+and each way of setting the swapped rows was scored in bits per character on
+60 held-out passages per domain (lower is better):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Swapped rows set by</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">English</th>
+<th style="text-align: right;">Thai tok/100ch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>original tokenizer (reference)</em></td>
+<td style="text-align: right;">3.312</td>
+<td style="text-align: right;">3.995</td>
+<td style="text-align: right;">3.841</td>
+<td style="text-align: right;">1.132</td>
+<td style="text-align: right;">97.1 / 98.5 / 93.1</td>
+</tr>
+<tr>
+<td>left as they were</td>
+<td style="text-align: right;">6.128</td>
+<td style="text-align: right;">6.966</td>
+<td style="text-align: right;">6.814</td>
+<td style="text-align: right;">1.132</td>
+<td style="text-align: right;">28.9 / 32.2 / 31.9</td>
+</tr>
+<tr>
+<td>random re-initialisation</td>
+<td style="text-align: right;">13.930</td>
+<td style="text-align: right;">15.921</td>
+<td style="text-align: right;">15.884</td>
+<td style="text-align: right;">1.197</td>
+<td style="text-align: right;">same</td>
+</tr>
+<tr>
+<td>random + 200 row-only steps</td>
+<td style="text-align: right;">4.178</td>
+<td style="text-align: right;">4.854</td>
+<td style="text-align: right;">4.697</td>
+<td style="text-align: right;">1.143</td>
+<td style="text-align: right;">same</td>
+</tr>
+<tr>
+<td>mean of old pieces, no training</td>
+<td style="text-align: right;">3.934</td>
+<td style="text-align: right;">4.381</td>
+<td style="text-align: right;">4.155</td>
+<td style="text-align: right;">1.132</td>
+<td style="text-align: right;">same</td>
+</tr>
+<tr>
+<td><strong>mean + 200 row-only steps</strong></td>
+<td style="text-align: right;"><strong>3.028</strong></td>
+<td style="text-align: right;"><strong>3.450</strong></td>
+<td style="text-align: right;"><strong>3.343</strong></td>
+<td style="text-align: right;"><strong>1.132</strong></td>
+<td style="text-align: right;">same</td>
+</tr>
+</tbody>
+</table></div>
+<p>Only the 5,000 swapped rows changed during tuning (verified: 5,000 rows
+changed, 0 outside the swap). Tuning used 204,800 tokens of Thai training text
+(200 Adam steps of 4 × 256, learning rate 1e-4).</p>
+<ul>
+<li><strong>Leaving the rows as they were is harmful:</strong> Thai bits per character
+  nearly double, because each new Thai token is read and predicted with the
+  vector of an unrelated pruned token.</li>
+<li><strong>Random re-initialisation, as Csaki et al. did, is far worse</strong> (about four
+  times the original bits per character) and also hurts English: BLOOM ties
+  its input and output embeddings, so 5,000 random rows compete in every
+  English prediction. Even after 200 steps of row-only tuning it has not caught
+  up with the untrained mean initialisation.</li>
+<li>
+<p><strong>The mean of the old pieces' embeddings recovers almost everything with no
+  training at all</strong>, and leaves English exactly unchanged, while the model
+  reads roughly a third as many Thai tokens.</p>
+</li>
+<li>
+<p><strong>Mean initialisation plus light row-only tuning ends up better than the
+  original on Thai</strong> - 8.6% lower bits per character on Wikipedia, 13.6% on
+  news, 13.0% on social - while the model reads about a third as many Thai
+  tokens, and English is unchanged to four decimal places. One caveat keeps
+  this from being a clean win for the tokenizer alone: the reference model got
+  no Thai training in this experiment, while the tuned rows saw 204,800 tokens
+  of Thai from the same three domains (different documents). The defensible
+  claim is that after 200 steps of training only the swapped rows, the
+  retrofitted model is <em>at least as good</em> at Thai as the original, at about a
+  third of the Thai token cost. BLOOM was not pretrained on Thai, so its
+  reference is weak.</p>
+</li>
+<li><strong>Contrast with Qwen2.5 (§7.5).</strong> There the same recipe recovered only three
+  quarters of the loss and pushed English up 8-10%. Two differences are
+  plausible and neither is separated here: Qwen already models Thai well
+  through its shipped tokenizer (a strong reference to match), and its repair
+  used a learning rate twenty times larger (2e-3 vs 1e-4). A Qwen repair at
+  1e-4 was started to test the second; see <code>QWEN_REPAIR_lr1e-4.md</code> if present.</li>
+</ul>
+<p><strong>So the honest version of the "no retraining" claim is:</strong> no vocabulary
+expansion and no pretraining, but the swapped rows must be re-set - the mean
+of the old pieces works without any training - and a short row-only tuning
+pass, a few hundred steps on a CPU for a 560M model, recovers the rest.</p>
+<h2 id="8-robustness-fairness-and-cost">8. Robustness, fairness and cost</h2>
+<p>All numbers in this section are from <code>ROBUSTNESS.md</code>.</p>
+<h3 id="81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</h3>
+<p>Tokens per word was recomputed under PyThaiNLP's <code>longest</code> segmenter next to
+<code>newmm</code>. <code>longest</code> finds 2-5% more words per 100 characters, so every
+fertility figure drops by a similar few percent, but the ordering of the nine
+published tokenizers is <strong>identical</strong> under both segmenters in all three
+domains (Kendall's τ = 1.00), and the retrofit's relative gain is the same.
+Per-character cost remains the headline because it needs no segmenter at all.</p>
+<h3 id="82-register-the-retrofit-widens-the-formalinformal-gap-like-every-thai-capable-tokenizer">8.2 Register: the retrofit widens the formal/informal gap, like every Thai-capable tokenizer</h3>
+<p>Spread = social tok/100ch ÷ mean of Wikipedia and news.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tokenizer</th>
+<th style="text-align: right;">Formal</th>
+<th style="text-align: right;">Informal</th>
+<th style="text-align: right;">Spread</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mistral-7B (base)</td>
+<td style="text-align: right;">98.4</td>
+<td style="text-align: right;">96.9</td>
+<td style="text-align: right;">0.985</td>
+</tr>
+<tr>
+<td>+ 2,483 slots, equal domain weights</td>
+<td style="text-align: right;">33.9</td>
+<td style="text-align: right;">37.7</td>
+<td style="text-align: right;">1.110</td>
+</tr>
+<tr>
+<td>+ 2,483 slots, <strong>formal-only</strong> training</td>
+<td style="text-align: right;">33.6</td>
+<td style="text-align: right;">40.6</td>
+<td style="text-align: right;"><strong>1.211</strong></td>
+</tr>
+<tr>
+<td>+ 2,483 slots, cluster-aware</td>
+<td style="text-align: right;">35.2</td>
+<td style="text-align: right;">39.2</td>
+<td style="text-align: right;">1.115</td>
+</tr>
+<tr>
+<td>+ 4,339 slots (English-only)</td>
+<td style="text-align: right;">30.0</td>
+<td style="text-align: right;">33.9</td>
+<td style="text-align: right;">1.128</td>
+</tr>
+<tr>
+<td>Typhoon-7B</td>
+<td style="text-align: right;">33.3</td>
+<td style="text-align: right;">37.2</td>
+<td style="text-align: right;">1.117</td>
+</tr>
+</tbody>
+</table></div>
+<p>Base Mistral is character-level for Thai, so it charges every register the
+same (social is even 1.5% cheaper). Every vocabulary that compresses Thai
+compresses formal Thai more - presumably because formal text is more
+standardised, though that was not tested. The retrofit's spread (1.110) is in
+line with Typhoon's (1.117). What the data <em>does</em> show is that the choice of
+training text matters: a vocabulary learned from formal text alone raises the
+informal premium from +11% to +21%. Equal domain weighting is not a formality -
+it is what keeps the informal gap at Typhoon's level instead of twice it.</p>
+<h3 id="83-embedding-row-accounting">8.3 Embedding-row accounting</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">2,483 slots (strict)</th>
+<th style="text-align: right;">3,219 slots (English-only)</th>
+<th style="text-align: right;">4,339 slots (English-only)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rows swapped</td>
+<td style="text-align: right;">2,483 (7.8%)</td>
+<td style="text-align: right;">3,219 (10.1%)</td>
+<td style="text-align: right;">4,339 (13.6%)</td>
+</tr>
+<tr>
+<td>Uses in the English + code protect corpora</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>Swapped rows seen at least once in 4,000 <em>held-out</em> English documents</td>
+<td style="text-align: right;">196</td>
+<td style="text-align: right;">296</td>
+<td style="text-align: right;">372</td>
+</tr>
+<tr>
+<td>Freed from</td>
+<td style="text-align: right;">Cyrillic 818, ASCII 675, CJK 473, other 234, Hangul 211</td>
+<td style="text-align: right;">ASCII 1,133, CJK 936, Cyrillic 590, ...</td>
+<td style="text-align: right;">ASCII 1,909, CJK 936, Cyrillic 922, ...</td>
+</tr>
+</tbody>
+</table></div>
+<p>"Never used by English" holds on the corpus the prune list was built from,
+not everywhere: 196 of the 2,483 freed entries appear somewhere in held-out
+English Wikipedia - mostly Cyrillic and CJK fragments inside names quoted in
+their original script. That is why the held-out English token count moves by
++0.01% rather than exactly zero. Every swapped row must be re-initialised
+(§7.6); no row outside the swap is touched.</p>
+<h3 id="84-who-pays-for-the-freed-slots">8.4 Who pays for the freed slots</h3>
+<p>Tokens per 100 characters on 200 documents per language, base Mistral-7B vs
+the retrofit:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Text</th>
+<th style="text-align: right;">Base</th>
+<th style="text-align: right;">2,483 (strict)</th>
+<th style="text-align: right;">3,219 (English-only)</th>
+<th style="text-align: right;">4,339 (English-only)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Korean</td>
+<td style="text-align: right;">106.5</td>
+<td style="text-align: right;">148.1 (<strong>+39.0%</strong>)</td>
+<td style="text-align: right;">149.8 (+40.7%)</td>
+<td style="text-align: right;">149.8 (+40.7%)</td>
+</tr>
+<tr>
+<td>Russian</td>
+<td style="text-align: right;">39.6</td>
+<td style="text-align: right;">46.5 (+17.6%)</td>
+<td style="text-align: right;">42.8 (+8.2%)</td>
+<td style="text-align: right;">47.8 (+20.7%)</td>
+</tr>
+<tr>
+<td>Chinese</td>
+<td style="text-align: right;">113.5</td>
+<td style="text-align: right;">128.1 (+12.9%)</td>
+<td style="text-align: right;">164.2 (<strong>+44.7%</strong>)</td>
+<td style="text-align: right;">164.2 (+44.8%)</td>
+</tr>
+<tr>
+<td>Japanese</td>
+<td style="text-align: right;">109.2</td>
+<td style="text-align: right;">120.3 (+10.2%)</td>
+<td style="text-align: right;">149.1 (+36.6%)</td>
+<td style="text-align: right;">149.1 (+36.6%)</td>
+</tr>
+<tr>
+<td>Python code</td>
+<td style="text-align: right;">32.7</td>
+<td style="text-align: right;">32.7 (+0.1%)</td>
+<td style="text-align: right;">32.9 (+0.8%)</td>
+<td style="text-align: right;">33.4 (+2.4%)</td>
+</tr>
+</tbody>
+</table></div>
+<p>This is the price of fixed size, and it should be stated as plainly as the
+gain: <strong>the Thai slots are paid for by Korean, Russian, Chinese and Japanese
+users.</strong> For a Thai-and-English deployment that serves none of them, that
+price is zero. For a multilingual deployment the prune list must be built
+with those languages in the protect set, which leaves fewer slots for Thai.
+Protecting code also protects CJK: the strict profile frees 473 CJK entries
+against 936 without code protection, which is why Chinese moves +12.9%
+instead of +44.7% (the code corpus evidently contains CJK text, most likely
+in comments and strings - not checked).</p>
+<h2 id="9-limitations-and-ethics">9. Limitations and ethics</h2>
+<p><strong>What "no retraining" can honestly mean.</strong> A fixed-size retrofit keeps the
+embedding matrix's shape, so nothing is added and no full pretraining is
+needed. It does not mean zero adaptation: each swapped row still holds the
+vector of the token it used to be, and §7.6 shows that using the retrofit
+without touching those rows is harmful. The defensible claim is: <em>no
+vocabulary expansion and no full pretraining; only the swapped rows need
+re-initialising and light tuning.</em></p>
+<p><strong>Who can use it.</strong> Only self-hosted open-weight deployments (on-device and
+edge, or organisations that must self-host for PDPA or data-residency
+reasons). A hosted API's tokenizer cannot be changed by its users, so GPT-4,
+GPT-4o or Claude users gain nothing from this method.</p>
+<p><strong>A retrofit is deployment-specific.</strong> "Unused" means unused by the protect
+corpora chosen here (English prose and Python). Entries freed for Thai were
+mostly Cyrillic, other-language Latin-script and markup pieces, CJK and
+Hangul, so a deployment that also serves those languages would pay for the
+Thai gain (§8.4). The prune list is published so a
+deployment can check it against its own traffic.</p>
+<p><strong>Scale of the model experiments.</strong> The tokenizer results are for Mistral-7B's
+tokenizer, but the embedding experiments ran on small models that fit a CPU
+(BLOOM-560m, Qwen2.5-0.5B), with a few hundred optimisation steps and bits per
+character as the only quality measure. They show the direction and rough size
+of the effect, not the downstream task quality of a tuned 7B model.</p>
+<p><strong>Data.</strong> The social domain is small (189k evaluation characters) and comes
+from brand-monitoring posts, so brand and product names are over-represented
+(<code>เบียร์ช้าง</code>, <code>โตโยต้า</code> appear among the added tokens); OPUS-100
+is partly subtitle text and its alignments are noisy; the English protect
+corpus is Wikipedia, so English registers it lacks (chat, legal, informal
+web) could use entries it never saw. All Thai results are per domain because a
+pooled average would hide a vocabulary that works for one register only.</p>
+<p><strong>Method.</strong> Slots are allocated greedily by savings, one merge at a time; an
+integer program over candidate sets (as BrahmicTokenizer frames it) could do
+slightly better. Merges are learned from at most 4M characters per domain.</p>
+<p><strong>Ethics.</strong> All data and models are public; no client or employer data was
+used. WiseSight posts are user-written: the labels are CC0 but copyright stays
+with the posters, so they are used only for measurement and never
+redistributed. The fairness question is treated as a result, not a footnote:
+§8.2 reports whether the retrofit widens the formal/informal gap, and a
+formal-only ablation shows what happens when informal Thai is left out of the
+vocabulary's training data.</p>
+<h2 id="10-conclusion-and-next-steps">10. Conclusion and next steps</h2>
+<p><strong>Answers to the research questions.</strong></p>
+<ol>
+<li><em>Pre-tokenization vs vocabulary.</em> It depends entirely on the tokenizer.
+   cl100k and Qwen2.5 cut every Thai consonant away from its mark in the
+   pre-tokenizer (<code>\p{L}+</code> excludes <code>\p{M}</code>); for Qwen2.5 that accounts for
+   89% of the excess, for cl100k 38%, and cl100k needs both fixes to get
+   anywhere. Mistral-7B, BLOOM and o200k carry all or nearly all of their
+   damage in the vocabulary.</li>
+<li><em>How much a fixed-size retrofit removes.</em> On Mistral-7B, swapping 2,483
+   entries (7.8%) that English, code and Thai never use removes 64.4% of Thai
+   tokens on Wikipedia, 66.6% on news and 61.1% on social text, takes the Thai
+   penalty from 3.92x to 1.33x and nearly triples effective context, while
+   English moves by +0.01% and 99.55% of English samples get identical token
+   ids. This is far above the plan's 15% target. It should not be set
+   against the Indic 26.7% that motivated the project: that figure compares
+   two different tokenizers, not a tokenizer before and after its retrofit,
+   and a character-level Thai baseline leaves much more to gain than o200k
+   does for Indic scripts. The closest Thai analogue, Csaki et al.'s 73%
+   better fertility on GPT-2, is measured per word.</li>
+<li><em>Against expansion.</em> At Typhoon's own budget the fixed-size retrofit is
+   cheaper than Typhoon on all three domains and ties it on matched content,
+   without growing the embedding matrix. Under strict English-and-code
+   protection Mistral can only free 2,483 slots, and with those it comes
+   within a point of Typhoon.</li>
+<li><em>Who pays.</em> Informal Thai gains less than formal Thai (an informal
+   premium of +11%, the same as Typhoon's +12%), and the premium rises to
+   +21% if the vocabulary is learned from formal text only. The freed slots are paid for by
+   Korean (+39%), Russian (+18%), Chinese (+13%) and Japanese (+10%) text.</li>
+<li><em>What the rows need.</em> Re-setting, and a little tuning. Stale rows nearly double
+   Thai bits per character on BLOOM-560m and random rows quadruple it; the
+   mean of the old pieces recovers most of the loss with no training, and
+   200 steps of row-only tuning end at least as good as the original on Thai
+   with a third of the tokens and English unchanged. On Qwen2.5, where the
+   rows were never trained and the reference is strong, the same recipe
+   recovers three quarters and leaks into English: row-only repair is enough
+   for a retrofit of a weak-Thai model, not for unlocking Qwen's dead rows.</li>
+</ol>
+<p><strong>What to do next.</strong></p>
+<ul>
+<li>Run the embedding repair at the target scale: mean-initialise Mistral-7B's
+  swapped rows and tune only those rows on a GPU for a few thousand steps,
+  then measure downstream Thai tasks, not only bits per character.</li>
+<li>For Qwen2.5, test the cheapest fix of all - the regex change plus repair of
+  the 1,578 untrained rows - on a larger checkpoint.</li>
+<li>Build the prune list from a deployment's real traffic (including any
+  Korean, Chinese, Japanese or Russian it serves), and replace greedy
+  allocation with an integer program.</li>
+<li>Make the cluster-aware variant the default if downstream tools need token
+  boundaries that respect Thai clusters; it costs about one point of
+  reduction.</li>
+</ul>
+<h2 id="appendix-reproducing-every-number">Appendix: reproducing every number</h2>
+<p>All scripts are in <code>src/</code>, all outputs in <code>results/</code>; CPU only, public data
+only. Corpora download on first use and are cached in <code>~/.cache/thaitok</code>.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Command</th>
+<th>Time on a 16-core laptop</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline (Week 1)</td>
+<td><code>python src/run_baseline.py --docs 1200 --pairs 3000</code></td>
+<td>~5 min</td>
+</tr>
+<tr>
+<td>Decomposition</td>
+<td><code>python src/run_decomposition.py</code></td>
+<td>~4 min</td>
+</tr>
+<tr>
+<td>Candidates</td>
+<td><code>python src/candidates.py --target Mistral-7B</code></td>
+<td>~3 min</td>
+</tr>
+<tr>
+<td>Retrofit, strict</td>
+<td><code>python src/retrofit.py --target Mistral-7B --k 500 1000 2000 3219</code></td>
+<td>~10 min (merges then cached)</td>
+</tr>
+<tr>
+<td>Retrofit, English-only</td>
+<td><code>python src/retrofit.py --target Mistral-7B --k 1000 2000 3219 5000 --code-docs 0</code></td>
+<td>~13 min</td>
+</tr>
+<tr>
+<td>Ablations</td>
+<td><code>... --k 3219 --mode cluster</code>; <code>... --k 3219 --train-domains wikipedia news</code></td>
+<td>~10 min each</td>
+</tr>
+<tr>
+<td>BLOOM</td>
+<td><code>python src/retrofit.py --target BLOOM --k 1000 3219 5000 10000</code></td>
+<td>~18 min</td>
+</tr>
+<tr>
+<td>Acceptance checks</td>
+<td><code>python src/verify_retrofit.py tokenizers/&lt;name&gt; [--base BLOOM]</code>, then <code>--summary</code></td>
+<td>~3 min each</td>
+</tr>
+<tr>
+<td>Evaluation</td>
+<td><code>python src/evaluate.py</code>; <code>python src/run_baseline.py --retrofits --out BASELINE_after</code></td>
+<td>~5 / ~35 min</td>
+</tr>
+<tr>
+<td>Robustness</td>
+<td><code>python src/robustness.py</code></td>
+<td>~5 min</td>
+</tr>
+<tr>
+<td>Embedding experiment</td>
+<td><code>python src/embed_adapt.py --tokenizer tokenizers/bloom-th5000</code></td>
+<td>~2.5 h</td>
+</tr>
+<tr>
+<td>Qwen study</td>
+<td><code>python src/qwen_unreachable.py</code>; <code>python src/qwen_repair.py</code></td>
+<td>~5 min; ~1 h</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td><code>python -m pytest tests</code></td>
+<td>&lt;1 min</td>
+</tr>
+</tbody>
+</table></div>
+<p>Budgets above the free-slot cap are clipped to it and named by the real
+count (<code>mistral-7b-th2483</code>).</p>
+<h2 id="references">References</h2><div class="refs">
+<p>Checked against primary sources; see <code>REFERENCES.md</code> for quotes and page numbers.</p>
+<p>Chumpolsathien, N. (2020). <em>Using knowledge distillation from keyword
+extraction to improve the informativeness of neural cross-lingual
+summarization</em> [Master's thesis, Beijing Institute of Technology].
+<em>(Metadata from the ThaiSum dataset card only; thesis not accessed.)</em></p>
+<p>Chumpolsathien, N. (2020). <em>ThaiSum</em> [Data set]. Hugging Face.
+https://huggingface.co/datasets/pythainlp/thaisum</p>
+<p>Csaki, Z., Pawakapan, P., Thakker, U., &amp; Xu, Q. (2023). <em>Efficiently adapting
+pretrained language models to new languages</em> (arXiv:2311.05741). arXiv.
+https://doi.org/10.48550/arXiv.2311.05741</p>
+<p>Dagan, G., Synnaeve, G., &amp; Rozière, B. (2024). Getting the most out of your
+tokenizer for pre-training and domain adaptation. In R. Salakhutdinov, Z.
+Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett, &amp; F. Berkenkamp (Eds.),
+<em>Proceedings of the 41st International Conference on Machine Learning</em> (Vol.
+235, pp. 9784–9805). PMLR. https://proceedings.mlr.press/v235/dagan24a.html</p>
+<p>Dobler, K., &amp; de Melo, G. (2023). FOCUS: Effective embedding initialization
+for monolingual specialization of multilingual models. In H. Bouamor, J.
+Pino, &amp; K. Bali (Eds.), <em>Proceedings of the 2023 Conference on Empirical
+Methods in Natural Language Processing</em> (pp. 13440–13454). Association for
+Computational Linguistics. https://doi.org/10.18653/v1/2023.emnlp-main.829</p>
+<p>Gee, L., Zugarini, A., Rigutini, L., &amp; Torroni, P. (2022). Fast vocabulary
+transfer for language model compression. In Y. Li &amp; A. Lazaridou (Eds.),
+<em>Proceedings of the 2022 Conference on Empirical Methods in Natural Language
+Processing: Industry Track</em> (pp. 409–416). Association for Computational
+Linguistics. https://doi.org/10.18653/v1/2022.emnlp-industry.41</p>
+<p>Land, S., &amp; Bartolo, M. (2024). Fishing for Magikarp: Automatically detecting under-trained tokens in large language models. In <em>Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing</em> (EMNLP 2024, main track). arXiv:2405.05417. https://doi.org/10.48550/arXiv.2405.05417 <em>(Venue from the arXiv comments; page range not retrieved.)</em></p>
+<p>Lowphansirikul, L., Polpanumas, C., Jantrakulchai, N., &amp; Nutanong, S. (2021).
+<em>WangchanBERTa: Pretraining transformer-based Thai language models</em>
+(arXiv:2101.09635). arXiv. https://doi.org/10.48550/arXiv.2101.09635</p>
+<p>Minixhofer, B., Paischer, F., &amp; Rekabsaz, N. (2022). WECHSEL: Effective
+initialization of subword embeddings for cross-lingual transfer of
+monolingual language models. In M. Carpuat, M.-C. de Marneffe, &amp; I. V. Meza
+Ruiz (Eds.), <em>Proceedings of the 2022 Conference of the North American Chapter
+of the Association for Computational Linguistics: Human Language
+Technologies</em> (pp. 3992–4006). Association for Computational Linguistics.
+https://doi.org/10.18653/v1/2022.naacl-main.293</p>
+<p>OpenAI. (n.d.). <em>tiktoken</em> [Computer software]. GitHub. Retrieved September
+28, 2026, from https://github.com/openai/tiktoken</p>
+<p>Petrov, A., La Malfa, E., Torr, P. H. S., &amp; Bibi, A. (2023). Language model
+tokenizers introduce unfairness between languages. In <em>Advances in Neural
+Information Processing Systems 36 (NeurIPS 2023)</em>.
+https://doi.org/10.52202/075280-1608
+<em>(Editors and page range not retrieved; add them from the NeurIPS
+proceedings page if your style guide requires them.)</em></p>
+<p>Phatthiyaphaibun, W., Chaovavanich, K., Polpanumas, C., Suriyawongkul, A.,
+Lowphansirikul, L., Chormai, P., Limkonchotiwat, P., Suntorntip, T., &amp;
+Udomcharoenchaikit, C. (2023). PyThaiNLP: Thai natural language processing in
+Python. In L. Tan, D. Milajevs, G. Chauhan, J. Gwinnup, &amp; E. Rippeth (Eds.),
+<em>Proceedings of the 3rd Workshop for Natural Language Processing Open Source
+Software (NLP-OSS 2023)</em> (pp. 25–36). Association for Computational
+Linguistics. https://doi.org/10.18653/v1/2023.nlposs-1.4</p>
+<p>Pipatanakul, K., Jirabovonvisut, P., Manakul, P., Sripaisarnmongkol, S.,
+Patomwong, R., Chokchainant, P., &amp; Tharnpipitchai, K. (2023). <em>Typhoon: Thai
+large language models</em> (arXiv:2312.13951). arXiv.
+https://doi.org/10.48550/arXiv.2312.13951</p>
+<p>Rust, P., Pfeiffer, J., Vulić, I., Ruder, S., &amp; Gurevych, I. (2021). How good
+is your tokenizer? On the monolingual performance of multilingual language
+models. In C. Zong, F. Xia, W. Li, &amp; R. Navigli (Eds.), <em>Proceedings of the
+59th Annual Meeting of the Association for Computational Linguistics and the
+11th International Joint Conference on Natural Language Processing (Volume 1:
+Long Papers)</em> (pp. 3118–3135). Association for Computational Linguistics.
+https://doi.org/10.18653/v1/2021.acl-long.243</p>
+<p>SCB 10X. (2023). <em>Typhoon-7B</em> [Large language model]. Hugging Face.
+https://huggingface.co/scb10x/typhoon-7b</p>
+<p>Schmidt, C. W., Reddy, V., Tanner, C., &amp; Pinter, Y. (2025). <em>Boundless byte
+pair encoding: Breaking the pre-tokenization barrier</em> (arXiv:2504.00178).
+arXiv. https://doi.org/10.48550/arXiv.2504.00178
+<em>(Accepted to COLM 2025 per arXiv comments; cite the COLM proceedings version
+if available.)</em></p>
+<p>Shravan, R. (2026). <em>BrahmicTokenizer-131K: An Indic-capable drop-in
+replacement for o200k_base</em> (arXiv:2605.29379). arXiv.
+https://doi.org/10.48550/arXiv.2605.29379</p>
+<p>Suriyawongkul, A., Chuangsuwanich, E., Chormai, P., &amp; Polpanumas, C. (2019).
+<em>PyThaiNLP/wisesight-sentiment: First release</em> (Version v1.0) [Data set].
+Zenodo. https://doi.org/10.5281/zenodo.3457447</p>
+<p>Theeramunkong, T., Sornlertlamvanich, V., Tanhermhong, T., &amp; Chinnan, W.
+(2000). Character cluster based Thai information retrieval. In <em>Proceedings of
+the Fifth International Workshop on Information Retrieval with Asian
+Languages</em> (pp. 75–80). Association for Computing Machinery.
+https://doi.org/10.1145/355214.355225</p>
+<p>Velayuthan, M., &amp; Sarveswaran, K. (2025). Egalitarian language representation
+in language models: It all begins with tokenizers. In O. Rambow, L. Wanner, M.
+Apidianaki, H. Al-Khalifa, B. Di Eugenio, &amp; S. Schockaert (Eds.),
+<em>Proceedings of the 31st International Conference on Computational
+Linguistics</em> (pp. 5987–5996). Association for Computational Linguistics.
+https://aclanthology.org/2025.coling-main.400/</p>
+<p>Wikimedia Foundation. (2023). <em>Wikipedia</em> (Version 20231101.th) [Data set].
+Hugging Face. https://huggingface.co/datasets/wikimedia/wikipedia
+<em>(Upstream source: Wikimedia Downloads, https://dumps.wikimedia.org)</em></p>
+<p>Zhang, B., Williams, P., Titov, I., &amp; Sennrich, R. (2020). Improving
+massively multilingual neural machine translation and zero-shot translation.
+In D. Jurafsky, J. Chai, N. Schluter, &amp; J. Tetreault (Eds.), <em>Proceedings of
+the 58th Annual Meeting of the Association for Computational Linguistics</em>
+(pp. 1628–1639). Association for Computational Linguistics.
+https://doi.org/10.18653/v1/2020.acl-main.148</p></div></main>
+</div>

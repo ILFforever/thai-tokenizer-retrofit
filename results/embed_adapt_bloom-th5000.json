@@ -1,0 +1,242 @@
+{
+  "meta": {
+    "tokenizer": "bloom-th5000",
+    "model": "bigscience/bloom-560m",
+    "swapped_rows": 5000,
+    "vocab": 250680,
+    "steps": 200,
+    "lr": 0.0001,
+    "seq": 256,
+    "batch": 4,
+    "train_tokens_seen": 204800,
+    "eval_passages_per_domain": 60,
+    "passage_chars": 500,
+    "seconds": 7800.0
+  },
+  "results": {
+    "base": {
+      "wikipedia_bpc": 3.3125,
+      "wikipedia_tok100": 97.08,
+      "news_bpc": 3.9948,
+      "news_tok100": 98.53,
+      "social_bpc": 3.8414,
+      "social_tok100": 93.12,
+      "english_bpc": 1.1321,
+      "english_tok100": 22.72
+    },
+    "stale": {
+      "wikipedia_bpc": 6.1283,
+      "wikipedia_tok100": 28.92,
+      "news_bpc": 6.966,
+      "news_tok100": 32.2,
+      "social_bpc": 6.8139,
+      "social_tok100": 31.92,
+      "english_bpc": 1.1321,
+      "english_tok100": 22.72
+    },
+    "random": {
+      "wikipedia_bpc": 13.9296,
+      "wikipedia_tok100": 28.92,
+      "news_bpc": 15.9214,
+      "news_tok100": 32.2,
+      "social_bpc": 15.8837,
+      "social_tok100": 31.92,
+      "english_bpc": 1.1974,
+      "english_tok100": 22.72
+    },
+    "random+tune": {
+      "wikipedia_bpc": 4.178,
+      "wikipedia_tok100": 28.92,
+      "news_bpc": 4.8545,
+      "news_tok100": 32.2,
+      "social_bpc": 4.6966,
+      "social_tok100": 31.92,
+      "english_bpc": 1.1434,
+      "english_tok100": 22.72,
+      "rows_changed": 5000,
+      "rows_changed_outside_swap": 0
+    },
+    "mean": {
+      "wikipedia_bpc": 3.9336,
+      "wikipedia_tok100": 28.92,
+      "news_bpc": 4.3815,
+      "news_tok100": 32.2,
+      "social_bpc": 4.155,
+      "social_tok100": 31.92,
+      "english_bpc": 1.1321,
+      "english_tok100": 22.72
+    },
+    "mean+tune": {
+      "wikipedia_bpc": 3.0278,
+      "wikipedia_tok100": 28.92,
+      "news_bpc": 3.4495,
+      "news_tok100": 32.2,
+      "social_bpc": 3.3427,
+      "social_tok100": 31.92,
+      "english_bpc": 1.1321,
+      "english_tok100": 22.72,
+      "rows_changed": 5000,
+      "rows_changed_outside_swap": 0
+    }
+  },
+  "logs": {
+    "random+tune": [
+      {
+        "step": 33,
+        "train_loss": 17.44281005859375,
+        "wikipedia_bpc": 7.2628,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 9.1151,
+        "news_tok100": 32.45,
+        "social_bpc": 8.8948,
+        "social_tok100": 32.87,
+        "seconds": 549.8
+      },
+      {
+        "step": 66,
+        "train_loss": 13.890506744384766,
+        "wikipedia_bpc": 5.6546,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 6.8939,
+        "news_tok100": 32.45,
+        "social_bpc": 6.785,
+        "social_tok100": 32.87,
+        "seconds": 1080.6
+      },
+      {
+        "step": 99,
+        "train_loss": 12.634608268737793,
+        "wikipedia_bpc": 5.0689,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 6.0596,
+        "news_tok100": 32.45,
+        "social_bpc": 5.9278,
+        "social_tok100": 32.87,
+        "seconds": 1599.2
+      },
+      {
+        "step": 132,
+        "train_loss": 10.895809173583984,
+        "wikipedia_bpc": 4.5428,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 5.5374,
+        "news_tok100": 32.45,
+        "social_bpc": 5.4352,
+        "social_tok100": 32.87,
+        "seconds": 2099.9
+      },
+      {
+        "step": 165,
+        "train_loss": 10.37360954284668,
+        "wikipedia_bpc": 4.2447,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 5.274,
+        "news_tok100": 32.45,
+        "social_bpc": 5.1092,
+        "social_tok100": 32.87,
+        "seconds": 2608.5
+      },
+      {
+        "step": 198,
+        "train_loss": 8.60129451751709,
+        "wikipedia_bpc": 4.0274,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 5.0172,
+        "news_tok100": 32.45,
+        "social_bpc": 4.8136,
+        "social_tok100": 32.87,
+        "seconds": 3121.0
+      },
+      {
+        "step": 200,
+        "train_loss": 10.067869186401367,
+        "wikipedia_bpc": 4.0264,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 5.0079,
+        "news_tok100": 32.45,
+        "social_bpc": 4.8029,
+        "social_tok100": 32.87,
+        "seconds": 3207.5
+      }
+    ],
+    "mean+tune": [
+      {
+        "step": 33,
+        "train_loss": 8.27804183959961,
+        "wikipedia_bpc": 3.4404,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 4.0505,
+        "news_tok100": 32.45,
+        "social_bpc": 3.9011,
+        "social_tok100": 32.87,
+        "seconds": 510.6
+      },
+      {
+        "step": 66,
+        "train_loss": 8.034469604492188,
+        "wikipedia_bpc": 3.1854,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 3.7993,
+        "news_tok100": 32.45,
+        "social_bpc": 3.7259,
+        "social_tok100": 32.87,
+        "seconds": 957.1
+      },
+      {
+        "step": 99,
+        "train_loss": 8.020626068115234,
+        "wikipedia_bpc": 3.093,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 3.7064,
+        "news_tok100": 32.45,
+        "social_bpc": 3.6261,
+        "social_tok100": 32.87,
+        "seconds": 1331.2
+      },
+      {
+        "step": 132,
+        "train_loss": 7.752729415893555,
+        "wikipedia_bpc": 3.059,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 3.6535,
+        "news_tok100": 32.45,
+        "social_bpc": 3.547,
+        "social_tok100": 32.87,
+        "seconds": 1703.4
+      },
+      {
+        "step": 165,
+        "train_loss": 7.732507705688477,
+        "wikipedia_bpc": 2.9511,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 3.5608,
+        "news_tok100": 32.45,
+        "social_bpc": 3.4942,
+        "social_tok100": 32.87,
+        "seconds": 2079.4
+      },
+      {
+        "step": 198,
+        "train_loss": 6.6953535079956055,
+        "wikipedia_bpc": 2.9122,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 3.5219,
+        "news_tok100": 32.45,
+        "social_bpc": 3.4621,
+        "social_tok100": 32.87,
+        "seconds": 2453.5
+      },
+      {
+        "step": 200,
+        "train_loss": 7.490757942199707,
+        "wikipedia_bpc": 2.912,
+        "wikipedia_tok100": 26.79,
+        "news_bpc": 3.521,
+        "news_tok100": 32.45,
+        "social_bpc": 3.4589,
+        "social_tok100": 32.87,
+        "seconds": 2513.9
+      }
+    ]
+  }
+}

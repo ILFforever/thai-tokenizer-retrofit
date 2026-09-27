@@ -390,6 +390,9 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--no-write", action="store_true")
+    ap.add_argument("--tag", default="",
+                    help="variant run: write results/qwen_repair{tag}.json and QWEN_REPAIR{tag}.md, "
+                         "leaving the main results untouched")
     args = ap.parse_args()
     t_start = time.time()
     torch.set_num_threads(args.threads)
@@ -530,6 +533,13 @@ def main() -> None:
     }
     if args.no_write:
         print(markdown(result))
+    elif args.tag:
+        (RESULTS / f"qwen_repair{args.tag}.json").write_text(
+            json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        (RESULTS / f"QWEN_REPAIR{args.tag}.md").write_text(
+            f"# Qwen2.5 row repair, variant `{args.tag}` (lr {args.lr})\n\n" + markdown(result),
+            encoding="utf-8")
+        log(f"wrote qwen_repair{args.tag}.json and QWEN_REPAIR{args.tag}.md")
     else:
         write_report(result)
         log(f"wrote {RESULTS / 'qwen_repair.json'} and the repair tables in QWEN_UNREACHABLE.md")

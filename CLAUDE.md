@@ -15,10 +15,10 @@ Mid-term proposal was presented 26 Sep. Final delivery: November 2026.
 ## Status (28 Sep 2026)
 
 **Weeks 2-6 of `PLAN.md` are built, run and committed; the Week 7 report is
-drafted** in `results/REPORT.md`. Every number in it comes from `results/`.
-Branch `week2`. Remaining: finish the embedding sections once
-`src/embed_adapt.py` / `src/qwen_repair.py` results are in, then polish the
-write-up (Week 7) and use Week 8 as buffer.
+written** (`results/REPORT.md`, also published as a page with a results
+dashboard; see README). Every number comes from `results/`. Branch `week2`.
+Remaining: map the report onto the proposal's ten components, final polish,
+Week 8 buffer. A Qwen repair at lr 1e-4 (`--tag _lr1e-4`) may still be running.
 
 ## The core idea, and how it differs from prior work
 
@@ -66,6 +66,13 @@ Weeks 3-5, target Mistral-7B (`results/EVALUATION.md`):
   Week 5 acceptance checks pass except "top-100 candidates single-token"
   (98/100; the two misses cost 2 tokens).
 - At Typhoon's budget (3,219, English-only) it beats Typhoon on all domains.
+
+Embedding rows (`results/EMBED_ADAPT_bloom-th5000.md`, BLOOM-560m, 5,000
+swapped rows): stale rows nearly double Thai bits/char, random quadruples it;
+mean-of-old-pieces init recovers most with no training; + 200 row-only steps
+ends better than the original on Thai (caveat: the reference got no Thai
+training) with English unchanged. Qwen2.5 repair recovers only ~75% and
+leaks into English (lr 2e-3, all-Thai tuning data).
 
 Week 6 (`results/ROBUSTNESS.md`): segmenter does not change rankings
 (Kendall tau 1.00); retrofit informal/formal spread 1.110 vs Typhoon 1.117,

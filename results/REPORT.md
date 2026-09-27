@@ -23,7 +23,15 @@ draft generated 28 September 2026 from the numbers in `results/`
   (spread 1.11, the same as Typhoon; 1.21 if the vocabulary is learned from
   formal text only), and the freed slots come from other languages - Korean
   text costs 39% more tokens, Russian 18%, Chinese 13%, Japanese 10%.
-- <!-- TLDR-EMBED -->
+- **The swapped embedding rows must be re-set, but that is cheap.** On
+  BLOOM-560m, leaving them as they were nearly doubles Thai bits per
+  character and random re-initialisation quadruples it; setting each row to
+  the mean of the pieces it replaces recovers most of the loss with no
+  training, and 200 steps training only those rows ends *better* than the
+  original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
+  at a third of the tokens, with English unchanged. "No retraining" is
+  narrowed to: no expansion and no pretraining; swapped rows re-set and
+  lightly tuned.
 - **Several earlier claims did not survive checking** and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
   costs more on social text", and the novelty of fixed-size replacement for
@@ -504,7 +512,18 @@ BLOOM-560m was retrofitted with 5,000 Thai entries (2.0% of its 250,680 rows)
 and each way of setting the swapped rows was scored in bits per character on
 60 held-out passages per domain (lower is better):
 
-<!-- EMBED-TABLE -->
+| Swapped rows set by | Wikipedia | News | Social | English | Thai tok/100ch |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| *original tokenizer (reference)* | 3.312 | 3.995 | 3.841 | 1.132 | 97.1 / 98.5 / 93.1 |
+| left as they were | 6.128 | 6.966 | 6.814 | 1.132 | 28.9 / 32.2 / 31.9 |
+| random re-initialisation | 13.930 | 15.921 | 15.884 | 1.197 | same |
+| random + 200 row-only steps | 4.178 | 4.854 | 4.697 | 1.143 | same |
+| mean of old pieces, no training | 3.934 | 4.381 | 4.155 | 1.132 | same |
+| **mean + 200 row-only steps** | **3.028** | **3.450** | **3.343** | **1.132** | same |
+
+Only the 5,000 swapped rows changed during tuning (verified: 5,000 rows
+changed, 0 outside the swap). Tuning used 204,800 tokens of Thai training text
+(200 Adam steps of 4 × 256, learning rate 1e-4).
 
 - **Leaving the rows as they were is harmful:** Thai bits per character
   nearly double, because each new Thai token is read and predicted with the
@@ -518,7 +537,28 @@ and each way of setting the swapped rows was scored in bits per character on
   training at all**, and leaves English exactly unchanged, while the model
   reads roughly a third as many Thai tokens.
 
-<!-- EMBED-TUNE -->
+- **Mean initialisation plus light row-only tuning ends up better than the
+  original on Thai** - 8.6% lower bits per character on Wikipedia, 13.6% on
+  news, 13.0% on social - while the model reads about a third as many Thai
+  tokens, and English is unchanged to four decimal places. One caveat keeps
+  this from being a clean win for the tokenizer alone: the reference model got
+  no Thai training in this experiment, while the tuned rows saw 204,800 tokens
+  of Thai from the same three domains (different documents). The defensible
+  claim is that after 200 steps of training only the swapped rows, the
+  retrofitted model is *at least as good* at Thai as the original, at about a
+  third of the Thai token cost. BLOOM was not pretrained on Thai, so its
+  reference is weak.
+- **Contrast with Qwen2.5 (§7.5).** There the same recipe recovered only three
+  quarters of the loss and pushed English up 8-10%. Two differences are
+  plausible and neither is separated here: Qwen already models Thai well
+  through its shipped tokenizer (a strong reference to match), and its repair
+  used a learning rate twenty times larger (2e-3 vs 1e-4). A Qwen repair at
+  1e-4 was started to test the second; see `QWEN_REPAIR_lr1e-4.md` if present.
+
+**So the honest version of the "no retraining" claim is:** no vocabulary
+expansion and no pretraining, but the swapped rows must be re-set - the mean
+of the old pieces works without any training - and a short row-only tuning
+pass, a few hundred steps on a CPU for a 560M model, recovers the rest.
 
 ## 8. Robustness, fairness and cost
 
@@ -672,7 +712,14 @@ vocabulary's training data.
    premium of +11%, the same as Typhoon's +12%), and the premium rises to
    +21% if the vocabulary is learned from formal text only. The freed slots are paid for by
    Korean (+39%), Russian (+18%), Chinese (+13%) and Japanese (+10%) text.
-5. *What the rows need.* <!-- CONCLUSION-EMBED -->
+5. *What the rows need.* Re-setting, and a little tuning. Stale rows nearly double
+   Thai bits per character on BLOOM-560m and random rows quadruple it; the
+   mean of the old pieces recovers most of the loss with no training, and
+   200 steps of row-only tuning end at least as good as the original on Thai
+   with a third of the tokens and English unchanged. On Qwen2.5, where the
+   rows were never trained and the reference is strong, the same recipe
+   recovers three quarters and leaks into English: row-only repair is enough
+   for a retrofit of a weak-Thai model, not for unlocking Qwen's dead rows.
 
 **What to do next.**
 

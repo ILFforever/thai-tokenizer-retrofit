@@ -10,8 +10,8 @@ Week 1 is done (`results/BASELINE.md`). This is the rest.
 | 3 Candidates | ✅ done | Top 5,000 ranked with held-out projection; curve flattens. Note: the projection turned out pessimistic, not an upper bound | `results/CANDIDATES.md`, `candidates.csv` |
 | 4 Retrofit | ✅ done | Size identical ✅, Thai round-trip 10k ✅, English round-trip 10k ✅, top-100 single-token ⚠️ 98/100 at 2,483 (100/100 at 3,219+ and on BLOOM) | `results/RETROFIT_CHECKS.md`, `tokenizers/` |
 | 5 Evaluate | ✅ done | Thai ≥15% ✅ (61-67%), English ≤1% ✅ (+0.01%), context ≥+15% ✅ (+157-200%) | `results/EVALUATION.md`, `BASELINE_after.md` |
-| 6 Robustness | ✅ done (embedding run finishing) | Second segmenter ✅, register split ✅, row accounting ✅, collateral cost (extra) ✅, embedding re-init test ⏳ | `results/ROBUSTNESS.md`, `EMBED_ADAPT_*.md` |
-| 7 Write-up | 🟡 drafted | Report structured as 10 sections (the proposal's ten components were not available, so a standard structure is used); references checked from primary sources | `results/REPORT.md`, dashboard |
+| 6 Robustness | ✅ done | Second segmenter ✅, register split ✅, row accounting ✅, collateral cost (extra) ✅, embedding re-init test ✅ (BLOOM-560m: mean init + 200 row-only steps ≥ original on Thai at 1/3 the tokens; Qwen repair only partial) | `results/ROBUSTNESS.md`, `EMBED_ADAPT_*.md`, `QWEN_UNREACHABLE.md` |
+| 7 Write-up | ✅ drafted, published | Report structured as 10 sections (the proposal's ten components were not available, so a standard structure is used); references checked from primary sources | `results/REPORT.md`, dashboard |
 | 8 Buffer | - | - | - |
 
 Deviations from the plan, and why:

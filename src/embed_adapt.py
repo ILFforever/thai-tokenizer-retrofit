@@ -103,8 +103,15 @@ def mean_init(emb: torch.Tensor, base_tok, toks: list[str], ids: list[int]) -> N
 
 
 def train_rows(model, tok, rows: list[int], texts: list[str], steps: int, lr: float,
-               seq: int, batch: int, bos: int, log_every: int, eval_fn) -> list[dict]:
-    """Train only `rows` of the (tied) embedding matrix on `texts`."""
+               seq: int, batch: int, bos: int, log_every: int, eval_fn,
+               en_texts: list[str] | None = None, en_windows: int = 0) -> list[dict]:
+    """Train only `rows` of the (tied) embedding matrix on `texts`.
+
+    With `en_windows` > 0, that many windows of every batch come from English
+    text instead: with tied embeddings the new rows also compete in the
+    output softmax, and training on Thai alone teaches them nothing about
+    staying quiet in English contexts.
+    """
     emb = model.get_input_embeddings().weight
     for p in model.parameters():
         p.requires_grad_(False)
@@ -114,18 +121,27 @@ def train_rows(model, tok, rows: list[int], texts: list[str], steps: int, lr: fl
     hook = emb.register_hook(lambda g: g * mask)
     opt = torch.optim.Adam([emb], lr=lr)
 
-    # one long token stream, cut into fixed windows
-    stream: list[int] = []
-    for t in texts:
-        stream += [bos] + tok.encode(t, add_special_tokens=False)
+    # one long token stream per language, cut into fixed windows
+    def to_stream(ts: list[str]) -> list[int]:
+        out: list[int] = []
+        for t in ts:
+            out += [bos] + tok.encode(t, add_special_tokens=False)
+        return out
+
+    stream = to_stream(texts)
     n_win = len(stream) // seq
+    en_stream = to_stream(en_texts) if en_windows and en_texts else []
+    n_en = len(en_stream) // seq
     rng = np.random.default_rng(0)
     log = []
     model.train()
     t0 = time.time()
     for step in range(1, steps + 1):
-        starts = rng.integers(0, n_win, size=batch) * seq
-        x = torch.tensor([stream[s : s + seq] for s in starts])
+        starts = rng.integers(0, n_win, size=batch - en_windows) * seq
+        wins = [stream[s : s + seq] for s in starts]
+        if en_windows:
+            wins += [en_stream[s : s + seq] for s in rng.integers(0, n_en, size=en_windows) * seq]
+        x = torch.tensor(wins)
         out = model(x, labels=x)
         opt.zero_grad()
         out.loss.backward()
@@ -154,6 +170,10 @@ def main() -> None:
     ap.add_argument("--batch", type=int, default=4)
     ap.add_argument("--n-eval", type=int, default=60, help="passages per domain")
     ap.add_argument("--size", type=int, default=500, help="characters per passage")
+    ap.add_argument("--inits", nargs="+", default=["random", "mean"], choices=["random", "mean"])
+    ap.add_argument("--english-windows", type=int, default=0,
+                    help="windows per batch drawn from English (protect-corpus docs, not eval)")
+    ap.add_argument("--tag", default="", help="suffix for a variant run; reuses base/stale from the main run")
     args = ap.parse_args()
     torch.set_num_threads(16)
     torch.manual_seed(0)
@@ -201,18 +221,26 @@ def main() -> None:
     results: dict[str, dict] = {}
     logs: dict[str, list] = {}
 
+    en_train = load_thai_domain("english_raw", n_docs=300).texts if args.english_windows else None
     model = load_model()
-    results["base"] = evaluate(model, base_tok)
-    print("  base", results["base"], flush=True)
+    main_json = RESULTS / f"embed_adapt_{name}.json"
+    if args.tag and main_json.exists():
+        prev = json.loads(main_json.read_text(encoding="utf-8"))["results"]
+        results["base"], results["stale"] = prev["base"], prev["stale"]
+        print("  base/stale reused from", main_json.name, flush=True)
+    else:
+        results["base"] = evaluate(model, base_tok)
+        print("  base", results["base"], flush=True)
     emb = model.get_input_embeddings().weight
     orig = emb.detach().clone()
 
-    with torch.no_grad():
-        results["stale"] = evaluate(model, new_tok)
-    print("  stale", results["stale"], flush=True)
+    if "stale" not in results:
+        with torch.no_grad():
+            results["stale"] = evaluate(model, new_tok)
+        print("  stale", results["stale"], flush=True)
 
     std = float(orig.std())
-    for init in ("random", "mean"):
+    for init in args.inits:
         with torch.no_grad():
             emb.copy_(orig)
             if init == "random":
@@ -224,7 +252,8 @@ def main() -> None:
         if args.steps:
             logs[f"{init}+tune"] = train_rows(
                 model, new_tok, rows, train, args.steps, args.lr, args.seq, args.batch, bos,
-                log_every=max(1, args.steps // 6), eval_fn=lambda: evaluate(model, new_tok, quick=True))
+                log_every=max(1, args.steps // 6), eval_fn=lambda: evaluate(model, new_tok, quick=True),
+                en_texts=en_train, en_windows=args.english_windows)
             results[f"{init}+tune"] = evaluate(model, new_tok)
             print(f"  {init}+tune", results[f"{init}+tune"], flush=True)
             # confirm nothing but the swapped rows moved
@@ -237,9 +266,10 @@ def main() -> None:
             "steps": args.steps, "lr": args.lr, "seq": args.seq, "batch": args.batch,
             "train_tokens_seen": args.steps * args.seq * args.batch,
             "eval_passages_per_domain": args.n_eval, "passage_chars": args.size,
+            "english_windows_per_batch": args.english_windows, "tag": args.tag,
             "seconds": round(time.time() - t0, 1)}
     RESULTS.mkdir(exist_ok=True)
-    (RESULTS / f"embed_adapt_{name}.json").write_text(
+    (RESULTS / f"embed_adapt_{name}{args.tag}.json").write_text(
         json.dumps({"meta": meta, "results": results, "logs": logs}, indent=2), encoding="utf-8")
 
     md = [f"# Embedding adaptation on BLOOM-560m ({name})\n"]
@@ -248,7 +278,10 @@ def main() -> None:
         f"({len(rows) / len(base_tok):.2%}) were swapped. Bits per character (lower is better) on "
         f"held-out text, {args.n_eval} passages of ~{args.size} characters per domain. Tuning: "
         f"{args.steps} steps x {args.batch} x {args.seq} tokens "
-        f"({meta['train_tokens_seen']:,} tokens), only the swapped rows trainable, Adam lr {args.lr}.\n"
+        f"({meta['train_tokens_seen']:,} tokens), only the swapped rows trainable, Adam lr {args.lr}"
+        + (f"; {args.english_windows} of every {args.batch} training windows are English "
+           f"(protect-corpus documents, never the evaluation text)" if args.english_windows else "")
+        + ".\n"
     )
     md.append("\n| Condition | " + " | ".join(f"{d} BPC" for d in DOMAINS) + " | English BPC | " +
               " | ".join(f"{d} tok/100ch" for d in DOMAINS) + " |")
@@ -256,7 +289,7 @@ def main() -> None:
     for c, r in results.items():
         md.append(f"| {c} | " + " | ".join(f"{r[f'{d}_bpc']:.3f}" for d in DOMAINS) +
                   f" | {r['english_bpc']:.3f} | " + " | ".join(f"{r[f'{d}_tok100']:.1f}" for d in DOMAINS) + " |")
-    (RESULTS / f"EMBED_ADAPT_{name}.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+    (RESULTS / f"EMBED_ADAPT_{name}{args.tag}.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md))
     print(f"done in {time.time() - t0:.0f}s")
 
