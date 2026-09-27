@@ -1,0 +1,18 @@
+{
+  "docs_per_domain": 1200,
+  "parallel_pairs": 3000,
+  "segmenter": "pythainlp/newmm",
+  "tokenizers": [
+    "GPT-4 (cl100k_base)",
+    "GPT-4o (o200k_base)",
+    "Typhoon-7B",
+    "Qwen2.5",
+    "BLOOM",
+    "mT5",
+    "XGLM",
+    "WangchanBERTa",
+    "Mistral-7B"
+  ],
+  "skipped": [],
+  "seconds": 272.6
+}
