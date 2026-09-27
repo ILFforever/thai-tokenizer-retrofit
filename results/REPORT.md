@@ -149,7 +149,9 @@ split, so it compares one model under two tokenizers fairly.
 
 ## 6. Method
 
-### 6.1 Decomposing the penalty (Week 2, `src/pretok.py`, `src/run_decomposition.py`)
+### 6.1 Decomposing the penalty (Week 2)
+
+*Source: `src/pretok.py`, `src/run_decomposition.py`.*
 
 A BPE tokenizer works in two stages: a *pre-tokenizer* cuts the text into
 pieces (with a regex, or on whitespace), then the *vocabulary* encodes each
@@ -172,7 +174,9 @@ original floor - one token per cluster - was dropped because good Thai
 tokenizers already use *fewer* tokens than there are clusters, which made the
 plan's share formula negative.
 
-### 6.2 Candidates (Week 3, `src/candidates.py`)
+### 6.2 Candidates (Week 3)
+
+*Source: `src/candidates.py`.*
 
 Thai training text was segmented into `newmm` words and Thai Character
 Clusters (TCC). Frequencies were computed per million characters in each
@@ -180,7 +184,9 @@ domain and averaged, so each domain carries equal weight regardless of size.
 Each unit was scored by `savings(u) = freq(u) × (base_tokens(u) − 1)`, and the
 projected reduction was measured on the held-out evaluation slice per domain.
 
-### 6.3 The retrofit (Week 4, `src/retrofit.py`)
+### 6.3 The retrofit (Week 4)
+
+*Source: `src/retrofit.py`.*
 
 **Freeing slots.** A vocabulary entry may be freed only if (a) it is never
 produced when encoding the protect corpora - raw English Wikipedia (line
@@ -218,7 +224,9 @@ English text plus raw Python; this cut Mistral's free slots from 4,471 to
 2,483. The same protect set is also offered without code (the "English-only"
 profile, up to 4,339 slots) to show what the code protection costs Thai.
 
-### 6.4 Evaluation (Week 5, `src/evaluate.py`, `src/verify_retrofit.py`)
+### 6.4 Evaluation (Week 5)
+
+*Source: `src/evaluate.py`, `src/verify_retrofit.py`.*
 
 Every tokenizer is scored on held-out text only: the Thai evaluation slice per
 domain, the OPUS-100 pairs, and 4,000 raw English Wikipedia documents disjoint
@@ -227,7 +235,9 @@ documents (1,000 resamples). Acceptance follows the plan: Thai tokens down at
 least 15% in every domain, English within 1%, effective context up at least
 15%.
 
-### 6.5 Embedding adaptation (Week 6, `src/embed_adapt.py`, `src/qwen_repair.py`)
+### 6.5 Embedding adaptation (Week 6)
+
+*Source: `src/embed_adapt.py`, `src/qwen_repair.py`.*
 
 On BLOOM-560m (CPU) the retrofit's swapped rows were set in four ways - left
 stale, random (as Csaki et al. did), mean of the base-token embeddings the new
@@ -255,7 +265,9 @@ Re-running the Week 1 harness reproduced all 36 result rows exactly
   so the informal-Thai premium appears once a tokenizer can compress Thai at
   all; a character-level tokenizer pays the same everywhere.
 
-### 7.2 Where the penalty comes from (`DECOMPOSITION.md`)
+### 7.2 Where the penalty comes from
+
+*Source: `DECOMPOSITION.md`.*
 
 | Tokenizer | Penalty | Pre-tokenizer cuts consonant\|mark | Regex fix alone | Best vocabulary alone | Pre-tok share of excess |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -291,7 +303,9 @@ expensive fixable open-weight tokenizer after BLOOM, and Typhoon is Mistral-7B
 comparison. BLOOM (250k entries) is the secondary target because its 560M
 checkpoint runs on a CPU for the embedding experiment.
 
-### 7.3 What the candidates promise (`CANDIDATES.md`)
+### 7.3 What the candidates promise
+
+*Source: `CANDIDATES.md`.*
 
 If each of the top-N `newmm` words became a single token, Mistral's held-out
 Thai tokens would fall by about 37% at N = 1,000 and 58% at N = 5,000, with
@@ -309,7 +323,9 @@ pieces that are shared by thousands of words (`ที่`, `การ`) and can 
 boundaries (`เมื่อวันที่`), so the real retrofit beat it at every budget -
 at 500 slots, 47% fewer tokens on Wikipedia against a projected 28%.
 
-### 7.4 The retrofit (`RETROFIT_CHECKS.md`, `EVALUATION.md`)
+### 7.4 The retrofit
+
+*Source: `RETROFIT_CHECKS.md`, `EVALUATION.md`.*
 
 **How many slots can Mistral free?** Of its 32,000 entries, raw English
 Wikipedia uses 26,741, Python code 23,471 and the Thai training text 13,582;
@@ -381,12 +397,29 @@ margin.
   `แหล่งข้อมูลอื่น`) where the equal-weight vocabulary has everyday words
   (`ไม่ได้`, `วันนี้`, `ตอนนี้`, `แบบนี้`, `ลูกค้า`).
 
-**BLOOM**, the secondary target, reaches the same picture with more room
-(170,347 freeable entries): see `BASELINE_after.md`.
+**BLOOM**, the secondary target, has far more room: of its 250,680 entries
+only 77,741 are used by English, code or Thai, and 170,347 can be freed. From
+`BASELINE_after.md` (the Week 1 harness re-run with every retrofit added):
 
-<!-- RESULTS-BLOOM -->
+| Tokenizer | Swapped | Wikipedia | News | Social | Penalty |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| BLOOM (base) | - | 94.9 | 98.9 | 93.9 | 4.25x |
+| BLOOM + 1,000 | 0.4% | 44.1 | 44.1 | 46.2 | 1.91x |
+| BLOOM + 3,219 | 1.3% | 33.4 | 33.3 | 36.1 | 1.50x |
+| BLOOM + 5,000 | 2.0% | 30.4 | 30.1 | 33.2 | 1.38x |
+| BLOOM + 10,000 | 4.0% | 26.7 | 26.2 | 29.4 | **1.22x** |
 
-### 7.5 Qwen2.5's Thai vocabulary it cannot use (`QWEN_UNREACHABLE.md`)
+At 10,000 slots - 4% of its vocabulary - BLOOM's Thai penalty falls below
+Typhoon's (1.26x). All four BLOOM retrofits pass every Week 4 check,
+including all top-100 candidates as single tokens from 3,219 slots up.
+
+**Cluster breaks.** The share of Thai clusters split by the final tokens
+falls from 22% to 3.1% (Wikipedia) for Mistral at 2,483 slots - the same as
+Typhoon (3.1%) - and from 39% to 3.1% for BLOOM at 10,000.
+
+### 7.5 Qwen2.5's Thai vocabulary it cannot use
+
+*Source: `QWEN_UNREACHABLE.md`.*
 
 Qwen2.5's vocabulary contains 2,570 Thai entries. **1,578 of them (61%) can
 never be produced by its own pre-tokenizer**, because each contains a
@@ -424,7 +457,7 @@ published tokenizers is **identical** under both segmenters in all three
 domains (Kendall's τ = 1.00), and the retrofit's relative gain is the same.
 Per-character cost remains the headline because it needs no segmenter at all.
 
-### 8.2 Register: the retrofit widens the formal/informal gap - as every Thai-capable tokenizer does
+### 8.2 Register: the retrofit widens the formal/informal gap, like every Thai-capable tokenizer
 
 Spread = social tok/100ch ÷ mean of Wikipedia and news.
 
