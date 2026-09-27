@@ -404,8 +404,12 @@ slots, English-only profile) the fixed-size retrofit is cheaper than Typhoon
 on all three domains (−66.3 / −68.6 / −63.0% vs −64.9 / −67.4 / −61.6%) and
 ties it on the matched-content penalty (1.26x), without growing the
 embedding matrix. Under the strict profile, with 736 fewer slots, it is
-within 0.5-0.8 points of Typhoon. The comparison is of tokenizers only:
-Typhoon also continued pretraining its model, which this project does not.
+within 0.5-0.8 points of Typhoon. Paired on the same documents
+(`vs_typhoon_bootstrap.json`, 2,000 resamples), the 3,219-slot retrofit needs
+**3.7-4.2% fewer tokens than Typhoon** in every domain and the strict 2,483-slot
+retrofit **1.3-2.5% more**; every one of these intervals excludes zero. The
+comparison is of tokenizers only: Typhoon also continued pretraining its
+model, which this project does not.
 
 **Week 5 acceptance: all pass.** Every budget clears all three targets in
 every domain (Thai ≥15% fewer, English within 1%, context ≥ +15%), by a wide
