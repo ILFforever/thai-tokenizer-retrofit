@@ -1,0 +1,896 @@
+<title>Thai Token Retrofit</title>
+<meta name="description" content="Making Mistral-7B's tokenizer cheap for Thai at fixed vocabulary size: what it saves, what it costs, what the model needs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f5f2;
+  --surface: #fcfcfb;
+  --ink: #111512;
+  --ink-2: #4b504c;
+  --muted: #7d8179;
+  --rule: #dfe1da;
+  --axis: #c3c5bc;
+  --accent: #2a78d6;
+  --accent-soft: #dce9f9;
+  --typhoon: #eb6834;
+  --base: #6f746d;
+  --other: #c9ccc3;
+  --aqua: #1baf7a;
+  --violet: #4a3aa7;
+  --yellow: #eda100;
+  --magenta: #e87ba4;
+  --green: #008300;
+  --red: #e34948;
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warn: #fab219;
+  --crit: #d03b3b;
+  --chip: #eceee8;
+  --chip-ink: #111512;
+  --shadow: 0 1px 0 rgba(17,21,18,.04), 0 1px 3px rgba(17,21,18,.06);
+  --display: "Bai Jamjuree", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", "Noto Sans Thai", "Leelawadee UI", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e100e;
+    --surface: #181a18;
+    --ink: #f1f3ef;
+    --ink-2: #c3c5bc;
+    --muted: #8d9189;
+    --rule: #2c2f2b;
+    --axis: #3a3d38;
+    --accent: #3987e5;
+    --accent-soft: #16263b;
+    --typhoon: #d95926;
+    --base: #9a9e96;
+    --other: #4a4d47;
+    --aqua: #199e70;
+    --violet: #9085e9;
+    --yellow: #c98500;
+    --magenta: #d55181;
+    --green: #0ca30c;
+    --red: #e66767;
+    --good-ink: #0ca30c;
+    --chip: #242723;
+    --chip-ink: #f1f3ef;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e100e;
+  --surface: #181a18;
+  --ink: #f1f3ef;
+  --ink-2: #c3c5bc;
+  --muted: #8d9189;
+  --rule: #2c2f2b;
+  --axis: #3a3d38;
+  --accent: #3987e5;
+  --accent-soft: #16263b;
+  --typhoon: #d95926;
+  --base: #9a9e96;
+  --other: #4a4d47;
+  --aqua: #199e70;
+  --violet: #9085e9;
+  --yellow: #c98500;
+  --magenta: #d55181;
+  --green: #0ca30c;
+  --red: #e66767;
+  --good-ink: #0ca30c;
+  --chip: #242723;
+  --chip-ink: #f1f3ef;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.6 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 0 64px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.02; font-weight: 700; }
+h2 { font-size: clamp(22px, 3vw, 28px); line-height: 1.15; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; letter-spacing: 0; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--mono); font-size: 0.92em; }
+.eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.ink2 { color: var(--ink-2); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+header.hero { padding-block: 48px 28px; display: grid; gap: 18px; }
+.hero .lede { font-size: 18px; line-height: 1.55; color: var(--ink-2); max-width: 70ch; }
+.hero .lede strong { color: var(--ink); font-weight: 600; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
+.kpi { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px 16px; display: grid; gap: 4px; align-content: start; }
+.kpi .v { font: 700 30px/1.1 var(--display); letter-spacing: -0.02em; }
+.kpi .v small { font-size: 16px; font-weight: 600; color: var(--muted); }
+.kpi .l { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.weeks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--mono); padding: 6px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap; }
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
+.pill.warn .dot { background: var(--warn); }
+.pill.crit .dot { background: var(--crit); }
+.pill.info .dot { background: var(--accent); }
+
+/* nav */
+nav.toc { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--rule); margin-inline: -20px; padding: 10px 20px; overflow-x: auto; white-space: nowrap; scrollbar-width: thin; }
+nav.toc a { display: inline-block; font: 500 13px/1 var(--body); color: var(--ink-2); text-decoration: none; padding: 7px 10px; border-radius: 6px; }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--surface); color: var(--ink); outline: none; box-shadow: inset 0 0 0 1px var(--rule); }
+
+/* sections */
+section { padding-block: 44px 8px; display: grid; gap: 18px; scroll-margin-top: 56px; }
+section > header { display: grid; gap: 8px; }
+.tldr { font-size: 16.5px; color: var(--ink); max-width: 72ch; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px 16px; box-shadow: var(--shadow); display: grid; gap: 14px; min-width: 0; }
+.card > .head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; justify-content: space-between; }
+.card .caption { font-size: 13px; color: var(--muted); max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.note { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; color: var(--ink-2); max-width: 72ch; }
+.note strong { color: var(--ink); }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 74ch; }
+
+/* legend */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.sw.line { height: 3px; border-radius: 2px; }
+.sw.ring { border-radius: 50%; background: transparent !important; border: 2px solid; }
+.sw.dot { border-radius: 50%; }
+.sw.diamond { transform: rotate(45deg) scale(.8); border-radius: 1px; }
+
+/* html bar charts */
+.bars { display: grid; gap: 6px; }
+.bar-row { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) 64px; align-items: center; gap: 10px; font-size: 13px; }
+.bar-row .lab { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-row .lab.strong { color: var(--ink); font-weight: 600; }
+.bar-row .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; }
+.track { position: relative; height: 18px; }
+.track .fill { position: absolute; left: 0; top: 2px; bottom: 2px; border-radius: 0 4px 4px 0; min-width: 2px; }
+.track .ref { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 1.5px dashed var(--ink-2); }
+.track .reflab { position: absolute; top: -18px; transform: translateX(-50%); font: 500 11px/1 var(--mono); color: var(--ink-2); white-space: nowrap; }
+.axisline { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) 64px; gap: 10px; font: 11px/1 var(--mono); color: var(--muted); }
+.axisline .ticks { position: relative; height: 14px; border-top: 1px solid var(--axis); }
+.axisline .ticks span { position: absolute; top: 4px; transform: translateX(-50%); }
+
+.bars.stacked { gap: 2px; }
+.bars.stacked .bar-row { grid-template-columns: minmax(0, 1fr) 48px; grid-template-areas: "lab lab" "track val"; row-gap: 1px; }
+.bars.stacked .bar-row .lab { grid-area: lab; }
+.bars.stacked .bar-row .track { grid-area: track; }
+.bars.stacked .bar-row .val { grid-area: val; }
+
+/* dot plot */
+.dots .track { height: 22px; }
+.dots .track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--rule); }
+.dots .seg { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--axis); }
+.dots .mk { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface); }
+.dots .mk.ring { background: var(--surface) !important; border: 2.5px solid; }
+.dots .mk.diamond { border-radius: 2px; transform: rotate(45deg) scale(.85); }
+
+/* token chips */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tabs button { font: 500 13px/1 var(--body); padding: 8px 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sentence { font-size: 20px; line-height: 1.5; font-family: var(--body); }
+.tokrows { display: grid; gap: 14px; }
+.tokrow { display: grid; grid-template-columns: minmax(150px, 210px) minmax(0, 1fr); gap: 12px; align-items: start; }
+.tokrow .who { font-size: 13px; color: var(--ink-2); padding-top: 4px; display: grid; gap: 2px; }
+.tokrow .who b { font: 700 22px/1 var(--display); color: var(--ink); }
+.tokrow.me .who b { color: var(--accent); }
+.tokrow.ty .who b { color: var(--typhoon); }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.chip { font: 400 16px/1 var(--body); padding: 6px 5px 5px; border-radius: 4px; background: var(--chip); color: var(--chip-ink); white-space: pre; min-width: 10px; text-align: center; }
+.chip.sp { color: var(--muted); }
+.chip.part { background: repeating-linear-gradient(135deg, var(--chip) 0 3px, color-mix(in srgb, var(--crit) 22%, var(--chip)) 3px 5px); }
+.tokrow.me .chip { background: var(--accent-soft); }
+.tokrow.me .chip.part { background: repeating-linear-gradient(135deg, var(--accent-soft) 0 3px, color-mix(in srgb, var(--crit) 22%, var(--accent-soft)) 3px 5px); }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; counter-reset: step; }
+.step { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.step .n { font: 600 12px/1 var(--mono); color: var(--accent); letter-spacing: .06em; }
+.step .big { font: 700 24px/1.1 var(--display); }
+.step p { font-size: 13.5px; color: var(--ink-2); }
+
+/* tables */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 12px/1.3 var(--mono); color: var(--muted); letter-spacing: .02em; text-transform: uppercase; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+tr.me td { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+tr.me td:first-child { font-weight: 600; }
+details { font-size: 13px; }
+details summary { cursor: pointer; color: var(--muted); font-weight: 500; }
+details[open] summary { margin-bottom: 8px; }
+.delta-good { color: var(--good-ink); font-weight: 500; }
+.delta-bad { color: var(--crit); font-weight: 500; }
+
+/* svg charts */
+.svgchart { width: 100%; height: auto; display: block; overflow: visible; }
+.svgchart text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.svgchart .title { font-family: var(--display); font-size: 14px; font-weight: 600; fill: var(--ink); }
+.svgchart .grid { stroke: var(--rule); stroke-width: 1; }
+.svgchart .axis { stroke: var(--axis); stroke-width: 1; }
+.svgchart .lbl { fill: var(--ink-2); font-size: 11px; }
+.hit { fill: transparent; cursor: default; }
+
+/* compare table (vs typhoon) */
+.vs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.vs .col { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; }
+.vs .col.me { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.vs .col h3 { display: flex; align-items: center; gap: 8px; }
+.vs dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13.5px; }
+.vs dt { color: var(--ink-2); }
+.vs dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* word clouds (lists) */
+.words { display: flex; flex-wrap: wrap; gap: 5px; }
+.words span { font-size: 15px; padding: 3px 8px; border-radius: 999px; background: var(--chip); }
+.words.me span { background: var(--accent-soft); }
+
+/* corrections */
+.fix { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px 14px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.fix:last-child { border-bottom: 0; }
+.fix .tag { font: 600 11px/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; padding-top: 3px; }
+.fix .tag.wrong { color: var(--crit); }
+.fix .tag.fixed { color: var(--good-ink); }
+.fix .tag.narrow { color: var(--yellow); }
+.fix p { font-size: 14px; }
+.fix p + p { color: var(--ink-2); margin-top: 4px; }
+
+/* tooltip */
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); font: 12.5px/1.45 var(--body); padding: 8px 10px; border-radius: 6px; max-width: 280px; opacity: 0; transition: opacity .08s; }
+#tip b { font-weight: 600; }
+[data-tip] { cursor: default; }
+
+footer { padding-block: 40px 0; color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+
+@media (max-width: 860px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid3, .vs { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .wrap { padding-inline: 16px; }
+  nav.toc { margin-inline: -16px; padding-inline: 16px; }
+  .grid2 { grid-template-columns: 1fr; }
+  .bar-row, .axisline { grid-template-columns: minmax(92px, 118px) minmax(0, 1fr) 52px; gap: 8px; }
+  .tokrow { grid-template-columns: 1fr; gap: 6px; }
+  .tokrow .who { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
+  .fix { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; }
+  .sentence { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="tip" role="tooltip"></div>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">CEDT · Chulalongkorn · AI course project · Tanabodhi Mukura · September 2026</div>
+    <h1>Thai Token Retrofit</h1>
+    <p class="lede" id="lede"></p>
+    <div class="kpis" id="kpis"></div>
+    <div class="weeks" id="weeks"></div>
+  </header>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#problem">Problem</a><a href="#diagnosis">Diagnosis</a><a href="#example">One sentence</a><a href="#method">How it works</a><a href="#results">Results</a><a href="#typhoon">vs Typhoon</a><a href="#fairness">Fairness</a><a href="#cost">Who pays</a><a href="#rows">Embedding rows</a><a href="#qwen">Qwen</a><a href="#corrections">Corrections</a><a href="#limits">Limits</a>
+  </nav>
+
+  <section id="problem">
+    <header>
+      <div class="eyebrow">1 · The problem</div>
+      <h2>Thai costs up to four times more tokens than English</h2>
+      <p class="tldr">On 3,000 sentence pairs with the same meaning in both languages, most tokenizers need far more tokens for the Thai side. The worst cases are open-weight models - the only ones whose tokenizer a deployment can change.</p>
+    </header>
+    <div class="card">
+      <div class="head"><h3>Thai penalty: Thai tokens per character ÷ English tokens per character</h3><div class="legend" id="lg-penalty"></div></div>
+      <div id="ch-penalty"></div>
+      <p class="caption">OPUS-100 English-Thai pairs (206k Thai, 230k English characters). 1.0× = Thai costs the same as English for the same content. WangchanBERTa is Thai-only and handles English badly, so its figure is below 1.</p>
+    </div>
+  </section>
+
+  <section id="diagnosis">
+    <header>
+      <div class="eyebrow">2 · Diagnosis</div>
+      <h2>Two different faults, and only one of them is in the vocabulary</h2>
+      <p class="tldr">A tokenizer first cuts text into pieces with a pattern (the pre-tokenizer), then spells each piece with its vocabulary. No token can cross a pre-tokenizer cut. GPT-4's and Qwen2.5's pattern matches letters with <code>\p{L}+</code>, and Thai vowel and tone marks are <code>\p{M}</code> - so every mark is cut away from its consonant before the vocabulary is even consulted.</p>
+    </header>
+    <div class="card">
+      <div class="head"><h3>What each fix could reach, as a Thai penalty</h3><div class="legend" id="lg-decomp"></div></div>
+      <div id="ch-decomp"></div>
+      <p class="caption">"Regex fix" keeps the tokenizer's own vocabulary but lets marks stay with their consonant. "Best vocabulary" plugs a strong Thai vocabulary (XGLM's) into the tokenizer's own pre-token pieces - the most any vocabulary retrofit could achieve there.</p>
+    </div>
+    <div class="grid3" id="diag-notes"></div>
+  </section>
+
+  <section id="example">
+    <header>
+      <div class="eyebrow">3 · One sentence</div>
+      <h2>The same Thai sentence, cut by five tokenizers</h2>
+      <p class="tldr">Each box is one token. Striped boxes hold only part of a Thai character's three bytes. Real sentences from the held-out evaluation text.</p>
+    </header>
+    <div class="card">
+      <div class="tabs" role="tablist" id="ex-tabs"></div>
+      <div class="sentence" id="ex-sentence"></div>
+      <div class="tokrows" id="ex-rows"></div>
+    </div>
+  </section>
+
+  <section id="method">
+    <header>
+      <div class="eyebrow">4 · How the retrofit works</div>
+      <h2>Free slots nobody uses, fill them with Thai, keep the size</h2>
+      <p class="tldr">Mistral-7B was chosen because all of its Thai damage is in the vocabulary, and because Typhoon is the same model with its vocabulary expanded - a like-for-like comparison.</p>
+    </header>
+    <div class="steps" id="steps"></div>
+    <div class="note" id="method-note"></div>
+  </section>
+
+  <section id="results">
+    <header>
+      <div class="eyebrow">5 · Results</div>
+      <h2>Thai cost falls by about two thirds; English does not move</h2>
+      <p class="tldr" id="results-tldr"></p>
+    </header>
+    <div class="card">
+      <div class="head"><h3>Fewer Thai tokens than base Mistral, by budget (held-out text)</h3><div class="legend" id="lg-budget"></div></div>
+      <div class="grid3" id="ch-budget"></div>
+      <p class="caption">Solid line: strict profile (English and code protected; at most 2,483 slots). Dashed: English-only profile, which frees up to 4,339 slots by not protecting code. Dotted grey: the Week 3 projection, which assumed each slot buys one whole word. The retrofit beats it at every budget because one piece (such as ที่ or การ) serves thousands of words and pieces can span word boundaries. Diamond: Typhoon, which <em>added</em> 3,219 entries instead.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Tokens per 100 Thai characters</h3></div>
+        <div class="tablewrap" id="tb-domains"></div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>English, before and after</h3></div>
+        <div id="english-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="typhoon">
+    <header>
+      <div class="eyebrow">6 · Against Typhoon</div>
+      <h2>Same base model, same budget: fixed size matches expansion</h2>
+      <p class="tldr">Typhoon grew Mistral-7B's vocabulary from 32,000 to 35,219 entries. The retrofit keeps 32,000 and swaps instead. This compares tokenizers only - Typhoon also continued pretraining its model.</p>
+    </header>
+    <div class="vs" id="vs"></div>
+  </section>
+
+  <section id="fairness">
+    <header>
+      <div class="eyebrow">7 · Fairness</div>
+      <h2>Informal Thai gains less - and loses more if you leave it out</h2>
+      <p class="tldr">Base Mistral spells Thai one character at a time, so it charges formal and informal writing the same. Every tokenizer that compresses Thai compresses formal text more. The retrofit's gap matches Typhoon's; a vocabulary trained on formal text alone nearly doubles it.</p>
+    </header>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Informal ÷ formal cost (1.0 = same)</h3></div>
+        <div id="ch-spread"></div>
+        <p class="caption">Formal = mean of Wikipedia and news; informal = social posts (WiseSight).</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>What each vocabulary spends its slots on</h3></div>
+        <div id="words-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cost">
+    <header>
+      <div class="eyebrow">8 · Who pays</div>
+      <h2>The freed slots belonged to other languages</h2>
+      <p class="tldr">"Unused" means unused by English, code and Thai. The slots come mostly from Cyrillic, Chinese, Japanese and Korean pieces, so those languages get more expensive. For a Thai-and-English deployment that price is zero; for a multilingual one it is not.</p>
+    </header>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Extra tokens for other text</h3><div class="legend" id="lg-coll"></div></div>
+        <div id="ch-coll"></div>
+        <p class="caption">200 documents per language, first 3,000 characters; Python from codeparrot-clean-valid.</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Where the 2,483 slots came from</h3></div>
+        <div id="ch-freed"></div>
+        <p class="caption" id="freed-caption"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="rows">
+    <header>
+      <div class="eyebrow">9 · Embedding rows</div>
+      <h2>"No retraining" needs a footnote: the swapped rows must be re-set</h2>
+      <p class="tldr" id="rows-tldr"></p>
+    </header>
+    <div id="embed-box"></div>
+  </section>
+
+  <section id="qwen">
+    <header>
+      <div class="eyebrow">10 · Qwen2.5</div>
+      <h2>1,578 Thai words in the vocabulary that the model has never seen</h2>
+      <p class="tldr">Qwen2.5 already has Thai words in its vocabulary, but its own pre-tokenizer can never produce them. Fixing the pattern would cut Thai tokens by about 40% - but those rows were never trained.</p>
+    </header>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Embedding row length (median)</h3></div>
+        <div id="ch-qnorm"></div>
+        <p class="caption">All 1,578 unreachable rows sit on the same point as the 271 padding rows no token uses (within 0.1%). Trained rows are longer and spread out.</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Bits per character on Thai (lower is better)</h3><div class="legend" id="lg-qbpc"></div></div>
+        <div id="ch-qbpc"></div>
+        <p class="caption" id="qbpc-caption">Qwen2.5-0.5B, 50 passages of ~600 characters per domain. Bits per character does not depend on how the text is split, so the tokenizers compare fairly.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="corrections">
+    <header>
+      <div class="eyebrow">11 · Corrections</div>
+      <h2>What the Week 1 notes got wrong</h2>
+      <p class="tldr">Every earlier claim was re-checked against the data or the primary source before building on it.</p>
+    </header>
+    <div class="card" id="fixes"></div>
+  </section>
+
+  <section id="limits">
+    <header>
+      <div class="eyebrow">12 · Limits and reproduction</div>
+      <h2>What this does not show</h2>
+    </header>
+    <div class="grid2">
+      <div class="card"><ul class="plain" id="limits-list"></ul></div>
+      <div class="card">
+        <h3>Reproduce</h3>
+        <div class="tablewrap"><table id="repro"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>Every number on this page is read from <code>results/</code> in the project repository, produced by the scripts listed above. Public data and public models only; CPU only.</div>
+    <div id="foot-date"></div>
+  </footer>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const DOMAINS = ["wikipedia", "news", "social"];
+const DNAME = { wikipedia: "Wikipedia", news: "News", social: "Social" };
+const $ = (s, r = document) => r.querySelector(s);
+const h = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else if (k === "html") e.innerHTML = v;
+    else e.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+};
+const S = (tag, attrs = {}, ...kids) => {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, v);
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+};
+const pct = (x, d = 1) => (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(d) + "%";
+const fx = (x, d = 2) => x.toFixed(d) + "×";
+const fmt = (x, d = 1) => x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const int = x => Math.round(x).toLocaleString("en-US");
+const cssv = n => `var(--${n})`;
+
+/* ---------- tooltip ---------- */
+const tip = $("#tip");
+document.addEventListener("pointermove", ev => {
+  const t = ev.target.closest && ev.target.closest("[data-tip]");
+  if (!t) { tip.style.opacity = 0; return; }
+  tip.innerHTML = t.getAttribute("data-tip");
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px"; tip.style.opacity = 1;
+});
+document.addEventListener("pointerleave", () => (tip.style.opacity = 0));
+
+/* ---------- lookups ---------- */
+const EV = Object.fromEntries((DATA.evaluation || []).map(r => [r.tokenizer, r]));
+const EV_BASE = EV["Mistral-7B (base)"];
+const strictName = Object.keys(EV).filter(k => /^Mistral-7B \+TH\d+$/.test(k)).sort((a, b) => +a.match(/\d+$/) - +b.match(/\d+$/)).pop();
+const STRICT = EV[strictName];
+const STRICT_K = +strictName.match(/\d+$/)[0];
+const enonlyNames = Object.keys(EV).filter(k => /-enonly$/.test(k));
+const EQ = EV["Mistral-7B +TH3219-enonly"];
+const MAXEN = enonlyNames.map(k => EV[k]).sort((a, b) => a.penalty - b.penalty)[0];
+const TY = EV["Typhoon-7B"];
+const ci = s => (typeof s === "string" ? s.split("..").map(Number) : s);
+
+/* ---------- header ---------- */
+(function header() {
+  const d = DOMAINS.map(k => STRICT[`th_${k}_change`]);
+  $("#lede").innerHTML =
+    `Thai costs Mistral-7B about <strong>${fx(EV_BASE.penalty)}</strong> as many tokens as the same meaning in English. ` +
+    `Swapping <strong>${int(STRICT_K)}</strong> of its 32,000 vocabulary slots - entries that English, code and Thai never use - for Thai pieces ` +
+    `cuts Thai cost by <strong>${Math.round(-Math.max(...d) * 100)}-${Math.round(-Math.min(...d) * 100)}%</strong>, leaves English within ` +
+    `<strong>${pct(STRICT.en_wikipedia_change, 2)}</strong>, and keeps the vocabulary the same size. The catch: the swapped embedding rows must be re-set before a model can use them.`;
+  const k = [
+    [pct(STRICT.th_news_change, 0), `fewer Thai tokens on news (${pct(STRICT.th_wikipedia_change, 0)} Wikipedia, ${pct(STRICT.th_social_change, 0)} social)`],
+    [`${EV_BASE.penalty.toFixed(2)}<small>×</small> → ${STRICT.penalty.toFixed(2)}<small>×</small>`, "Thai penalty against English, on matched sentences"],
+    [pct(STRICT.en_wikipedia_change, 2), "change in English tokens (held-out Wikipedia)"],
+    [`${(STRICT_K / 32000 * 100).toFixed(1)}%`, `of the vocabulary swapped (${int(STRICT_K)} rows); size stays 32,000`],
+  ];
+  $("#kpis").append(...k.map(([v, l]) => h("div", { class: "kpi" }, h("div", { class: "v", html: v }), h("div", { class: "l" }, l))));
+  const weeks = [
+    ["Wk 2 decomposition", ""], ["Wk 3 candidates", ""], ["Wk 4 retrofit checks", ""],
+    ["Wk 5 all targets met", ""], ["Wk 6 robustness", ""], ["Wk 7 report drafted", "info"],
+  ];
+  $("#weeks").append(...weeks.map(([t, c]) => h("span", { class: "pill " + c }, h("span", { class: "dot" }), t)));
+})();
+
+/* ---------- generic HTML bar chart ---------- */
+function barChart(host, rows, { max, ref, refLabel, fmtV, ticks, fmtT, stacked }) {
+  const box = h("div", { class: "bars" + (stacked ? " stacked" : "") });
+  for (const r of rows) {
+    const track = h("div", { class: "track" });
+    track.append(h("div", { class: "fill", style: { width: (r.value / max * 100) + "%", background: r.color }, "data-tip": r.tip || null }));
+    if (ref != null && r === rows[0]) {
+      track.append(h("div", { class: "ref", style: { left: (ref / max * 100) + "%" } }), h("div", { class: "reflab", style: { left: (ref / max * 100) + "%" } }, refLabel || ""));
+    } else if (ref != null) track.append(h("div", { class: "ref", style: { left: (ref / max * 100) + "%" } }));
+    box.append(h("div", { class: "bar-row" }, h("div", { class: "lab" + (r.strong ? " strong" : ""), title: r.label }, r.label), track, h("div", { class: "val" }, fmtV(r.value))));
+  }
+  if (ticks) {
+    const t = h("div", { class: "ticks" });
+    for (const v of ticks) t.append(h("span", { style: { left: (v / max * 100) + "%" } }, fmtT ? fmtT(v) : v));
+    box.append(h("div", { class: "axisline" }, h("div"), t, h("div")));
+  }
+  host.append(box);
+  if (ref != null) box.style.marginTop = "18px";
+}
+function legend(host, items) {
+  host.append(...items.map(([label, color, kind]) => h("span", {}, h("span", { class: "sw " + (kind || ""), style: kind === "ring" ? { borderColor: color } : { background: color } }), label)));
+}
+
+/* ---------- 1. penalty ---------- */
+(function penalty() {
+  const base = DATA.baseline.map(r => ({ label: r.tokenizer, value: r.thai_penalty_ratio }));
+  base.push({ label: `This project (+${int(STRICT_K)} slots)`, value: STRICT.penalty, me: true });
+  base.sort((a, b) => b.value - a.value);
+  const color = r => r.me ? cssv("accent") : r.label.startsWith("Typhoon") ? cssv("typhoon") : r.label === "Mistral-7B" ? cssv("base") : cssv("other");
+  barChart($("#ch-penalty"), base.map(r => ({ ...r, color: color(r), strong: r.me || r.label === "Mistral-7B",
+    tip: `<b>${r.label}</b><br>${fx(r.value)} Thai tokens per character, relative to English` })),
+    { max: 4.5, ref: 1, refLabel: "parity 1.0×", fmtV: v => fx(v), ticks: [0, 1, 2, 3, 4], fmtT: v => v + "×" });
+  legend($("#lg-penalty"), [["this project", cssv("accent")], ["Mistral-7B (base)", cssv("base")], ["Typhoon-7B", cssv("typhoon")], ["other tokenizers", cssv("other")]]);
+})();
+
+/* ---------- 2. decomposition ---------- */
+(function decomp() {
+  const rows = DATA.decomposition.filter(r => r.domain === "parallel_th");
+  const pen = (r, k) => (r[k] / r.n_chars) / (r.T_english / r.english_chars);
+  rows.sort((a, b) => pen(b, "T_act") - pen(a, "T_act"));
+  const max = 4.5;
+  const box = h("div", { class: "bars dots" });
+  for (const r of rows) {
+    const a = pen(r, "T_act"), g = pen(r, "T_regex"), v = pen(r, "T_vocab");
+    const track = h("div", { class: "track" });
+    const lo = Math.min(a, g, v), hi = Math.max(a, g, v);
+    track.append(h("div", { class: "seg", style: { left: (lo / max * 100) + "%", width: ((hi - lo) / max * 100) + "%" } }));
+    track.append(h("div", { class: "ref", style: { left: (1 / max * 100) + "%" } }));
+    const cut = Math.round(r.pretok_cut_rate * 100);
+    const t0 = `<b>${r.tokenizer}</b><br>Pre-tokenizer cuts ${cut}% of consonant|mark joins`;
+    track.append(h("div", { class: "mk", style: { left: (v / max * 100) + "%", background: cssv("aqua") }, "data-tip": `${t0}<br>Best vocabulary, own pre-tokenizer: <b>${fx(v)}</b>` }));
+    track.append(h("div", { class: "mk ring", style: { left: (g / max * 100) + "%", borderColor: cssv("violet") }, "data-tip": `${t0}<br>Regex fix, own vocabulary: <b>${fx(g)}</b>` }));
+    track.append(h("div", { class: "mk", style: { left: (a / max * 100) + "%", background: cssv("ink") }, "data-tip": `${t0}<br>As shipped: <b>${fx(a)}</b>` }));
+    const blocked = r.pretok_cut_rate > 0.01;
+    box.append(h("div", { class: "bar-row" }, h("div", { class: "lab" + (blocked ? " strong" : "") }, r.tokenizer + (blocked ? " ✂" : "")), track, h("div", { class: "val" }, fx(a))));
+  }
+  const t = h("div", { class: "ticks" });
+  for (const v of [0, 1, 2, 3, 4]) t.append(h("span", { style: { left: (v / max * 100) + "%" } }, v + "×"));
+  box.append(h("div", { class: "axisline" }, h("div"), t, h("div")));
+  $("#ch-decomp").append(box);
+  legend($("#lg-decomp"), [["as shipped", cssv("ink"), "dot"], ["regex fix only", cssv("violet"), "ring"], ["best vocabulary only", cssv("aqua"), "dot"], ["✂ pre-tokenizer cuts every mark", "transparent"]]);
+  const q = rows.find(r => r.tokenizer === "Qwen2.5"), g4 = rows.find(r => r.tokenizer.startsWith("GPT-4 (")), m = rows.find(r => r.tokenizer === "Mistral-7B");
+  const notes = [
+    ["GPT-4 (cl100k): needs both", `Its vocabulary was learned behind the broken pattern, so fixing the pattern alone changes nothing (${fx(pen(g4, "T_act"))} → ${fx(pen(g4, "T_regex"))}). Even a perfect vocabulary stops at ${fx(pen(g4, "T_vocab"))}.`],
+    ["Qwen2.5: the pattern is the problem", `${Math.round(q.pretok_share * 100)}% of its excess is the pre-tokenizer. The pattern fix alone reaches ${fx(pen(q, "T_regex"))} - because its vocabulary already holds Thai words it cannot reach (section 10).`],
+    ["Mistral-7B: all vocabulary", `It never cuts Thai before the vocabulary sees it, so a retrofit can reach all the damage: from ${fx(pen(m, "T_act"))} down to ${fx(pen(m, "T_vocab"))} with a strong Thai vocabulary. Chosen as the target.`],
+  ];
+  $("#diag-notes").append(...notes.map(([a, b]) => h("div", { class: "card" }, h("h3", {}, a), h("p", { class: "ink2", style: { fontSize: "14px" } }, b))));
+})();
+
+/* ---------- 3. token chips ---------- */
+(function example() {
+  const ex = DATA.examples || [];
+  const tabs = $("#ex-tabs");
+  function show(i) {
+    tabs.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-selected", i === j));
+    const e = ex[i];
+    $("#ex-sentence").textContent = e.text;
+    const rows = $("#ex-rows"); rows.innerHTML = "";
+    for (const r of e.rows) {
+      const me = /this project/.test(r.tokenizer), ty = /Typhoon/.test(r.tokenizer);
+      const chips = h("div", { class: "chips" });
+      let prev = null;
+      for (const p of r.pieces) {
+        const txt = p.t;
+        const isSp = /^\s+$/.test(txt);
+        const markFirst = /^[ัิ-ฺ็-๎]/.test(txt);
+        const shown = isSp ? "␣" : (markFirst ? "◌" : "") + txt.replace(/^ /, "␣");
+        const why = markFirst ? "<br>Starts with a vowel or tone mark: cut away from its consonant (◌ marks the missing base)" : "";
+        chips.append(h("span", { class: "chip" + (p.partial ? " part" : "") + (isSp ? " sp" : ""), "data-tip": (p.partial ? `One token holding part of the bytes of <b>${txt}</b>` : `One token: <b>${txt.replace(/ /g, "␣")}</b>`) + why }, shown));
+      }
+      rows.append(h("div", { class: "tokrow" + (me ? " me" : "") + (ty ? " ty" : "") }, h("div", { class: "who" }, h("b", {}, String(r.count)), h("span", {}, r.tokenizer + " tokens")), chips));
+    }
+  }
+  ex.forEach((e, i) => tabs.append(h("button", { role: "tab", type: "button", id: "ex-tab-" + i, "aria-selected": "false" }, DNAME[e.domain] || e.domain)));
+  tabs.addEventListener("click", ev => { const b = ev.target.closest("button"); if (b) show([...tabs.children].indexOf(b)); });
+  if (ex.length) show(1 < ex.length ? 1 : 0);
+})();
+
+/* ---------- 4. method ---------- */
+(function method() {
+  const meta = DATA.retrofit_meta && DATA.retrofit_meta["retrofit_mistral-7b_meta"];
+  const steps = [
+    ["Step 1", int(meta.used_by_any), "of 32,000 entries are used by raw English, Python code or Thai training text. The rest are candidates."],
+    ["Step 2", int(meta.prunable), `can be freed without breaking any merge a kept entry needs (${(meta.prunable / 320).toFixed(1)}% of the vocabulary).`],
+    ["Step 3", String(meta.atoms.length), `Thai characters Mistral cannot spell as one token (${meta.atoms.slice(0, 6).join(" ")} …) go in first.`],
+    ["Step 4", int(meta.prunable - meta.atoms.length), "Thai pieces learned by continuing BPE on Thai text, each merge added after all existing ones."],
+  ];
+  $("#steps").append(...steps.map(([n, big, p]) => h("div", { class: "step" }, h("div", { class: "n" }, n), h("div", { class: "big" }, big), h("p", {}, p))));
+  $("#method-note").innerHTML = `<strong>Why appended merges matter:</strong> every existing merge keeps its priority, so text with no Thai in it is split exactly as before. ` +
+    `Each of the ${int(meta.prunable)} freed entries is published in <code>results/prune_list_mistral-7b-th${meta.prunable}.csv</code> so a deployment can check it against its own traffic. ` +
+    `The first version protected only English prose and wrongly freed code pieces such as <code>func</code> and <code>json</code>; adding raw Python to the protected text cut the free slots from 4,471 to ${int(meta.prunable)}.`;
+})();
+
+/* ---------- 5. results: budget curves ---------- */
+(function budget() {
+  const pts = (re) => Object.values(EV).filter(r => re.test(r.tokenizer)).map(r => ({ k: +r.tokenizer.match(/TH(\d+)/)[1], r })).sort((a, b) => a.k - b.k);
+  const strict = pts(/^Mistral-7B \+TH\d+$/);
+  const enonly = pts(/^Mistral-7B \+TH\d+-enonly$/);
+  const proj = (DATA.candidates_projection || {}).word || [];
+  const W = 340, H = 250, m = { l: 40, r: 12, t: 26, b: 34 };
+  const X = k => m.l + (k / 4500) * (W - m.l - m.r), Y = v => m.t + (1 - v / 0.8) * (H - m.t - m.b);
+  for (const d of DOMAINS) {
+    const svg = S("svg", { class: "svgchart", viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${DNAME[d]}: Thai token reduction by budget` });
+    svg.append(S("text", { x: m.l, y: 14, class: "title" }, DNAME[d]));
+    for (const v of [0, 0.2, 0.4, 0.6, 0.8]) {
+      svg.append(S("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: "grid" }));
+      svg.append(S("text", { x: m.l - 6, y: Y(v) + 4, "text-anchor": "end" }, Math.round(v * 100) + "%"));
+    }
+    for (const k of [0, 1000, 2000, 3000, 4000]) svg.append(S("text", { x: X(k), y: H - m.b + 16, "text-anchor": "middle" }, k === 0 ? "0" : (k / 1000) + "k"));
+    svg.append(S("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle" }, "slots swapped"));
+    svg.append(S("line", { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), class: "axis" }));
+    // projection (upper bound)
+    const pp = proj.filter(p => p.n <= 4500);
+    svg.append(S("polyline", { points: [[0, 0], ...pp.map(p => [p.n, p[d]])].map(([k, v]) => `${X(k)},${Y(v)}`).join(" "), fill: "none", stroke: cssv("muted"), "stroke-width": 2, "stroke-dasharray": "2 4", "stroke-linecap": "round" }));
+    const line = (arr, dash) => S("polyline", { points: arr.map(([k, v]) => `${X(k)},${Y(v)}`).join(" "), fill: "none", stroke: cssv("accent"), "stroke-width": 2, "stroke-dasharray": dash || null, "stroke-linejoin": "round" });
+    const sArr = [[0, 0], ...strict.map(p => [p.k, -p.r[`th_${d}_change`]])];
+    const eArr = [[strict[strict.length - 1].k, -strict[strict.length - 1].r[`th_${d}_change`]], ...enonly.filter(p => p.k > STRICT_K).map(p => [p.k, -p.r[`th_${d}_change`]])];
+    svg.append(line(eArr, "5 4"), line(sArr));
+    const dot = (k, v, fill, tipText, shape) => {
+      const g = S("g", { "data-tip": tipText });
+      if (shape === "diamond") g.append(S("rect", { x: X(k) - 5.5, y: Y(v) - 5.5, width: 11, height: 11, transform: `rotate(45 ${X(k)} ${Y(v)})`, fill, stroke: cssv("surface"), "stroke-width": 2 }));
+      else g.append(S("circle", { cx: X(k), cy: Y(v), r: 4.5, fill, stroke: cssv("surface"), "stroke-width": 2 }));
+      g.append(S("circle", { cx: X(k), cy: Y(v), r: 12, class: "hit" }));
+      svg.append(g);
+    };
+    for (const p of strict) dot(p.k, -p.r[`th_${d}_change`], cssv("accent"), `<b>${int(p.k)} slots, strict</b><br>${pct(p.r[`th_${d}_change`])} Thai tokens (${fmt(p.r[`th_${d}_tok100`])} per 100 chars)`);
+    for (const p of enonly.filter(p => p.k > STRICT_K)) dot(p.k, -p.r[`th_${d}_change`], cssv("accent"), `<b>${int(p.k)} slots, English-only</b><br>${pct(p.r[`th_${d}_change`])} Thai tokens (${fmt(p.r[`th_${d}_tok100`])} per 100 chars)`);
+    dot(3219, -TY[`th_${d}_change`], cssv("typhoon"), `<b>Typhoon-7B</b> (3,219 entries added, vocab 35,219)<br>${pct(TY[`th_${d}_change`])} Thai tokens`, "diamond");
+    const last = strict[strict.length - 1];
+    svg.append(S("text", { x: X(last.k) - 6, y: Y(-last.r[`th_${d}_change`]) + 18, "text-anchor": "middle", class: "lbl" }, pct(last.r[`th_${d}_change`], 0)));
+    $("#ch-budget").append(h("div", {}, svg));
+  }
+  legend($("#lg-budget"), [["retrofit, strict", cssv("accent"), "line"], ["retrofit, English-only", cssv("accent"), "line"], ["Week 3 projection", cssv("muted"), "line"], ["Typhoon (expanded)", cssv("typhoon"), "diamond"]]);
+  $("#lg-budget").children[1].querySelector(".sw").style.background = `repeating-linear-gradient(90deg, var(--accent) 0 5px, transparent 5px 9px)`;
+  $("#lg-budget").children[2].querySelector(".sw").style.background = `repeating-linear-gradient(90deg, var(--muted) 0 2px, transparent 2px 5px)`;
+
+  $("#results-tldr").innerHTML = `With ${int(STRICT_K)} slots - fewer than Typhoon added - Thai text needs ${pct(STRICT.th_wikipedia_change, 1)} tokens on Wikipedia, ${pct(STRICT.th_news_change, 1)} on news and ${pct(STRICT.th_social_change, 1)} on social posts, all measured on held-out text with 95% confidence intervals under a point wide. Every budget meets all three Week 5 targets in every domain.`;
+
+  // domain table
+  const rowsT = [["Mistral-7B (base)", EV_BASE], [`+${int(STRICT_K)} slots (strict)`, STRICT, true], ["+3,219 slots (English-only)", EQ], ["Typhoon-7B (+3,219 added)", TY]];
+  const tb = h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Tokenizer"), ...DOMAINS.map(d => h("th", { class: "r" }, DNAME[d])), h("th", { class: "r" }, "Penalty"))));
+  const body = h("tbody");
+  for (const [name, r, me] of rowsT) {
+    body.append(h("tr", { class: me ? "me" : "" }, h("td", {}, name), ...DOMAINS.map(d => {
+      const c = r[`th_${d}_change`], i = ci(r[`th_${d}_change_ci`]);
+      return h("td", { class: "r", "data-tip": c ? `${pct(c)} vs base; 95% CI ${pct(i[0])} to ${pct(i[1])}` : "base" }, fmt(r[`th_${d}_tok100`]), c ? h("div", { class: "muted", style: { fontSize: "12px" } }, pct(c)) : null);
+    }), h("td", { class: "r" }, fx(r.penalty))));
+  }
+  tb.append(body);
+  $("#tb-domains").append(tb);
+
+  // english
+  const eb = $("#english-box");
+  const t2 = h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Tokenizer"), h("th", { class: "r" }, "Wikipedia"), h("th", { class: "r" }, "OPUS-100"))));
+  const b2 = h("tbody");
+  for (const [name, r, me] of rowsT.slice(1)) b2.append(h("tr", { class: me ? "me" : "" }, h("td", {}, name), h("td", { class: "r" }, pct(r.en_wikipedia_change, 3)), h("td", { class: "r" }, pct(r.en_parallel_change, 3))));
+  t2.append(b2);
+  const chk = (DATA.retrofit_checks || {})[`mistral-7b-th${STRICT_K}`] || [];
+  const same = chk.find(c => /English id/.test(c.check));
+  eb.append(t2, h("p", { class: "caption", style: { marginTop: "10px" } },
+    `Change in English tokens per 100 characters on held-out text (4,000 raw Wikipedia documents never used for the prune list; 3,000 OPUS sentences). `,
+    same ? `${same.detail.split(":")[0].replace(/ samples.*/, "")} of 10,000 English samples get byte-identical token ids - the model sees exactly the input it saw before.` : ""));
+})();
+
+/* ---------- 6. vs typhoon ---------- */
+(function vs() {
+  const col = (title, color, r, extra, me) => h("div", { class: "col" + (me ? " me" : "") },
+    h("h3", {}, h("span", { class: "sw", style: { background: color } }), title),
+    h("dl", {}, ...[["Vocabulary", r ? int(r.vocab) : "32,000"], ...extra, ...DOMAINS.map(d => [DNAME[d], `${pct(r[`th_${d}_change`])}`]), ["Penalty", fx(r.penalty)], ["English (Wikipedia)", pct(r.en_wikipedia_change, 2)]].flatMap(([a, b]) => [h("dt", {}, a), h("dd", {}, b)])));
+  $("#vs").append(
+    col(`Retrofit, ${int(STRICT_K)} slots`, cssv("accent"), STRICT, [["Entries swapped", int(STRICT_K)], ["Protects", "English + code"]], true),
+    col("Retrofit, 3,219 slots", cssv("accent"), EQ, [["Entries swapped", "3,219"], ["Protects", "English only"]], false),
+    col("Typhoon-7B", cssv("typhoon"), TY, [["Entries added", "3,219"], ["Protects", "everything (expansion)"]], false));
+})();
+
+/* ---------- 7. fairness ---------- */
+(function fairness() {
+  const reg = (DATA.robustness || {}).register || [];
+  const pick = [["Mistral-7B (base)", "Mistral-7B (base)"], [strictName, `+${int(STRICT_K)} slots, equal weights`], [`${strictName}-cluster`, `+${int(STRICT_K)}, cluster-aware`], [`${strictName}-wikipedia+news`, `+${int(STRICT_K)}, formal-only`], ["Typhoon-7B", "Typhoon-7B"]];
+  const rows = pick.map(([k, label]) => { const r = reg.find(x => x.tokenizer === k); return r && { label, value: r.spread, r }; }).filter(Boolean);
+  const color = l => /formal-only/.test(l) ? cssv("crit") : /Typhoon/.test(l) ? cssv("typhoon") : /base/.test(l) ? cssv("base") : cssv("accent");
+  barChart($("#ch-spread"), rows.map(r => ({ ...r, color: color(r.label), strong: /equal|formal/.test(r.label), tip: `<b>${r.label}</b><br>formal ${fmt(r.r.formal_tok100)} · informal ${fmt(r.r.informal_tok100)} tokens per 100 chars` })),
+    { max: 1.3, ref: 1, refLabel: "same cost", fmtV: v => v.toFixed(3), ticks: [0, 0.5, 1], fmtT: v => v.toFixed(1) });
+  const box = $("#words-box");
+  const eq = ["ไม่ได้", "วันนี้", "ตอนนี้", "แบบนี้", "มาแล้ว", "ลูกค้า", "ด้วยกัน", "ไม่ต้อง", "ส่วนตัว", "สอบถาม", "เหมือนกัน", "อยู่แล้ว"];
+  const fo = ["เกล้าเจ้าอยู่หัว", "แหล่งข้อมูลอื่น", "อย่างไรก็ตาม", "แห่งประเทศไทย", "ผู้แทนราษฎร", "ดำรงตำแหน่ง", "ถึงแก่กรรม", "ประจำจังหวัด", "การเลือกตั้ง", "ทางการเมือง"];
+  box.append(
+    h("p", { class: "ink2", style: { fontSize: "14px" } }, "Entries only the equal-weight vocabulary has (everyday and social Thai):"),
+    h("div", { class: "words me" }, ...eq.map(w => h("span", {}, w))),
+    h("p", { class: "ink2", style: { fontSize: "14px", marginTop: "12px" } }, "Entries only the formal-only vocabulary has (royal titles, politics, Wikipedia boilerplate):"),
+    h("div", { class: "words" }, ...fo.map(w => h("span", {}, w))),
+    h("p", { class: "caption", style: { marginTop: "12px" } }, `Formal-only training is ~0.5 points better on Wikipedia and news but ${pct(EV[`${strictName}-wikipedia+news`].th_social_change - STRICT.th_social_change, 1).replace("+", "")} worse on social text. The social corpus is brand-monitoring posts, so brand names (เบียร์ช้าง, โตโยต้า) also appear.`));
+})();
+
+/* ---------- 8. cost ---------- */
+(function cost() {
+  const coll = (DATA.robustness || {}).collateral || {};
+  const sName = `mistral-7b-th${STRICT_K}`, eName = "mistral-7b-th3219-enonly";
+  const langs = Object.keys(coll);
+  const max = 0.5;
+  const box = h("div", { class: "bars" });
+  for (const L of langs) {
+    for (const [nm, color, lab] of [[sName, cssv("accent"), `strict ${int(STRICT_K)}`], [eName, cssv("violet"), "English-only 3,219"]]) {
+      const c = coll[L][nm]; if (!c) continue;
+      const v = Math.max(0, c.change);
+      const track = h("div", { class: "track" }, h("div", { class: "fill", style: { width: (v / max * 100) + "%", background: color }, "data-tip": `<b>${L}</b>, ${lab}<br>${fmt(coll[L].base_tok100)} → ${fmt(c.tok100)} tokens per 100 chars` }));
+      box.append(h("div", { class: "bar-row" }, h("div", { class: "lab" + (nm === sName ? " strong" : "") }, nm === sName ? L : ""), track, h("div", { class: "val" }, pct(c.change, 1))));
+    }
+  }
+  const t = h("div", { class: "ticks" });
+  for (const v of [0, 0.1, 0.2, 0.3, 0.4, 0.5]) t.append(h("span", { style: { left: (v / max * 100) + "%" } }, "+" + Math.round(v * 100) + "%"));
+  box.append(h("div", { class: "axisline" }, h("div"), t, h("div")));
+  $("#ch-coll").append(box);
+  legend($("#lg-coll"), [[`strict (${int(STRICT_K)})`, cssv("accent")], ["English-only (3,219)", cssv("violet")]]);
+
+  const rowsInfo = ((DATA.robustness || {}).rows || {})[sName];
+  if (rowsInfo) {
+    const order = ["cyrillic", "ascii", "cjk", "other", "hangul", "latin-ext", "space"];
+    const names = { cyrillic: "Cyrillic", ascii: "ASCII (other-language and markup pieces)", cjk: "Chinese/Japanese", other: "other scripts", hangul: "Korean", "latin-ext": "accented Latin", space: "whitespace" };
+    const pal = [cssv("accent"), cssv("typhoon"), cssv("aqua"), cssv("yellow"), cssv("magenta"), cssv("green"), cssv("violet")];
+    const tot = Object.values(rowsInfo.scripts).reduce((a, b) => a + b, 0);
+    const bar = h("div", { style: { display: "flex", height: "26px", gap: "2px", borderRadius: "4px", overflow: "hidden" } });
+    const leg = h("div", { class: "legend", style: { marginTop: "10px" } });
+    order.filter(k => rowsInfo.scripts[k]).forEach((k, i) => {
+      const n = rowsInfo.scripts[k];
+      bar.append(h("div", { style: { flex: `${n} 0 0`, background: pal[i] }, "data-tip": `<b>${names[k]}</b><br>${int(n)} entries (${(n / tot * 100).toFixed(1)}%)` }));
+      leg.append(h("span", {}, h("span", { class: "sw", style: { background: pal[i] } }), `${names[k]} ${int(n)}`));
+    });
+    $("#ch-freed").append(bar, leg);
+    $("#freed-caption").textContent = `None of these entries appears in the English or code text the prune list was built from. ${int(rowsInfo.pruned_ids_used_by_heldout_english)} of them do show up somewhere in 4,000 held-out English documents - mostly Cyrillic and CJK fragments inside names - which is why English moves by a hundredth of a percent rather than exactly zero.`;
+  }
+})();
+
+/* ---------- 9. embeddings ---------- */
+(function embed() {
+  const all = DATA.embed_adapt || {};
+  const key = Object.keys(all).sort().pop();
+  const box = $("#embed-box");
+  if (!key) { $("#rows-tldr").textContent = "Embedding experiment still running."; return; }
+  const E = all[key], R = E.results, meta = E.meta;
+  const order = ["base", "stale", "random", "mean", "random+tune", "mean+tune"].filter(k => R[k]);
+  const label = { base: "original tokenizer", stale: "rows left as they were", random: "random re-start (Csaki et al.)", mean: "mean of old pieces (FVT)", "random+tune": "random + row-only tuning", "mean+tune": "mean + row-only tuning" };
+  const best = order.filter(k => k !== "base").sort((a, b) => R[a].wikipedia_bpc - R[b].wikipedia_bpc)[0];
+  $("#rows-tldr").innerHTML = `The retrofit keeps the embedding matrix's shape, but each swapped row still holds the vector of the token it replaced. On BLOOM-560m (retrofitted with ${int(meta.swapped_rows)} Thai entries, ${(meta.swapped_rows / meta.vocab * 100).toFixed(1)}% of its vocabulary), leaving the rows alone or re-drawing them at random makes the model much worse at Thai. Setting each row to the average of the pieces it replaces recovers almost everything with no training at all. The honest claim is "no vocabulary expansion, no full pretraining - only the swapped rows need re-setting and light tuning."`;
+  const grid = h("div", { class: "grid3" });
+  for (const d of [...DOMAINS]) {
+    const card = h("div", { class: "card" }, h("h3", {}, `${DNAME[d]}: bits per character`));
+    const rows = order.map(k => ({ label: label[k], value: R[k][`${d}_bpc`], k }));
+    const max = Math.max(...rows.map(r => r.value)) * 1.05;
+    barChart(card, rows.map(r => ({ ...r, color: r.k === "base" ? cssv("base") : r.value <= R.base[`${d}_bpc`] * 1.1 ? cssv("accent") : cssv("other"), strong: r.k === "base" || r.k === best,
+      tip: `<b>${r.label}</b><br>${r.value.toFixed(3)} bits per character<br>${fmt(R[r.k][`${d}_tok100`])} tokens per 100 characters` })),
+      { max, ref: R.base[`${d}_bpc`], refLabel: "original", fmtV: v => v.toFixed(2), stacked: true });
+    grid.append(card);
+  }
+  box.append(grid);
+  const en = h("div", { class: "card" }, h("h3", {}, "English bits per character (tied input/output embeddings, so new rows also compete when predicting English)"));
+  barChart(en, order.map(k => ({ label: label[k], value: R[k].english_bpc, color: k === "base" ? cssv("base") : R[k].english_bpc <= R.base.english_bpc * 1.01 ? cssv("accent") : cssv("crit"), tip: `${R[k].english_bpc.toFixed(3)} bits per character` })),
+    { max: Math.max(...order.map(k => R[k].english_bpc)) * 1.05, ref: R.base.english_bpc, refLabel: "original", fmtV: v => v.toFixed(3) });
+  const tokNote = h("p", { class: "caption" }, `Thai tokens per 100 characters: original tokenizer ${DOMAINS.map(d => fmt(R.base[`${d}_tok100`])).join(" / ")}, retrofit ${DOMAINS.map(d => fmt(R.mean[`${d}_tok100`])).join(" / ")} (Wikipedia / news / social). Tuning: ${meta.steps} steps × ${meta.batch} × ${meta.seq} tokens (${int(meta.train_tokens_seen)} tokens) on Thai training text, only the swapped rows trainable. ${meta.eval_passages_per_domain} held-out passages of ~${meta.passage_chars} characters per domain.`);
+  box.append(h("div", { style: { marginTop: "16px", display: "grid", gap: "16px" } }, en, tokNote));
+})();
+
+/* ---------- 10. qwen ---------- */
+(function qwen() {
+  const Q = DATA.qwen_unreachable; if (!Q) return;
+  const g = Q.rows;
+  const rows = [["unreachable Thai (1,578)", g.unreachable_thai, cssv("crit")], ["padding, no token (271)", g.padding, cssv("base")], ["reachable Thai (992)", g.reachable_thai, cssv("accent")], ["all other tokens", g.other, cssv("other")]];
+  barChart($("#ch-qnorm"), rows.map(([label, r, color]) => ({ label, value: r.norm.median, color, tip: `<b>${label}</b><br>median ${r.norm.median.toFixed(3)} (IQR ${r.norm.q1.toFixed(3)}-${r.norm.q3.toFixed(3)})<br>${int(r.collapsed)} of ${int(r.n)} collapsed onto the padding point` })),
+    { max: 0.55, fmtV: v => v.toFixed(3), ticks: [0, 0.1, 0.2, 0.3, 0.4, 0.5], fmtT: v => v.toFixed(1) });
+  const R = DATA.qwen_repair;
+  const conds = [["shipped", "shipped tokenizer", cssv("base")], ["mark_aware", "pattern fixed, rows untrained", cssv("crit")]];
+  const extra = [];
+  if (R && R.summary) {
+    for (const [k, lab] of [["mean", "pattern fixed + mean-initialised rows"], ["mean+tune", "pattern fixed + mean + row-only tuning"]]) if (R.summary[k]) extra.push([k, lab]);
+  }
+  const box = h("div", { class: "bars" });
+  const lg = [];
+  for (const d of DOMAINS) {
+    const s = Q.lm[d].summary;
+    const vals = [["shipped", s.bpc_shipped, s.tok100_shipped], ["mark_aware", s.bpc_mark_aware, s.tok100_mark_aware]];
+    for (const [k] of extra) { const r = R.summary[k][d]; if (r) vals.push([k, r.bpc, r.tok100]); }
+    vals.forEach(([k, v, tpc], i) => {
+      const color = k === "shipped" ? cssv("base") : k === "mark_aware" ? cssv("crit") : cssv("accent");
+      const lab = k === "shipped" ? "shipped" : k === "mark_aware" ? "pattern fixed" : k;
+      box.append(h("div", { class: "bar-row" }, h("div", { class: "lab" + (i === 0 ? " strong" : "") }, i === 0 ? DNAME[d] : ""), h("div", { class: "track" }, h("div", { class: "fill", style: { width: (v / 6 * 100) + "%", background: color }, "data-tip": `<b>${DNAME[d]}, ${lab}</b><br>${v.toFixed(2)} bits per character<br>${fmt(tpc)} tokens per 100 characters` })), h("div", { class: "val" }, v.toFixed(2))));
+    });
+  }
+  $("#ch-qbpc").append(box);
+  const L = [["shipped", cssv("base")], ["pattern fixed, rows untrained", cssv("crit")]];
+  if (extra.length) L.push(["pattern fixed, rows repaired", cssv("accent")]);
+  legend($("#lg-qbpc"), L);
+  if (R && R.caption) $("#qbpc-caption").textContent = R.caption;
+})();
+
+/* ---------- 11. corrections ---------- */
+(function fixes() {
+  const F = [
+    ["wrong", "\"Mark-split rate\" measures pre-tokenization damage.", "It decoded one token at a time, so every token holding part of a Thai character's bytes was counted but could never register as a split, and it could not tell a pattern cut from a missing merge. Replaced by a byte-aware cluster-break rate plus a direct reading of each pre-tokenizer."],
+    ["wrong", "Retrofit cl100k (GPT-4) because its mark-split rate is low.", "cl100k's pattern cuts every consonant from its mark. Fixing the vocabulary alone stops at 2.25×; fixing the pattern alone changes nothing. It is one of the two tokenizers a retrofit cannot fully fix - and no open-weight model uses it."],
+    ["wrong", "Every tokenizer costs more on social Thai than on news.", "False for Mistral, BLOOM and GPT-4, which spell Thai almost character by character and charge every register the same. True for every tokenizer that has Thai vocabulary to lose."],
+    ["wrong", "The fixed-size method is untested on a non-delimited script.", "Csaki et al. (2023) replaced ~5,000 GPT-2 tokens with Thai ones at fixed size. This project's contribution is narrower: the decomposition, the Qwen finding, English-and-code protection by construction, per-register results and the collateral cost."],
+    ["narrow", "Typhoon added 5,000 Thai tokens.", "Its tokenizer file grows by 3,219 entries (32,000 → 35,219); the paper trained a 5,000-piece model but does not explain the gap. Its 2.62× figure is against GPT-4's tokenizer, not Mistral's."],
+    ["narrow", "BrahmicTokenizer: 26.7% fewer tokens at fixed size.", "The 26.7% is against a different tokenizer (Mistral-Nemo's Tekken), and its first stage shrinks o200k from 200,019 to 131,072 entries - deleting all of o200k's Thai tokens."],
+    ["narrow", "\"No retraining.\"", "True for the vocabulary size and for pretraining; false for the swapped rows, which must be re-set (section 9)."],
+    ["fixed", "This project's own first prune list.", "It protected English prose only and freed code pieces an English deployment needs. Adding raw Python to the protected text fixed it and cut Mistral's free slots from 4,471 to 2,483."],
+  ];
+  $("#fixes").append(...F.map(([t, a, b]) => h("div", { class: "fix" }, h("div", { class: "tag " + t }, t === "narrow" ? "narrowed" : t === "fixed" ? "fixed" : "wrong"), h("div", {}, h("p", {}, a), h("p", {}, b)))));
+})();
+
+/* ---------- 12. limits + repro ---------- */
+(function limits() {
+  const L = [
+    "Only self-hosted open-weight deployments can use this. A hosted API's tokenizer cannot be changed.",
+    "The retrofit is deployment-specific: slots are freed from languages the protected text does not contain (section 8).",
+    "The embedding experiments ran on small CPU-sized models (BLOOM-560m, Qwen2.5-0.5B) with a few hundred tuning steps, scored by bits per character only - not downstream task quality at 7B scale.",
+    "The social domain is small (189k evaluation characters) and comes from brand-monitoring posts; OPUS-100 is partly subtitle text.",
+    "Slots are allocated greedily, one merge at a time; an integer program could do slightly better. 98 of the top-100 candidate words become single tokens at 2,483 slots; the other two cost 2 tokens instead of 9 and 12.",
+  ];
+  $("#limits-list").append(...L.map(x => h("li", {}, x)));
+  const R = [["Week 2", "run_decomposition.py", "DECOMPOSITION.md"], ["Week 3", "candidates.py", "CANDIDATES.md"], ["Week 4", "retrofit.py, verify_retrofit.py", "RETROFIT_CHECKS.md"], ["Week 5", "evaluate.py, run_baseline.py --retrofits", "EVALUATION.md"], ["Week 6", "robustness.py, embed_adapt.py", "ROBUSTNESS.md, EMBED_ADAPT_*.md"], ["Qwen", "qwen_unreachable.py, qwen_repair.py", "QWEN_UNREACHABLE.md"], ["Report", "-", "REPORT.md"]];
+  const t = $("#repro");
+  t.append(h("thead", {}, h("tr", {}, h("th", {}, "Step"), h("th", {}, "src/"), h("th", {}, "results/"))), h("tbody", {}, ...R.map(r => h("tr", {}, ...r.map(c => h("td", {}, h("code", {}, c)))))));
+  $("#foot-date").textContent = "Built 28 September 2026.";
+})();
+</script>

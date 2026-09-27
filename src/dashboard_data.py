@@ -46,7 +46,7 @@ def _md_table(md: str, heading: str) -> list[list[str]]:
                 rows.append(cells)
         elif rows:
             break
-    return rows
+    return rows[1:]  # drop the header row
 
 
 def token_examples() -> list[dict]:

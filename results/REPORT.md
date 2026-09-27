@@ -303,6 +303,12 @@ ranking is register-sensitive: `ไม่` (not) and `แล้ว` (already) ar
 more frequent in social text than in Wikipedia, and the repetition mark `ๆ` -
 which Mistral cannot encode as one token at all - four times.
 
+This projection turned out to be **pessimistic**, not the upper bound it was
+first taken for. It assumes each slot buys one whole word; BPE instead builds
+pieces that are shared by thousands of words (`ที่`, `การ`) and can span word
+boundaries (`เมื่อวันที่`), so the real retrofit beat it at every budget -
+at 500 slots, 47% fewer tokens on Wikipedia against a projected 28%.
+
 ### 7.4 The retrofit (`RETROFIT_CHECKS.md`, `EVALUATION.md`)
 
 **How many slots can Mistral free?** Of its 32,000 entries, raw English
@@ -379,6 +385,31 @@ margin.
 (170,347 freeable entries): see `BASELINE_after.md`.
 
 <!-- RESULTS-BLOOM -->
+
+### 7.5 Qwen2.5's Thai vocabulary it cannot use (`QWEN_UNREACHABLE.md`)
+
+Qwen2.5's vocabulary contains 2,570 Thai entries. **1,578 of them (61%) can
+never be produced by its own pre-tokenizer**, because each contains a
+consonant followed by a mark and the regex always cuts there - whole words
+such as `ประวัติศาสตร์` (history) and `อย่างต่อเนื่อง` (continuously). Over
+12.4M characters of Thai the shipped tokenizer emits them zero times.
+
+In Qwen2.5-0.5B (input and output embeddings tied) **all 1,578 rows are
+untrained**: every one sits on the same vector as the 271 padding rows no
+token ever uses (norm 0.301, within 0.1% of the padding centroid), while the
+992 reachable Thai rows look like any other trained row (median norm 0.447).
+A whole-vocabulary check finds the same for all 1,673 entries the
+pre-tokenizer can never produce - Thai, Arabic with vowel marks, full-width
+digits - with no exceptions.
+
+So the one-line regex fix from §7.2 is **not free**. Behind a mark-aware
+regex, Qwen2.5-0.5B's Thai token count drops by 31-42%, but its bits per
+character get 2-3 times *worse* on every domain (Wikipedia 1.42 → 4.30,
+news 1.78 → 4.69, social 2.69 → 5.53; worse on 50 of 50 passages in each):
+a third of the new tokens are rows the model has never seen, each costing
+about 19 bits to predict.
+
+<!-- RESULTS-QWEN-REPAIR -->
 
 ## 8. Robustness, fairness and cost
 
@@ -501,8 +532,166 @@ vocabulary's training data.
 
 ## 10. Conclusion and next steps
 
-<!-- CONCLUSION -->
+**Answers to the research questions.**
+
+1. *Pre-tokenization vs vocabulary.* It depends entirely on the tokenizer.
+   cl100k and Qwen2.5 cut every Thai consonant away from its mark in the
+   pre-tokenizer (`\p{L}+` excludes `\p{M}`); for Qwen2.5 that accounts for
+   89% of the excess, for cl100k 38%, and cl100k needs both fixes to get
+   anywhere. Mistral-7B, BLOOM and o200k carry all or nearly all of their
+   damage in the vocabulary.
+2. *How much a fixed-size retrofit removes.* On Mistral-7B, swapping 2,483
+   entries (7.8%) that English, code and Thai never use removes 64.4% of Thai
+   tokens on Wikipedia, 66.6% on news and 61.1% on social text, takes the Thai
+   penalty from 3.92x to 1.33x and nearly triples effective context, while
+   English moves by +0.01% and 99.55% of English samples get identical token
+   ids. This is far above the plan's 15% target. It should not be set
+   against the Indic 26.7% that motivated the project: that figure compares
+   two different tokenizers, not a tokenizer before and after its retrofit,
+   and a character-level Thai baseline leaves much more to gain than o200k
+   does for Indic scripts. The closest Thai analogue, Csaki et al.'s 73%
+   better fertility on GPT-2, is measured per word.
+3. *Against expansion.* At Typhoon's own budget the fixed-size retrofit is
+   cheaper than Typhoon on all three domains and ties it on matched content,
+   without growing the embedding matrix. Under strict English-and-code
+   protection Mistral can only free 2,483 slots, and with those it comes
+   within a point of Typhoon.
+4. *Who pays.* Informal Thai gains less than formal Thai (spread 1.110, the
+   same as Typhoon's 1.117), and nearly twice as much less if the vocabulary is
+   learned from formal text only (1.211). The freed slots are paid for by
+   Korean (+39%), Russian (+18%), Chinese (+13%) and Japanese (+10%) text.
+5. *What the rows need.* <!-- CONCLUSION-EMBED -->
+
+**What to do next.**
+
+- Run the embedding repair at the target scale: mean-initialise Mistral-7B's
+  swapped rows and tune only those rows on a GPU for a few thousand steps,
+  then measure downstream Thai tasks, not only bits per character.
+- For Qwen2.5, test the cheapest fix of all - the regex change plus repair of
+  the 1,578 untrained rows - on a larger checkpoint.
+- Build the prune list from a deployment's real traffic (including any
+  Korean, Chinese, Japanese or Russian it serves), and replace greedy
+  allocation with an integer program.
+- Make the cluster-aware variant the default if downstream tools need token
+  boundaries that respect Thai clusters; it costs about one point of
+  reduction.
 
 ## References
 
-<!-- REFERENCES -->
+Checked against primary sources; see `REFERENCES.md` for quotes and page numbers.
+
+Chumpolsathien, N. (2020). *Using knowledge distillation from keyword
+extraction to improve the informativeness of neural cross-lingual
+summarization* [Master's thesis, Beijing Institute of Technology].
+*(Metadata from the ThaiSum dataset card only; thesis not accessed.)*
+
+Chumpolsathien, N. (2020). *ThaiSum* [Data set]. Hugging Face.
+https://huggingface.co/datasets/pythainlp/thaisum
+
+Csaki, Z., Pawakapan, P., Thakker, U., & Xu, Q. (2023). *Efficiently adapting
+pretrained language models to new languages* (arXiv:2311.05741). arXiv.
+https://doi.org/10.48550/arXiv.2311.05741
+
+Dagan, G., Synnaeve, G., & Rozière, B. (2024). Getting the most out of your
+tokenizer for pre-training and domain adaptation. In R. Salakhutdinov, Z.
+Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett, & F. Berkenkamp (Eds.),
+*Proceedings of the 41st International Conference on Machine Learning* (Vol.
+235, pp. 9784–9805). PMLR. https://proceedings.mlr.press/v235/dagan24a.html
+
+Dobler, K., & de Melo, G. (2023). FOCUS: Effective embedding initialization
+for monolingual specialization of multilingual models. In H. Bouamor, J.
+Pino, & K. Bali (Eds.), *Proceedings of the 2023 Conference on Empirical
+Methods in Natural Language Processing* (pp. 13440–13454). Association for
+Computational Linguistics. https://doi.org/10.18653/v1/2023.emnlp-main.829
+
+Gee, L., Zugarini, A., Rigutini, L., & Torroni, P. (2022). Fast vocabulary
+transfer for language model compression. In Y. Li & A. Lazaridou (Eds.),
+*Proceedings of the 2022 Conference on Empirical Methods in Natural Language
+Processing: Industry Track* (pp. 409–416). Association for Computational
+Linguistics. https://doi.org/10.18653/v1/2022.emnlp-industry.41
+
+Land, S., & Bartolo, M. (2024). Fishing for Magikarp: Automatically detecting under-trained tokens in large language models. In *Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing* (EMNLP 2024, main track). arXiv:2405.05417. https://doi.org/10.48550/arXiv.2405.05417 *(Venue from the arXiv comments; page range not retrieved.)*
+
+Lowphansirikul, L., Polpanumas, C., Jantrakulchai, N., & Nutanong, S. (2021).
+*WangchanBERTa: Pretraining transformer-based Thai language models*
+(arXiv:2101.09635). arXiv. https://doi.org/10.48550/arXiv.2101.09635
+
+Minixhofer, B., Paischer, F., & Rekabsaz, N. (2022). WECHSEL: Effective
+initialization of subword embeddings for cross-lingual transfer of
+monolingual language models. In M. Carpuat, M.-C. de Marneffe, & I. V. Meza
+Ruiz (Eds.), *Proceedings of the 2022 Conference of the North American Chapter
+of the Association for Computational Linguistics: Human Language
+Technologies* (pp. 3992–4006). Association for Computational Linguistics.
+https://doi.org/10.18653/v1/2022.naacl-main.293
+
+OpenAI. (n.d.). *tiktoken* [Computer software]. GitHub. Retrieved September
+28, 2026, from https://github.com/openai/tiktoken
+
+Petrov, A., La Malfa, E., Torr, P. H. S., & Bibi, A. (2023). Language model
+tokenizers introduce unfairness between languages. In *Advances in Neural
+Information Processing Systems 36 (NeurIPS 2023)*.
+https://doi.org/10.52202/075280-1608
+*(Editors and page range not retrieved; add them from the NeurIPS
+proceedings page if your style guide requires them.)*
+
+Phatthiyaphaibun, W., Chaovavanich, K., Polpanumas, C., Suriyawongkul, A.,
+Lowphansirikul, L., Chormai, P., Limkonchotiwat, P., Suntorntip, T., &
+Udomcharoenchaikit, C. (2023). PyThaiNLP: Thai natural language processing in
+Python. In L. Tan, D. Milajevs, G. Chauhan, J. Gwinnup, & E. Rippeth (Eds.),
+*Proceedings of the 3rd Workshop for Natural Language Processing Open Source
+Software (NLP-OSS 2023)* (pp. 25–36). Association for Computational
+Linguistics. https://doi.org/10.18653/v1/2023.nlposs-1.4
+
+Pipatanakul, K., Jirabovonvisut, P., Manakul, P., Sripaisarnmongkol, S.,
+Patomwong, R., Chokchainant, P., & Tharnpipitchai, K. (2023). *Typhoon: Thai
+large language models* (arXiv:2312.13951). arXiv.
+https://doi.org/10.48550/arXiv.2312.13951
+
+Rust, P., Pfeiffer, J., Vulić, I., Ruder, S., & Gurevych, I. (2021). How good
+is your tokenizer? On the monolingual performance of multilingual language
+models. In C. Zong, F. Xia, W. Li, & R. Navigli (Eds.), *Proceedings of the
+59th Annual Meeting of the Association for Computational Linguistics and the
+11th International Joint Conference on Natural Language Processing (Volume 1:
+Long Papers)* (pp. 3118–3135). Association for Computational Linguistics.
+https://doi.org/10.18653/v1/2021.acl-long.243
+
+SCB 10X. (2023). *Typhoon-7B* [Large language model]. Hugging Face.
+https://huggingface.co/scb10x/typhoon-7b
+
+Schmidt, C. W., Reddy, V., Tanner, C., & Pinter, Y. (2025). *Boundless byte
+pair encoding: Breaking the pre-tokenization barrier* (arXiv:2504.00178).
+arXiv. https://doi.org/10.48550/arXiv.2504.00178
+*(Accepted to COLM 2025 per arXiv comments; cite the COLM proceedings version
+if available.)*
+
+Shravan, R. (2026). *BrahmicTokenizer-131K: An Indic-capable drop-in
+replacement for o200k_base* (arXiv:2605.29379). arXiv.
+https://doi.org/10.48550/arXiv.2605.29379
+
+Suriyawongkul, A., Chuangsuwanich, E., Chormai, P., & Polpanumas, C. (2019).
+*PyThaiNLP/wisesight-sentiment: First release* (Version v1.0) [Data set].
+Zenodo. https://doi.org/10.5281/zenodo.3457447
+
+Theeramunkong, T., Sornlertlamvanich, V., Tanhermhong, T., & Chinnan, W.
+(2000). Character cluster based Thai information retrieval. In *Proceedings of
+the Fifth International Workshop on Information Retrieval with Asian
+Languages* (pp. 75–80). Association for Computing Machinery.
+https://doi.org/10.1145/355214.355225
+
+Velayuthan, M., & Sarveswaran, K. (2025). Egalitarian language representation
+in language models: It all begins with tokenizers. In O. Rambow, L. Wanner, M.
+Apidianaki, H. Al-Khalifa, B. Di Eugenio, & S. Schockaert (Eds.),
+*Proceedings of the 31st International Conference on Computational
+Linguistics* (pp. 5987–5996). Association for Computational Linguistics.
+https://aclanthology.org/2025.coling-main.400/
+
+Wikimedia Foundation. (2023). *Wikipedia* (Version 20231101.th) [Data set].
+Hugging Face. https://huggingface.co/datasets/wikimedia/wikipedia
+*(Upstream source: Wikimedia Downloads, https://dumps.wikimedia.org)*
+
+Zhang, B., Williams, P., Titov, I., & Sennrich, R. (2020). Improving
+massively multilingual neural machine translation and zero-shot translation.
+In D. Jurafsky, J. Chai, N. Schluter, & J. Tetreault (Eds.), *Proceedings of
+the 58th Annual Meeting of the Association for Computational Linguistics*
+(pp. 1628–1639). Association for Computational Linguistics.
+https://doi.org/10.18653/v1/2020.acl-main.148

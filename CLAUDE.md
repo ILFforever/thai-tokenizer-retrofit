@@ -12,10 +12,13 @@ and measure the result against published baselines.
 Author: Tanabodhi Mukura (Dean). Solo, part-time, ~8 weeks from 26 Sep 2026.
 Mid-term proposal was presented 26 Sep. Final delivery: November 2026.
 
-## Status
+## Status (28 Sep 2026)
 
-**Week 1 is done.** The baseline harness is built and has been run on real
-corpora. Results are in `results/`. Nothing else has been built yet.
+**Weeks 2-6 of `PLAN.md` are built, run and committed; the Week 7 report is
+drafted** in `results/REPORT.md`. Every number in it comes from `results/`.
+Branch `week2`. Remaining: finish the embedding sections once
+`src/embed_adapt.py` / `src/qwen_repair.py` results are in, then polish the
+write-up (Week 7) and use Week 8 as buffer.
 
 ## The core idea, and how it differs from prior work
 
@@ -24,110 +27,113 @@ training data, so Thai text fragments into far more tokens than English of
 the same meaning. That raises API cost, shrinks usable context, and slows
 inference.
 
-Prior Thai work (**Typhoon**, SCB 10X) *expanded* the vocabulary — added
-5,000 Thai tokens — which changes the embedding matrix shape and forces
-retraining. That is fine if you are already training your own model.
+Typhoon (SCB 10X) *expanded* Mistral-7B's vocabulary: the released tokenizer
+grows by **3,219** entries (32,000 -> 35,219; the paper trained a 5,000-piece
+model and does not explain the gap). This project keeps the size **fixed**:
+prune entries the deployment never uses, put Thai units in the freed slots.
 
-This project keeps vocabulary size **fixed**: prune entries the deployment
-does not need, insert Thai units into the freed slots. The method is proven
-on Indic scripts (BrahmicTokenizer-131K, reported 26.7% fewer tokens with
-English fertility preserved) but untested on a non-delimited script.
+**Prior art exists** (verified from primary sources, `results/REFERENCES.md`):
+Csaki et al. (2023) already did fixed-size replacement for Thai on a GPT-2
+vocabulary. BrahmicTokenizer-131K's 26.7% is against a *different* tokenizer,
+not before/after, and its first stage shrinks o200k. So the contribution is:
+the pre-tokenization/vocabulary decomposition, the Qwen2.5 unreachable-token
+finding, English+code protection by construction, per-register results,
+collateral cost, and the embedding-row test.
 
-## Measured findings (Week 1, real data)
+## Findings
 
-12.4M chars of Thai across 3 domains + 3,000 parallel Thai/English pairs.
-Full tables in `results/BASELINE.md`.
+Week 1 baseline (`results/BASELINE.md`, reproduced exactly): Thai penalty on
+matched content BLOOM 4.25x, GPT-4 3.94x, Mistral 3.92x, Qwen2.5 2.38x, o200k
+1.92x, Typhoon 1.26x, XGLM 1.16x, mT5 1.01x, WangchanBERTa 0.42x (Thai-only;
+not a target).
 
-Thai penalty on matched content (tokens/100 chars Thai ÷ English):
+Week 2 decomposition (`results/DECOMPOSITION.md`):
+- cl100k and Qwen2.5 regexes use `\p{L}+`; Thai marks are `\p{M}`, so the
+  pre-tokenizer cuts **100%** of consonant|mark joins. Every other tokenizer
+  cuts 0%.
+- cl100k needs both fixes (regex alone changes nothing). Qwen2.5: 89% of its
+  excess is the regex. Mistral and BLOOM: 100% vocabulary -> retrofit targets.
+- Qwen2.5 has 1,578 Thai vocab entries its own pre-tokenizer can never emit;
+  all are **untrained** (identical to padding rows), and the regex fix without
+  repair makes Qwen2.5-0.5B's Thai bits/char 2-3x worse
+  (`results/QWEN_UNREACHABLE.md`).
 
-| Tokenizer | Penalty | Mark-split rate |
-|---|---|---|
-| BLOOM | 4.25x | 16.1% |
-| GPT-4 (cl100k_base) | 3.94x | 17.3% |
-| Mistral-7B | 3.92x | 18.9% |
-| Qwen2.5 | 2.38x | 28.8% |
-| GPT-4o (o200k_base) | 1.92x | 12.8% |
-| Typhoon-7B | 1.26x | 6.7% |
-| XGLM | 1.16x | 3.8% |
-| mT5 | 1.01x | 2.7% |
-| WangchanBERTa | 0.42x | 0.7% |
+Weeks 3-5, target Mistral-7B (`results/EVALUATION.md`):
+- Freeable under English+code protection: **2,483** entries (7.8%);
+  English-only protection: 4,339.
+- At 2,483 slots: Thai tokens -64.4% / -66.6% / -61.1% (wiki/news/social),
+  penalty 3.92x -> 1.33x, English +0.01% (held-out Wikipedia). All Week 4 and
+  Week 5 acceptance checks pass except "top-100 candidates single-token"
+  (98/100; the two misses cost 2 tokens).
+- At Typhoon's budget (3,219, English-only) it beats Typhoon on all domains.
 
-Four things this establishes:
+Week 6 (`results/ROBUSTNESS.md`): segmenter does not change rankings
+(Kendall tau 1.00); retrofit informal/formal spread 1.110 vs Typhoon 1.117,
+formal-only training 1.211; freed slots cost Korean +39%, Russian +18%,
+Chinese +13%, Japanese +10%, Python +0.1%.
 
-1. The penalty is real and worst in **open-weight** models — the ones people
-   self-host, and therefore the only ones where a tokenizer swap is even
-   possible.
-2. **Pre-tokenization is a hard ceiling.** "Mark-split rate" is the share of
-   tokens beginning with a Thai combining mark, meaning the tokenizer cut
-   between a base consonant and its vowel/tone mark. Qwen2.5 does this 28.8%
-   of the time. A vocabulary retrofit **cannot** fix those, because BPE
-   merges cannot span a boundary the pre-tokenizer already imposed.
-3. Good Thai tokenizers already exist (mT5 at 1.01x). The open question is
-   not "can Thai be cheap" but "can *this* model be made cheap for Thai
-   without retraining it".
-4. Every tokenizer costs more on informal/social Thai than on news. The more
-   Thai-tuned a tokenizer is, the larger that spread (WangchanBERTa 1.25x).
-   This is the fairness concern showing up in data: a vocabulary built only
-   from formal text penalises everyone who writes differently.
+## Corrections to earlier notes (do not reintroduce)
 
-WangchanBERTa's 0.42x means Thai is cheaper than English *for it* — it is
-Thai-only and handles English badly. Do not use it as a target.
+- The Week 1 "mark-split rate" is **not** a pre-tokenization measure (it
+  decodes one token at a time and misses byte fragments). Use
+  `pretok.cut_stats` (byte-aware cluster breaks) and the decomposition.
+- "Retrofit cl100k because its mark-split rate is low" was backwards.
+- "Every tokenizer costs more on social than news" is false for Mistral,
+  BLOOM and GPT-4.
+- "Untested on a non-delimited script" is false (Csaki et al. 2023).
 
-## Open decisions (not yet made)
+## Known limits of the claim
 
-1. **Which tokenizer to retrofit.** Best target has high token cost but LOW
-   mark-split rate — damage in the vocabulary, where a retrofit can reach it.
-   On this data that points at cl100k (17.3%) or BLOOM (16.1%). Qwen2.5 is
-   the most commercially valuable but the most blocked by pre-tokenization.
-2. **Whether the project is one intervention or two.** Fixing pre-tokenization
-   (a regex change) and fixing the vocabulary (the retrofit) are separate
-   interventions with different targets. Quantifying how much of each
-   tokenizer's penalty is pre-tokenization vs vocabulary would be a strong
-   result in its own right.
-
-## Known issues with the proposal as presented
-
-**The "no retraining" claim is too strong and must be narrowed.** A fixed-size
-retrofit keeps the embedding matrix *shape* unchanged, but a swapped row still
-holds the vector learned for the token it used to represent. Swapped rows need
-re-initialising and in practice light tuning. The honest claim is "no
-vocabulary expansion and no full pretraining — only the swapped embedding rows
-need adaptation", which is still far cheaper than Typhoon's approach.
-
-Consequences: hosted API models (GPT-4, Claude) cannot use this at all — you
-cannot swap a served model's tokenizer. The beneficiary is self-hosted
-open-weight deployments: on-device/edge, and corporates who must self-host for
-PDPA/data-residency reasons.
+**"No retraining" is narrowed to: no vocabulary expansion and no full
+pretraining; the swapped embedding rows must be re-initialised (mean of the
+old pieces' embeddings) and lightly tuned.** Hosted API models cannot use this
+at all; the beneficiary is self-hosted open-weight deployments. A retrofit is
+deployment-specific: freed slots come from languages the protect corpus does
+not contain.
 
 ## Metric choice
 
 Primary metric is **tokens per 100 characters**, not tokens per word. Thai has
-no whitespace word boundaries, so per-word fertility depends entirely on the
-segmenter chosen. Segmenter-based fertility is computed as a clearly-labelled
-secondary figure using `pythainlp/newmm`.
+no whitespace word boundaries, so per-word fertility depends on the segmenter;
+it is a secondary figure under `newmm` and `longest`. Model quality is
+compared in **bits per character**, which does not depend on the tokenizer.
 
 ## Layout
 
 ```
-src/corpora.py        corpus loading, 3 Thai domains + parallel
-src/registry.py       tiktoken + HF tokenizers behind one interface;
-                      mark_split_rate() is the pre-tokenization diagnostic
-src/metrics.py        tokens/100 chars, penalty ratio, effective context
-src/run_baseline.py   entry point
-results/              BASELINE.md, CSVs, run_meta.json
+src/corpora.py           corpus loading + cache (~/.cache/thaitok), disjoint
+                         train/eval slices; domains wikipedia/news/social,
+                         english_raw, code
+src/registry.py          tiktoken + HF tokenizers; retrofits read from the
+                         retrofit meta files in results/
+src/metrics.py           tok/100ch, penalty, effective context, cluster breaks
+src/pretok.py            pre-tokenizer introspection, cut stats, mark-aware
+                         regex counterfactual, unreachable tokens
+src/run_baseline.py      Week 1 (--retrofits --out BASELINE_after for Week 5)
+src/run_decomposition.py Week 2
+src/candidates.py        Week 3
+src/retrofit.py          Week 4 (prune list, BPE continuation, rebuild)
+src/verify_retrofit.py   Week 4 acceptance checks (--summary to combine)
+src/evaluate.py          Week 5
+src/robustness.py        Week 6
+src/embed_adapt.py       Week 6 embedding experiment (BLOOM-560m, CPU)
+src/qwen_unreachable.py, src/qwen_repair.py   Qwen2.5 side study
+src/dashboard_data.py, src/build_dashboard.py, src/dashboard_template.html
+tokenizers/              retrofitted tokenizers (BLOOM ones gitignored)
+results/                 every number; REPORT.md is the write-up
 ```
 
 ## Running
 
+Use a venv outside OneDrive (the project folder syncs). Evaluation always uses
+the first 1,200 documents per domain; anything that learns uses later
+documents. Learned merges are cached in `~/.cache/thaitok/merges_*.json`.
+
 ```bash
 pip install -r requirements.txt
-python src/run_baseline.py --docs 1200 --pairs 3000   # ~5 min
 python src/run_baseline.py --docs 120 --pairs 250     # smoke test, ~80s
+python src/retrofit.py --target Mistral-7B --k 500 1000 2000 3219   # ~10 min first time
 ```
-
-Corpora stream from Hugging Face; nothing large is stored. All sources are
-openly licensed. Gated repos (Llama, FLORES) are skipped and reported rather
-than failing the run.
 
 ## Constraints
 
@@ -137,9 +143,3 @@ than failing the run.
   scope achievable solo.
 - Report results **per domain**, never pooled — a single average hides a
   vocabulary that works on one register and not others.
-
-## Suggested next step
-
-Either pick the retrofit target and build the candidate generator, or first
-decompose each tokenizer's penalty into its pre-tokenization and vocabulary
-components. The second is lower risk and tells you where to aim.

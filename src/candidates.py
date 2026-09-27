@@ -18,9 +18,11 @@ slice, per domain.
     savings(u) = freq(u) * (base_tokens(u) - 1)
 
 A unit that already costs one token saves nothing. The projection assumes
-each chosen unit becomes exactly one token - an upper bound, because in a
-BPE vocabulary a new token also needs its intermediate pieces, each of which
-takes a slot. Week 4 builds the real thing and pays that cost.
+each slot buys exactly one whole word and nothing else. It is not a bound in
+either direction: BPE pays extra slots for intermediate pieces, but each
+piece (e.g. `ที่`, `การ`) also shortens every other word containing it, and
+pieces can span word boundaries. In Week 5 the real retrofit beat this
+projection at every budget.
 """
 
 from __future__ import annotations
@@ -221,8 +223,8 @@ def main() -> None:
         md.append(f"\n## Projected token reduction on held-out text: {name}\n")
         md.append(
             "Share of the target's Thai tokens saved if the top-N candidates "
-            "each became a single token. Upper bound: ignores the slots "
-            "needed for intermediate BPE pieces.\n"
+            "each became a single token, one slot per word. Not a bound: the "
+            "real BPE retrofit beats it (pieces are shared across words).\n"
         )
         md.append("| Top N | " + " | ".join(DOMAINS) + " |")
         md.append("| ---: |" + " ---: |" * len(DOMAINS))
