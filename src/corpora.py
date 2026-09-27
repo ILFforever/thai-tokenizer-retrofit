@@ -16,14 +16,21 @@ unrelated English text would measure the topics, not the tokenizers.
 
 from __future__ import annotations
 
+import json
+import os
 import re
-import unicodedata
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from datasets import load_dataset
 
 # Thai block plus the combining marks that belong to it.
 THAI_RE = re.compile(r"[฀-๿]")
+
+# Streamed documents are cached here so later stages (candidate mining,
+# pruning) can take large slices without re-streaming. Outside the repo on
+# purpose: the project folder is synced and the cache runs to hundreds of MB.
+CACHE = Path(os.environ.get("THAITOK_CACHE", Path.home() / ".cache" / "thaitok"))
 
 
 @dataclass
@@ -86,18 +93,9 @@ def _is_usable(text: str, min_chars: int, min_thai: float) -> bool:
     return thai / len(text) >= min_thai
 
 
-def load_thai_domain(
-    domain: str,
-    n_docs: int = 2000,
-    min_chars: int = 120,
-    min_thai: float = 0.55,
-) -> Corpus:
-    """Stream one Thai domain and keep the first `n_docs` usable documents.
-
-    Documents are deduplicated on their first 200 characters, which catches
-    the boilerplate headers that repeat across news articles without the cost
-    of comparing full texts.
-    """
+def _stream_domain(domain: str):
+    """Yield usable, deduplicated documents for one domain, in stream order."""
+    min_chars, min_thai = 120, 0.55
     if domain == "wikipedia":
         ds = load_dataset(
             "wikimedia/wikipedia", "20231101.th", split="train", streaming=True
@@ -112,24 +110,83 @@ def load_thai_domain(
         )
         field_of = lambda r: r["texts"]
         min_chars = 40  # social posts are legitimately short
+    elif domain == "english":
+        # English prose for the non-regression side of the retrofit: the
+        # prune list is built from one slice, English cost is measured on a
+        # later, disjoint slice.
+        ds = load_dataset(
+            "wikimedia/wikipedia", "20231101.en", split="train", streaming=True
+        )
+        field_of = lambda r: r["text"]
     else:
         raise ValueError(f"unknown domain: {domain!r}")
 
-    texts: list[str] = []
     seen: set[str] = set()
     for row in ds:
         text = _clean(field_of(row))
-        if not _is_usable(text, min_chars, min_thai):
+        if domain == "english":
+            if len(text) < min_chars:
+                continue
+            latin = sum(1 for c in text if c.isascii())
+            if latin / len(text) < 0.9:
+                continue
+        elif not _is_usable(text, min_chars, min_thai):
             continue
         key = text[:200]
         if key in seen:
             continue
         seen.add(key)
-        texts.append(text)
-        if len(texts) >= n_docs:
-            break
+        yield text
 
-    return Corpus(name=domain, texts=texts)
+
+def _cached_docs(domain: str, needed: int) -> list[str]:
+    """The first `needed` usable documents of a domain, from disk if cached.
+
+    The cache is a prefix of the stream, so any slice of it is identical to
+    what streaming would have produced - the Week 1 numbers stay
+    reproducible from the cache.
+    """
+    CACHE.mkdir(parents=True, exist_ok=True)
+    path = CACHE / f"{domain}.jsonl"
+    docs: list[str] = []
+    exhausted = False
+    if path.exists():
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                rec = json.loads(line)
+                if "__exhausted__" in rec:
+                    exhausted = True
+                    continue
+                docs.append(rec["text"])
+    if len(docs) >= needed or exhausted:
+        return docs[:needed]
+
+    docs = []
+    for text in _stream_domain(domain):
+        docs.append(text)
+        if len(docs) >= needed:
+            break
+    with path.open("w", encoding="utf-8") as fh:
+        for text in docs:
+            fh.write(json.dumps({"text": text}, ensure_ascii=False) + "\n")
+        if len(docs) < needed:
+            fh.write(json.dumps({"__exhausted__": True}) + "\n")
+    return docs
+
+
+def load_thai_domain(domain: str, n_docs: int = 2000, skip: int = 0) -> Corpus:
+    """Usable documents [skip, skip + n_docs) of one domain.
+
+    Documents are deduplicated on their first 200 characters, which catches
+    the boilerplate headers that repeat across news articles without the cost
+    of comparing full texts.
+
+    Evaluation always uses skip=0 (the Week 1 slice). Anything that learns
+    from text - candidate mining, prune lists - must use skip >= the
+    evaluation size, so nothing is tuned on the text it is scored on.
+    """
+    docs = _cached_docs(domain, skip + n_docs)
+    return Corpus(name=domain, texts=docs[skip : skip + n_docs])
 
 
 def load_parallel(n_pairs: int = 4000, min_chars: int = 40) -> ParallelCorpus:

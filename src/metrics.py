@@ -32,7 +32,8 @@ class DomainResult:
     tok_per_100_chars: float
     chars_per_1k_tokens: float
     tok_per_word: float | None
-    mark_split_rate: float
+    mark_split_rate: float  # legacy Week 1 diagnostic, see pretok.py
+    cluster_break_rate: float  # byte-aware replacement
 
 
 @dataclass
@@ -92,7 +93,17 @@ def score_domain(
         chars_per_1k_tokens=n_chars / n_tokens * 1000 if n_tokens else 0.0,
         tok_per_word=tok_per_word,
         mark_split_rate=mark_split_rate(tok, corpus.texts),
+        cluster_break_rate=_cluster_break_rate(tok, corpus.texts[:400]),
     )
+
+
+def _cluster_break_rate(tok: Tok, texts: list[str]) -> float:
+    """Share of Thai clusters (base + marks) the final tokens split, counted
+    on byte offsets so byte-level fragments are not missed."""
+    from pretok import cut_stats
+
+    st = cut_stats(tok, texts)
+    return st.token_broken_clusters / st.clusters if st.clusters else 0.0
 
 
 def score_parallel(tok: Tok, corpus: ParallelCorpus) -> ParallelResult:

@@ -97,21 +97,32 @@ def markdown_report(
         "writes differently.\n"
     )
 
-    out.append("\n## Pre-tokenization check\n")
+    out.append("\n## Cluster breaks\n")
     out.append(
-        "Share of tokens beginning with a Thai combining mark, meaning the "
-        "tokenizer cut between a base consonant and its vowel or tone mark. "
-        "A high rate means vocabulary changes alone cannot fix that "
-        "tokenizer - merges cannot span a boundary the pre-tokenizer already "
-        "imposed.\n"
+        "Share of Thai clusters (a base character plus its vowel/tone marks) "
+        "that the final tokens split, measured on byte offsets over the first "
+        "400 documents. This is a *token-level* measure: it does not say "
+        "whether the pre-tokenizer or the vocabulary made the cut - "
+        "`DECOMPOSITION.md` does. The Week 1 mark-split rate is kept for "
+        "comparison; it decoded one token at a time and so missed byte-level "
+        "fragments, and it is not a pre-tokenization measure.\n"
     )
-    out.append("\n| Tokenizer | Mark-split rate (wikipedia) |")
-    out.append("| --- | ---: |")
-    for r in sorted(
-        [r for r in domain_rows if r["domain"] == "wikipedia"],
-        key=lambda x: -x["mark_split_rate"],
-    ):
-        out.append(f"| {r['tokenizer']} | {r['mark_split_rate']:.1%} |")
+    out.append(
+        "\n| Tokenizer | " + " | ".join(domains) + " | legacy mark-split (wikipedia) |"
+    )
+    out.append("| --- |" + " ---: |" * (len(domains) + 1))
+    cbr: dict[str, dict[str, float]] = {}
+    legacy: dict[str, float] = {}
+    for r in domain_rows:
+        cbr.setdefault(r["tokenizer"], {})[r["domain"]] = r["cluster_break_rate"]
+        if r["domain"] == "wikipedia":
+            legacy[r["tokenizer"]] = r["mark_split_rate"]
+    for tok, vals in sorted(cbr.items(), key=lambda kv: -max(kv[1].values())):
+        cells = [f"{vals.get(d, float('nan')):.1%}" for d in domains]
+        out.append(
+            f"| {tok} | " + " | ".join(cells)
+            + f" | {legacy.get(tok, float('nan')):.1%} |"
+        )
 
     out.append("\n## Secondary: tokens per segmented word\n")
     out.append(

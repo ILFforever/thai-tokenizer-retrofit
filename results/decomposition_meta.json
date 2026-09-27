@@ -1,0 +1,6 @@
+{
+  "docs_per_domain": 1200,
+  "parallel_pairs": 3000,
+  "reference": "facebook/xglm-564M",
+  "seconds": 137.6
+}

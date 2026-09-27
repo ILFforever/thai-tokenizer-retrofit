@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
 import tiktoken
 from transformers import AutoTokenizer
@@ -30,6 +30,10 @@ class Tok:
     decode: Callable[[list[int]], str]
     vocab_size: int
     note: str = ""
+    # The underlying tiktoken Encoding or HF tokenizer, for code that needs
+    # more than encode/decode (pre-tokenizer introspection, offsets).
+    raw: Any = None
+    kind: str = ""  # "tiktoken" or "hf"
 
     def count(self, text: str) -> int:
         return len(self.encode(text))
@@ -54,12 +58,21 @@ HF_SPECS = [
 ]
 
 
-def load_all(verbose: bool = True) -> tuple[list[Tok], list[str]]:
-    """Return every tokenizer that loaded, plus labels for those that did not."""
+def load_all(
+    verbose: bool = True, only: list[str] | None = None
+) -> tuple[list[Tok], list[str]]:
+    """Return every tokenizer that loaded, plus labels for those that did not.
+
+    `only` restricts loading to the given labels (worker processes load just
+    the tokenizer they score).
+    """
     toks: list[Tok] = []
     skipped: list[str] = []
+    want = (lambda label: label in only) if only else (lambda label: True)
 
     for label, enc_name, note in TIKTOKEN_SPECS:
+        if not want(label):
+            continue
         try:
             enc = tiktoken.get_encoding(enc_name)
             toks.append(
@@ -70,12 +83,16 @@ def load_all(verbose: bool = True) -> tuple[list[Tok], list[str]]:
                     decode=enc.decode,
                     vocab_size=enc.n_vocab,
                     note=note,
+                    raw=enc,
+                    kind="tiktoken",
                 )
             )
         except Exception as exc:  # noqa: BLE001 - report and continue
             skipped.append(f"{label} ({type(exc).__name__})")
 
     for label, repo, note in HF_SPECS:
+        if not want(label):
+            continue
         try:
             hf = AutoTokenizer.from_pretrained(repo)
             toks.append(
@@ -84,8 +101,10 @@ def load_all(verbose: bool = True) -> tuple[list[Tok], list[str]]:
                     family="open-weight",
                     encode=lambda s, _t=hf: _t.encode(s, add_special_tokens=False),
                     decode=lambda ids, _t=hf: _t.decode(ids),
-                    vocab_size=hf.vocab_size,
+                    vocab_size=len(hf),
                     note=note,
+                    raw=hf,
+                    kind="hf",
                 )
             )
         except Exception as exc:  # noqa: BLE001
