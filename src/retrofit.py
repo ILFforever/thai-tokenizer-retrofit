@@ -397,9 +397,10 @@ def main() -> None:
           f"byte_level={bpe.byte_level}", flush=True)
 
     # 1. usage on the protected corpora and on Thai (training slices).
-    #    English is raw text (line breaks kept) and code is raw Python: an
-    #    earlier version used whitespace-normalised English, which made every
-    #    token containing a newline look unused.
+    #    English is raw text (spacing kept) and code is raw Python: an
+    #    earlier version protected whitespace-normalised English prose only,
+    #    and so freed code and LaTeX pieces (` func`, `json`, `mathcal`) that
+    #    an English deployment still needs.
     english = load_thai_domain("english_raw", n_docs=args.english_docs).texts
     code = load_thai_domain("code", n_docs=args.code_docs).texts if args.code_docs else []
     thai_train = {d: train_texts(d) for d in DOMAINS}

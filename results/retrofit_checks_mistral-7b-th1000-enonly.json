@@ -1,0 +1,32 @@
+[
+  {
+    "check": "vocabulary size identical, ids contiguous",
+    "pass": true,
+    "detail": "base 32,000, retrofit 32,000"
+  },
+  {
+    "check": "Thai round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 0, base 0, new failures introduced by retrofit 0"
+  },
+  {
+    "check": "English round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 0, base 0, new failures introduced by retrofit 0"
+  },
+  {
+    "check": "top 100 candidates each encode to one token",
+    "pass": false,
+    "detail": "90/100 single-token; not: เจ้าหน้าที่ (2 tokens, base 11), เนื่องจาก (2 tokens, base 9), ปัจจุบัน (2 tokens, base 8), อำเภอ (2 tokens, base 5), โรงพยาบาล (2 tokens, base 9), มหาวิทยาลัย (2 tokens, base 11), ดังกล่าว (2 tokens, base 8), บริเวณ (2 tokens, base 6), เท่านั้น (2 tokens, base 8), การเลือกตั้ง (2 tokens, base 12)"
+  },
+  {
+    "check": "added tokens used on held-out Thai",
+    "pass": true,
+    "detail": "999/1,000 used (99.9%); threshold 95%"
+  },
+  {
+    "check": "English id sequences unchanged (>= 99.5%)",
+    "pass": true,
+    "detail": "9,976/10,000 samples byte-identical (99.76%)"
+  }
+]

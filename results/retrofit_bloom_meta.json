@@ -1,0 +1,87 @@
+{
+  "target": "BLOOM",
+  "mode": "plain",
+  "prunable": 170347,
+  "train_domains": [
+    "wikipedia",
+    "news",
+    "social"
+  ],
+  "english_prune_docs": 8000,
+  "english_prune_chars": 83723487,
+  "used_by_english": 67416,
+  "code_prune_docs": 5000,
+  "code_prune_chars": 49600398,
+  "used_by_code": 48308,
+  "used_by_thai": 23927,
+  "used_by_any": 77741,
+  "thai_run_types": 266042,
+  "atoms": [],
+  "bpe_char_cap_per_domain": 4000000,
+  "runs": [
+    {
+      "name": "bloom-th1000",
+      "k": 1000,
+      "atoms": 0,
+      "merged": 1000,
+      "merges_added": 1000,
+      "pruned_scripts": {
+        "cjk": 183,
+        "ascii": 318,
+        "other": 482,
+        "latin-ext": 11,
+        "cyrillic": 3,
+        "hangul": 3
+      }
+    },
+    {
+      "name": "bloom-th3219",
+      "k": 3219,
+      "atoms": 0,
+      "merged": 3219,
+      "merges_added": 3219,
+      "pruned_scripts": {
+        "cjk": 565,
+        "other": 1601,
+        "ascii": 996,
+        "cyrillic": 13,
+        "hangul": 10,
+        "latin-ext": 33,
+        "space": 1
+      }
+    },
+    {
+      "name": "bloom-th5000",
+      "k": 5000,
+      "atoms": 0,
+      "merged": 5000,
+      "merges_added": 5000,
+      "pruned_scripts": {
+        "other": 2426,
+        "ascii": 1604,
+        "cjk": 883,
+        "latin-ext": 55,
+        "cyrillic": 19,
+        "hangul": 12,
+        "space": 1
+      }
+    },
+    {
+      "name": "bloom-th10000",
+      "k": 10000,
+      "atoms": 0,
+      "merged": 10000,
+      "merges_added": 10000,
+      "pruned_scripts": {
+        "cjk": 1801,
+        "ascii": 3193,
+        "other": 4819,
+        "latin-ext": 113,
+        "hangul": 28,
+        "cyrillic": 39,
+        "space": 7
+      }
+    }
+  ],
+  "seconds": 1076.5
+}

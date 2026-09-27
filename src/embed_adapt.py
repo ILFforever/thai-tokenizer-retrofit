@@ -129,6 +129,7 @@ def train_rows(model, tok, rows: list[int], texts: list[str], steps: int, lr: fl
         out = model(x, labels=x)
         opt.zero_grad()
         out.loss.backward()
+        torch.nn.utils.clip_grad_norm_([emb], 1.0)
         opt.step()
         if step % log_every == 0 or step == steps:
             model.eval()
@@ -146,10 +147,11 @@ def train_rows(model, tok, rows: list[int], texts: list[str], steps: int, lr: fl
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tokenizer", default="tokenizers/bloom-th5000")
-    ap.add_argument("--steps", type=int, default=300)
-    ap.add_argument("--lr", type=float, default=2e-3)
+    ap.add_argument("--steps", type=int, default=200)
+    ap.add_argument("--lr", type=float, default=1e-4,
+                    help="embedding values are ~0.009, so 1e-4 moves them ~1%% per Adam step")
     ap.add_argument("--seq", type=int, default=256)
-    ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--batch", type=int, default=4)
     ap.add_argument("--n-eval", type=int, default=60, help="passages per domain")
     ap.add_argument("--size", type=int, default=500, help="characters per passage")
     args = ap.parse_args()

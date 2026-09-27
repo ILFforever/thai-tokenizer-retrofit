@@ -113,9 +113,8 @@ def _stream_domain(domain: str):
     elif domain in ("english", "english_raw"):
         # English prose for the non-regression side of the retrofit: the
         # prune list is built from one slice, English cost is measured on a
-        # later, disjoint slice. `english_raw` keeps line breaks and spacing:
-        # real text has them, and tokens containing a newline would
-        # otherwise look unused and be pruned.
+        # later, disjoint slice. `english_raw` keeps line breaks and runs of
+        # spaces, as real text has them, so whitespace tokens are counted.
         ds = load_dataset(
             "wikimedia/wikipedia", "20231101.en", split="train", streaming=True
         )

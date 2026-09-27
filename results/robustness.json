@@ -1,0 +1,810 @@
+{
+  "segmenter": {
+    "fertility": {
+      "GPT-4 (cl100k_base)": {
+        "wikipedia_newmm": 4.818675070665064,
+        "wikipedia_longest": 4.611753731343284,
+        "news_newmm": 4.449709294160605,
+        "news_longest": 4.36426997245179,
+        "social_newmm": 3.7078391669077235,
+        "social_longest": 3.5864577504196977
+      },
+      "GPT-4o (o200k_base)": {
+        "wikipedia_newmm": 2.159394392280451,
+        "wikipedia_longest": 2.066666666666667,
+        "news_newmm": 2.0198017021037553,
+        "news_longest": 1.9810192837465566,
+        "social_newmm": 1.8539195834538618,
+        "social_longest": 1.7932288752098489
+      },
+      "Typhoon-7B": {
+        "wikipedia_newmm": 1.664316579486013,
+        "wikipedia_longest": 1.5928482587064676,
+        "news_newmm": 1.584894531359717,
+        "news_longest": 1.5544628099173554,
+        "social_newmm": 1.568990454150998,
+        "social_longest": 1.5176273083379967
+      },
+      "Qwen2.5": {
+        "wikipedia_newmm": 2.9372624191819097,
+        "wikipedia_longest": 2.81113184079602,
+        "news_newmm": 2.740724096284021,
+        "news_longest": 2.688099173553719,
+        "social_newmm": 2.4075788255713046,
+        "social_longest": 2.32876329043089
+      },
+      "BLOOM": {
+        "wikipedia_newmm": 4.970206959290425,
+        "wikipedia_longest": 4.756778606965174,
+        "news_newmm": 4.674156672190546,
+        "news_longest": 4.5844077134986225,
+        "social_newmm": 3.9013595603124096,
+        "social_longest": 3.7736429770565194
+      },
+      "mT5": {
+        "wikipedia_newmm": 1.483414016049904,
+        "wikipedia_longest": 1.4197139303482587,
+        "news_newmm": 1.3781703789006545,
+        "news_longest": 1.3517079889807162,
+        "social_newmm": 1.3523286086201909,
+        "social_longest": 1.3080581980973698
+      },
+      "XGLM": {
+        "wikipedia_newmm": 1.4625881282692745,
+        "wikipedia_longest": 1.3997823383084578,
+        "news_newmm": 1.3873549981743112,
+        "news_longest": 1.3607162534435262,
+        "social_newmm": 1.3679490888053225,
+        "social_longest": 1.3231673195299385
+      },
+      "WangchanBERTa": {
+        "wikipedia_newmm": 1.3280483446505735,
+        "wikipedia_longest": 1.2710199004975125,
+        "news_newmm": 1.147290958627082,
+        "news_longest": 1.1252617079889806,
+        "social_newmm": 1.2577379230546717,
+        "social_longest": 1.216564073866816
+      },
+      "Mistral-7B": {
+        "wikipedia_newmm": 5.044543357483999,
+        "wikipedia_longest": 4.827922885572139,
+        "news_newmm": 4.734825716933966,
+        "news_longest": 4.6439118457300275,
+        "social_newmm": 4.029794619612381,
+        "social_longest": 3.8978735310576385
+      },
+      "Mistral-7B +TH2483-cluster": {
+        "wikipedia_newmm": 1.7676012865915072,
+        "wikipedia_longest": 1.6916977611940298,
+        "news_newmm": 1.6896609836249754,
+        "news_longest": 1.6572176308539945,
+        "social_newmm": 1.6468035869250794,
+        "social_longest": 1.5928931169557918
+      },
+      "Mistral-7B +TH1000-enonly": {
+        "wikipedia_newmm": 2.1620585464115143,
+        "wikipedia_longest": 2.069216417910448,
+        "news_newmm": 2.0274695952588266,
+        "news_longest": 1.9885399449035812,
+        "social_newmm": 1.8990454150997975,
+        "social_longest": 1.8368774482372692
+      },
+      "Mistral-7B +TH2000-enonly": {
+        "wikipedia_newmm": 1.805744176224049,
+        "wikipedia_longest": 1.728202736318408,
+        "news_newmm": 1.7021880178636632,
+        "news_longest": 1.669504132231405,
+        "social_newmm": 1.657217240381834,
+        "social_longest": 1.6029658645775042
+      },
+      "Mistral-7B +TH3219-enonly": {
+        "wikipedia_newmm": 1.6114883524480976,
+        "wikipedia_longest": 1.5422885572139304,
+        "news_newmm": 1.5286352273684802,
+        "news_longest": 1.499283746556474,
+        "social_newmm": 1.5111368238356957,
+        "social_longest": 1.4616675993284836
+      },
+      "Mistral-7B +TH4339-enonly": {
+        "wikipedia_newmm": 1.5120699178010981,
+        "wikipedia_longest": 1.447139303482587,
+        "news_newmm": 1.433137656939022,
+        "news_longest": 1.4056198347107438,
+        "social_newmm": 1.4289846687879664,
+        "social_longest": 1.3822048125349748
+      },
+      "Mistral-7B +TH2483-wikipedia+news": {
+        "wikipedia_newmm": 1.6725364696708795,
+        "wikipedia_longest": 1.6007151741293533,
+        "news_newmm": 1.6120551638906833,
+        "news_longest": 1.5811019283746557,
+        "social_newmm": 1.7202776974255134,
+        "social_longest": 1.6639619473978735
+      },
+      "Mistral-7B +TH500": {
+        "wikipedia_newmm": 2.5899152019233895,
+        "wikipedia_longest": 2.478700248756219,
+        "news_newmm": 2.419206246664607,
+        "news_longest": 2.372754820936639,
+        "social_newmm": 2.1842638125542377,
+        "social_longest": 2.112758813654169
+      },
+      "Mistral-7B +TH1000": {
+        "wikipedia_newmm": 2.1621235257805647,
+        "wikipedia_longest": 2.0692786069651743,
+        "news_newmm": 2.0274695952588266,
+        "news_longest": 1.9885399449035812,
+        "social_newmm": 1.8990454150997975,
+        "social_longest": 1.8368774482372692
+      },
+      "Mistral-7B +TH2000": {
+        "wikipedia_newmm": 1.805744176224049,
+        "wikipedia_longest": 1.728202736318408,
+        "news_newmm": 1.7021880178636632,
+        "news_longest": 1.669504132231405,
+        "social_newmm": 1.656638704078681,
+        "social_longest": 1.602406267487409
+      },
+      "Mistral-7B +TH2483": {
+        "wikipedia_newmm": 1.7153253841905196,
+        "wikipedia_longest": 1.6416666666666666,
+        "news_newmm": 1.624582198129371,
+        "news_longest": 1.5933884297520662,
+        "social_newmm": 1.5872143477003182,
+        "social_longest": 1.5352546166759933
+      }
+    },
+    "words_per_100_chars": {
+      "newmm": {
+        "wikipedia": 19.207463571406283,
+        "news": 21.129502252238886,
+        "social": 23.8200234272721
+      },
+      "longest": {
+        "wikipedia": 20.069268931947953,
+        "news": 21.543154558780763,
+        "social": 24.626197202508095
+      }
+    },
+    "rank_agreement": {
+      "wikipedia": {
+        "kendall_tau": 1.0,
+        "newmm_order": [
+          "WangchanBERTa",
+          "XGLM",
+          "mT5",
+          "Typhoon-7B",
+          "GPT-4o (o200k_base)",
+          "Qwen2.5",
+          "GPT-4 (cl100k_base)",
+          "BLOOM",
+          "Mistral-7B"
+        ],
+        "longest_order": [
+          "WangchanBERTa",
+          "XGLM",
+          "mT5",
+          "Typhoon-7B",
+          "GPT-4o (o200k_base)",
+          "Qwen2.5",
+          "GPT-4 (cl100k_base)",
+          "BLOOM",
+          "Mistral-7B"
+        ]
+      },
+      "news": {
+        "kendall_tau": 1.0,
+        "newmm_order": [
+          "WangchanBERTa",
+          "mT5",
+          "XGLM",
+          "Typhoon-7B",
+          "GPT-4o (o200k_base)",
+          "Qwen2.5",
+          "GPT-4 (cl100k_base)",
+          "BLOOM",
+          "Mistral-7B"
+        ],
+        "longest_order": [
+          "WangchanBERTa",
+          "mT5",
+          "XGLM",
+          "Typhoon-7B",
+          "GPT-4o (o200k_base)",
+          "Qwen2.5",
+          "GPT-4 (cl100k_base)",
+          "BLOOM",
+          "Mistral-7B"
+        ]
+      },
+      "social": {
+        "kendall_tau": 1.0,
+        "newmm_order": [
+          "WangchanBERTa",
+          "mT5",
+          "XGLM",
+          "Typhoon-7B",
+          "GPT-4o (o200k_base)",
+          "Qwen2.5",
+          "GPT-4 (cl100k_base)",
+          "BLOOM",
+          "Mistral-7B"
+        ],
+        "longest_order": [
+          "WangchanBERTa",
+          "mT5",
+          "XGLM",
+          "Typhoon-7B",
+          "GPT-4o (o200k_base)",
+          "Qwen2.5",
+          "GPT-4 (cl100k_base)",
+          "BLOOM",
+          "Mistral-7B"
+        ]
+      }
+    }
+  },
+  "register": [
+    {
+      "tokenizer": "Mistral-7B (base)",
+      "formal_tok100": 98.36016723513254,
+      "informal_tok100": 96.86546565918813,
+      "spread": 0.984803791840133
+    },
+    {
+      "tokenizer": "Mistral-7B +TH500",
+      "formal_tok100": 50.588687630898775,
+      "informal_tok100": 52.75038467842998,
+      "spread": 1.0427308386274656
+    },
+    {
+      "tokenizer": "Mistral-7B +TH1000",
+      "formal_tok100": 42.36807993970476,
+      "informal_tok100": 45.5861124477181,
+      "spread": 1.0759541738165388
+    },
+    {
+      "tokenizer": "Mistral-7B +TH2000",
+      "formal_tok100": 35.698330231074664,
+      "informal_tok100": 39.38736985707412,
+      "spread": 1.1033392767146353
+    },
+    {
+      "tokenizer": "Mistral-7B +TH2483",
+      "formal_tok100": 33.920422525605744,
+      "informal_tok100": 37.65882856825596,
+      "spread": 1.1102110694472682
+    },
+    {
+      "tokenizer": "Mistral-7B +TH1000-enonly",
+      "formal_tok100": 42.36651007498115,
+      "informal_tok100": 45.5861124477181,
+      "spread": 1.0759940426303425
+    },
+    {
+      "tokenizer": "Mistral-7B +TH2000-enonly",
+      "formal_tok100": 35.70115837858478,
+      "informal_tok100": 39.38842739227682,
+      "spread": 1.1032814950873928
+    },
+    {
+      "tokenizer": "Mistral-7B +TH2483-cluster",
+      "formal_tok100": 35.15486735511891,
+      "informal_tok100": 39.18749570376324,
+      "spread": 1.1147103844229735
+    },
+    {
+      "tokenizer": "Mistral-7B +TH2483-wikipedia+news",
+      "formal_tok100": 33.5564471262543,
+      "informal_tok100": 40.62151343862859,
+      "spread": 1.2105427396944726
+    },
+    {
+      "tokenizer": "Mistral-7B +TH3219-enonly",
+      "formal_tok100": 31.97211655919685,
+      "informal_tok100": 35.79333647068777,
+      "spread": 1.1195172645018943
+    },
+    {
+      "tokenizer": "Mistral-7B +TH4339-enonly",
+      "formal_tok100": 30.025617512037947,
+      "informal_tok100": 33.877611450991175,
+      "spread": 1.128290248732066
+    },
+    {
+      "tokenizer": "Typhoon-7B",
+      "formal_tok100": 33.28365946717993,
+      "informal_tok100": 37.19404184666797,
+      "spread": 1.1174865517219932
+    }
+  ],
+  "rows": {
+    "mistral-7b-th2483-cluster": {
+      "swapped": 2483,
+      "share_of_vocab": 0.07759375,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 196,
+      "heldout_examples": [
+        " ре",
+        " сво",
+        " За",
+        "ред",
+        " Ц",
+        " гру",
+        " ett",
+        "бы",
+        " или",
+        " спо"
+      ],
+      "scripts": {
+        "ascii": 675,
+        "space": 9,
+        "cyrillic": 818,
+        "latin-ext": 63,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    },
+    "mistral-7b-th1000-enonly": {
+      "swapped": 1000,
+      "share_of_vocab": 0.03125,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 119,
+      "heldout_examples": [
+        "ソ",
+        "ử",
+        "등",
+        "差",
+        "∙",
+        "Ô",
+        "低",
+        "典",
+        "書",
+        "ự"
+      ],
+      "scripts": {
+        "cjk": 572,
+        "ascii": 19,
+        "other": 227,
+        "hangul": 144,
+        "latin-ext": 20,
+        "cyrillic": 12,
+        "space": 6
+      }
+    },
+    "mistral-7b-th2000-enonly": {
+      "swapped": 2000,
+      "share_of_vocab": 0.0625,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 219,
+      "heldout_examples": [
+        " ausge",
+        "Sensor",
+        "CURRENT",
+        "рок",
+        "deprecated",
+        "VED",
+        "validator",
+        "рович",
+        "UMENT",
+        "шение"
+      ],
+      "scripts": {
+        "ascii": 358,
+        "cyrillic": 172,
+        "latin-ext": 51,
+        "cjk": 933,
+        "other": 264,
+        "hangul": 214,
+        "space": 8
+      }
+    },
+    "mistral-7b-th3219-enonly": {
+      "swapped": 3219,
+      "share_of_vocab": 0.10059375,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 296,
+      "heldout_examples": [
+        "Void",
+        " juin",
+        "åg",
+        "стре",
+        "OPTION",
+        " сред",
+        "wohner",
+        "xB",
+        "вое",
+        " lég"
+      ],
+      "scripts": {
+        "ascii": 1133,
+        "cyrillic": 590,
+        "latin-ext": 71,
+        "space": 9,
+        "cjk": 936,
+        "other": 266,
+        "hangul": 214
+      }
+    },
+    "mistral-7b-th4339-enonly": {
+      "swapped": 4339,
+      "share_of_vocab": 0.13559375,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 372,
+      "heldout_examples": [
+        " ре",
+        "Override",
+        " args",
+        "Provider",
+        "cpu",
+        "','",
+        " сво",
+        " кон",
+        " За",
+        "ред"
+      ],
+      "scripts": {
+        "ascii": 1909,
+        "space": 11,
+        "cyrillic": 922,
+        "latin-ext": 80,
+        "other": 267,
+        "cjk": 936,
+        "hangul": 214
+      }
+    },
+    "mistral-7b-th2483-wikipedia+news": {
+      "swapped": 2483,
+      "share_of_vocab": 0.07759375,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 196,
+      "heldout_examples": [
+        " ре",
+        " сво",
+        " За",
+        "ред",
+        " Ц",
+        " гру",
+        " ett",
+        "бы",
+        " или",
+        " спо"
+      ],
+      "scripts": {
+        "ascii": 675,
+        "space": 9,
+        "cyrillic": 818,
+        "latin-ext": 63,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    },
+    "mistral-7b-th500": {
+      "swapped": 500,
+      "share_of_vocab": 0.015625,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 60,
+      "heldout_examples": [
+        "외",
+        "問",
+        "企",
+        "』",
+        "『",
+        "毛",
+        "医",
+        "梅",
+        "醒",
+        "হ"
+      ],
+      "scripts": {
+        "other": 135,
+        "cjk": 265,
+        "hangul": 84,
+        "ascii": 1,
+        "space": 5,
+        "cyrillic": 7,
+        "latin-ext": 3
+      }
+    },
+    "mistral-7b-th1000": {
+      "swapped": 1000,
+      "share_of_vocab": 0.03125,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 128,
+      "heldout_examples": [
+        "를",
+        "스",
+        "입",
+        "他",
+        "მ",
+        "세",
+        "모",
+        "체",
+        "☆",
+        "선"
+      ],
+      "scripts": {
+        "cyrillic": 18,
+        "ascii": 26,
+        "latin-ext": 36,
+        "other": 230,
+        "hangul": 211,
+        "cjk": 473,
+        "space": 6
+      }
+    },
+    "mistral-7b-th2000": {
+      "swapped": 2000,
+      "share_of_vocab": 0.0625,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 171,
+      "heldout_examples": [
+        "åg",
+        "стре",
+        " сред",
+        "wohner",
+        "вое",
+        " pentru",
+        "serde",
+        " Сер",
+        " bek",
+        " СССР"
+      ],
+      "scripts": {
+        "ascii": 477,
+        "cyrillic": 539,
+        "latin-ext": 59,
+        "space": 7,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    },
+    "mistral-7b-th2483": {
+      "swapped": 2483,
+      "share_of_vocab": 0.07759375,
+      "english_uses_in_prune_corpus": 0,
+      "pruned_ids_used_by_heldout_english": 196,
+      "heldout_examples": [
+        " ре",
+        " сво",
+        " За",
+        "ред",
+        " Ц",
+        " гру",
+        " ett",
+        "бы",
+        " или",
+        " спо"
+      ],
+      "scripts": {
+        "ascii": 675,
+        "space": 9,
+        "cyrillic": 818,
+        "latin-ext": 63,
+        "other": 234,
+        "hangul": 211,
+        "cjk": 473
+      }
+    }
+  },
+  "collateral": {
+    "Chinese": {
+      "base_tok100": 113.46385846934565,
+      "mistral-7b-th2483-cluster": {
+        "tok100": 128.08897813684516,
+        "change": 0.12889672416217635
+      },
+      "mistral-7b-th1000-enonly": {
+        "tok100": 130.8925055066508,
+        "change": 0.1536052737181839
+      },
+      "mistral-7b-th2000-enonly": {
+        "tok100": 163.76526490298176,
+        "change": 0.4433253646774753
+      },
+      "mistral-7b-th3219-enonly": {
+        "tok100": 164.21805558798576,
+        "change": 0.44731598064199707
+      },
+      "mistral-7b-th4339-enonly": {
+        "tok100": 164.24179450658073,
+        "change": 0.44752520073124136
+      },
+      "mistral-7b-th2483-wikipedia+news": {
+        "tok100": 128.08897813684516,
+        "change": 0.12889672416217635
+      },
+      "mistral-7b-th500": {
+        "tok100": 119.25148465531869,
+        "change": 0.05100854372528363
+      },
+      "mistral-7b-th1000": {
+        "tok100": 128.08858897424523,
+        "change": 0.1288932943246479
+      },
+      "mistral-7b-th2000": {
+        "tok100": 128.08897813684516,
+        "change": 0.12889672416217635
+      },
+      "mistral-7b-th2483": {
+        "tok100": 128.08897813684516,
+        "change": 0.12889672416217635
+      }
+    },
+    "Korean": {
+      "base_tok100": 106.49039840482043,
+      "mistral-7b-th2483-cluster": {
+        "tok100": 148.07107635614358,
+        "change": 0.3904641035641103
+      },
+      "mistral-7b-th1000-enonly": {
+        "tok100": 123.45478450619876,
+        "change": 0.1593043725584411
+      },
+      "mistral-7b-th2000-enonly": {
+        "tok100": 149.8243512699254,
+        "change": 0.40692826315075026
+      },
+      "mistral-7b-th3219-enonly": {
+        "tok100": 149.82458072613713,
+        "change": 0.4069304178634301
+      },
+      "mistral-7b-th4339-enonly": {
+        "tok100": 149.825498550984,
+        "change": 0.40693903671414944
+      },
+      "mistral-7b-th2483-wikipedia+news": {
+        "tok100": 148.07107635614358,
+        "change": 0.3904641035641103
+      },
+      "mistral-7b-th500": {
+        "tok100": 113.86328539993072,
+        "change": 0.0692352278285453
+      },
+      "mistral-7b-th1000": {
+        "tok100": 148.0703879875084,
+        "change": 0.3904576394260708
+      },
+      "mistral-7b-th2000": {
+        "tok100": 148.07061744372012,
+        "change": 0.39045979413875065
+      },
+      "mistral-7b-th2483": {
+        "tok100": 148.07107635614358,
+        "change": 0.3904641035641103
+      }
+    },
+    "Russian": {
+      "base_tok100": 39.56798674787988,
+      "mistral-7b-th2483-cluster": {
+        "tok100": 46.52388386803586,
+        "change": 0.17579608395235535
+      },
+      "mistral-7b-th1000-enonly": {
+        "tok100": 39.57055214723926,
+        "change": 6.483522590450264e-05
+      },
+      "mistral-7b-th2000-enonly": {
+        "tok100": 40.2456186643798,
+        "change": 0.01712576181390446
+      },
+      "mistral-7b-th3219-enonly": {
+        "tok100": 42.824028263371225,
+        "change": 0.08228979493544264
+      },
+      "mistral-7b-th4339-enonly": {
+        "tok100": 47.767736071713905,
+        "change": 0.20723190634088517
+      },
+      "mistral-7b-th2483-wikipedia+news": {
+        "tok100": 46.52388386803586,
+        "change": 0.17579608395235535
+      },
+      "mistral-7b-th500": {
+        "tok100": 39.56981917599373,
+        "change": 4.631087564610503e-05
+      },
+      "mistral-7b-th1000": {
+        "tok100": 39.573117546598645,
+        "change": 0.00012967045180900527
+      },
+      "mistral-7b-th2000": {
+        "tok100": 42.548797560671694,
+        "change": 0.07533390141340801
+      },
+      "mistral-7b-th2483": {
+        "tok100": 46.52388386803586,
+        "change": 0.17579608395235535
+      }
+    },
+    "Japanese": {
+      "base_tok100": 109.19098896794324,
+      "mistral-7b-th2483-cluster": {
+        "tok100": 120.33183433880379,
+        "change": 0.10203081294676553
+      },
+      "mistral-7b-th1000-enonly": {
+        "tok100": 121.35514535205041,
+        "change": 0.11140256626559508
+      },
+      "mistral-7b-th2000-enonly": {
+        "tok100": 148.9316027994159,
+        "change": 0.3639550681525552
+      },
+      "mistral-7b-th3219-enonly": {
+        "tok100": 149.1334725672366,
+        "change": 0.36580384495848683
+      },
+      "mistral-7b-th4339-enonly": {
+        "tok100": 149.13754486802839,
+        "change": 0.36584114016782854
+      },
+      "mistral-7b-th2483-wikipedia+news": {
+        "tok100": 120.33183433880379,
+        "change": 0.10203081294676553
+      },
+      "mistral-7b-th500": {
+        "tok100": 114.49351243700055,
+        "change": 0.04856191448741276
+      },
+      "mistral-7b-th1000": {
+        "tok100": 120.33183433880379,
+        "change": 0.10203081294676553
+      },
+      "mistral-7b-th2000": {
+        "tok100": 120.33183433880379,
+        "change": 0.10203081294676553
+      },
+      "mistral-7b-th2483": {
+        "tok100": 120.33183433880379,
+        "change": 0.10203081294676553
+      }
+    },
+    "Python code": {
+      "base_tok100": 32.651851315937556,
+      "mistral-7b-th2483-cluster": {
+        "tok100": 32.699279731185385,
+        "change": 0.001452549038917228
+      },
+      "mistral-7b-th1000-enonly": {
+        "tok100": 32.65506680171707,
+        "change": 9.847790094363873e-05
+      },
+      "mistral-7b-th2000-enonly": {
+        "tok100": 32.73887039984565,
+        "change": 0.002665058194284642
+      },
+      "mistral-7b-th3219-enonly": {
+        "tok100": 32.90667856396405,
+        "change": 0.007804373649775709
+      },
+      "mistral-7b-th4339-enonly": {
+        "tok100": 33.43361629608193,
+        "change": 0.023942439666898574
+      },
+      "mistral-7b-th2483-wikipedia+news": {
+        "tok100": 32.699279731185385,
+        "change": 0.001452549038917228
+      },
+      "mistral-7b-th500": {
+        "tok100": 32.652655187382436,
+        "change": 2.461947523579866e-05
+      },
+      "mistral-7b-th1000": {
+        "tok100": 32.655468737439506,
+        "change": 0.00011078763856153806
+      },
+      "mistral-7b-th2000": {
+        "tok100": 32.670340359169764,
+        "change": 0.0005662479304253676
+      },
+      "mistral-7b-th2483": {
+        "tok100": 32.699279731185385,
+        "change": 0.001452549038917228
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "check": "vocabulary size identical, ids contiguous",
+    "pass": true,
+    "detail": "base 250,680, retrofit 250,680"
+  },
+  {
+    "check": "Thai round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 0, base 0, new failures introduced by retrofit 0"
+  },
+  {
+    "check": "English round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 0, base 0, new failures introduced by retrofit 0"
+  },
+  {
+    "check": "top 100 candidates each encode to one token",
+    "pass": true,
+    "detail": "100/100 single-token"
+  },
+  {
+    "check": "added tokens used on held-out Thai",
+    "pass": true,
+    "detail": "4,986/5,000 used (99.7%); threshold 95%"
+  },
+  {
+    "check": "English id sequences unchanged (>= 99.5%)",
+    "pass": true,
+    "detail": "9,988/10,000 samples byte-identical (99.88%)"
+  }
+]
