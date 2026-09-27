@@ -287,6 +287,7 @@ footer { padding-block: 40px 0; color: var(--muted); font-size: 13px; display: g
     <p class="lede" id="lede"></p>
     <div class="kpis" id="kpis"></div>
     <div class="weeks" id="weeks"></div>
+    <p id="report-link" class="ink2"></p>
   </header>
 
   <nav class="toc" aria-label="Sections">
@@ -474,6 +475,7 @@ footer { padding-block: 40px 0; color: var(--muted); font-size: 13px; display: g
 
 <script>
 const DATA = /*__DATA__*/null;
+const REPORT_URL = "__REPORT_URL__";
 const DOMAINS = ["wikipedia", "news", "social"];
 const DNAME = { wikipedia: "Wikipedia", news: "News", social: "Social" };
 const $ = (s, r = document) => r.querySelector(s);
@@ -546,6 +548,7 @@ const ci = s => (typeof s === "string" ? s.split("..").map(Number) : s);
     ["Wk 5 all targets met", ""], ["Wk 6 robustness", ""], ["Wk 7 report drafted", "info"],
   ];
   $("#weeks").append(...weeks.map(([t, c]) => h("span", { class: "pill " + c }, h("span", { class: "dot" }), t)));
+  if (REPORT_URL.startsWith("http")) $("#report-link").append("The full write-up, with method, references and limits: ", h("a", { href: REPORT_URL }, "read the report"), ".");
 })();
 
 /* ---------- generic HTML bar chart ---------- */
@@ -807,7 +810,11 @@ function legend(host, items) {
   const all = DATA.embed_adapt || {};
   const key = Object.keys(all).sort().pop();
   const box = $("#embed-box");
-  if (!key) { $("#rows-tldr").textContent = "Embedding experiment still running."; return; }
+  if (!key) {
+    $("#rows-tldr").textContent = "The retrofit keeps the embedding matrix's shape, but each swapped row still holds the vector of the token it replaced. The experiment that measures what those rows need (BLOOM-560m on CPU: rows left as they were, random re-start, mean of the old pieces, and row-only tuning) is still running; this section fills in when it finishes.";
+    box.append(h("div", { class: "card" }, h("p", { class: "ink2" }, "Pending: results/embed_adapt_bloom-th5000.json")));
+    return;
+  }
   const E = all[key], R = E.results, meta = E.meta;
   const order = ["base", "stale", "random", "mean", "random+tune", "mean+tune"].filter(k => R[k]);
   const label = { base: "original tokenizer", stale: "rows left as they were", random: "random re-start (Csaki et al.)", mean: "mean of old pieces (FVT)", "random+tune": "random + row-only tuning", "mean+tune": "mean + row-only tuning" };

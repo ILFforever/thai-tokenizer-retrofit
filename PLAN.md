@@ -2,6 +2,29 @@
 
 Week 1 is done (`results/BASELINE.md`). This is the rest.
 
+## Progress (28 Sep 2026)
+
+| Week | Status | Acceptance | Where |
+| --- | --- | --- | --- |
+| 2 Decompose | ✅ done | Every tokenizer decomposed (SentencePiece ones too - their pre-tokenizer is readable after all); target chosen: Mistral-7B | `results/DECOMPOSITION.md` |
+| 3 Candidates | ✅ done | Top 5,000 ranked with held-out projection; curve flattens. Note: the projection turned out pessimistic, not an upper bound | `results/CANDIDATES.md`, `candidates.csv` |
+| 4 Retrofit | ✅ done | Size identical ✅, Thai round-trip 10k ✅, English round-trip 10k ✅, top-100 single-token ⚠️ 98/100 at 2,483 (100/100 at 3,219+ and on BLOOM) | `results/RETROFIT_CHECKS.md`, `tokenizers/` |
+| 5 Evaluate | ✅ done | Thai ≥15% ✅ (61-67%), English ≤1% ✅ (+0.01%), context ≥+15% ✅ (+157-200%) | `results/EVALUATION.md`, `BASELINE_after.md` |
+| 6 Robustness | ✅ done (embedding run finishing) | Second segmenter ✅, register split ✅, row accounting ✅, collateral cost (extra) ✅, embedding re-init test ⏳ | `results/ROBUSTNESS.md`, `EMBED_ADAPT_*.md` |
+| 7 Write-up | 🟡 drafted | Report structured as 10 sections (the proposal's ten components were not available, so a standard structure is used); references checked from primary sources | `results/REPORT.md`, dashboard |
+| 8 Buffer | - | - | - |
+
+Deviations from the plan, and why:
+- Week 2: the plan's floor (one token per cluster) sits above what good Thai
+  tokenizers already reach, which makes its share formula negative; the
+  decomposition uses a strong Thai vocabulary as the reference instead.
+- Week 4: new tokens come from continued BPE (greedy by savings, one merge
+  per slot) rather than whole-candidate merge paths, so intermediate pieces
+  are paid for from the same budget. The protect corpus is raw English plus
+  Python code, not English alone.
+- Extra: Qwen2.5 unreachable-token study, BLOOM as a second target,
+  English-only protection profile, cluster-aware and formal-only ablations.
+
 Each week has a **deliverable**, **acceptance criteria**, and a **fallback**.
 Do not move on until acceptance is met — every week's output is the next
 week's input.

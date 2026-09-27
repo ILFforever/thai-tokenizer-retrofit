@@ -149,8 +149,10 @@ def main() -> None:
         if p.exists():
             data[name.split(".")[0]] = json.loads(p.read_text(encoding="utf-8"))
     for p in sorted(RESULTS.glob("embed_adapt_*.json")):
-        data.setdefault("embed_adapt", {})[p.stem.replace("embed_adapt_", "")] = json.loads(
-            p.read_text(encoding="utf-8"))
+        run = json.loads(p.read_text(encoding="utf-8"))
+        if run["meta"]["steps"] < 50:  # a smoke test, not a result
+            continue
+        data.setdefault("embed_adapt", {})[p.stem.replace("embed_adapt_", "")] = run
     for p in sorted(RESULTS.glob("qwen_repair*.json")):
         data[p.stem] = json.loads(p.read_text(encoding="utf-8"))
     for p in sorted(RESULTS.glob("retrofit_*_meta.json")):

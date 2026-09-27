@@ -3,7 +3,31 @@
 Tanabodhi Mukura (Dean) · CEDT, Chulalongkorn University · AI course project ·
 draft generated 28 September 2026 from the numbers in `results/`
 
-<!-- RESULTS-TLDR -->
+## TL;DR
+
+- **Thai costs Mistral-7B 3.92x as many tokens as English** for the same
+  meaning, and all of that damage is in its vocabulary: its pre-tokenizer
+  never cuts Thai text, so a vocabulary retrofit can reach all of it.
+- **Swapping 2,483 of its 32,000 entries** (7.8% - every entry that raw
+  English, Python code and Thai never use) for Thai pieces cuts Thai tokens by
+  **64% on Wikipedia, 67% on news and 61% on social posts**, takes the penalty
+  to **1.33x**, and changes English by **+0.01%**. The vocabulary stays the same
+  size. At Typhoon's own budget (3,219) the fixed-size retrofit beats Typhoon's
+  vocabulary expansion on all three domains.
+- **GPT-4's cl100k and Qwen2.5 cannot be fixed this way.** Their regex matches
+  letters with `\p{L}+`, which excludes Thai vowel and tone marks, so every
+  mark is cut off its consonant before the vocabulary is consulted. Qwen2.5
+  even holds **1,578 Thai words it can never emit**; all are untrained, so the
+  one-line regex fix alone makes Qwen2.5-0.5B 2-3x *worse* at Thai.
+- **The price is real and stated:** informal Thai gains less than formal
+  (spread 1.11, the same as Typhoon; 1.21 if the vocabulary is learned from
+  formal text only), and the freed slots come from other languages - Korean
+  text costs 39% more tokens, Russian 18%, Chinese 13%, Japanese 10%.
+- <!-- TLDR-EMBED -->
+- **Several earlier claims did not survive checking** and are corrected here:
+  the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
+  costs more on social text", and the novelty of fixed-size replacement for
+  Thai (Csaki et al. did it in 2023).
 
 ---
 

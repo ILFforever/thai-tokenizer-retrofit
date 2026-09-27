@@ -29,9 +29,15 @@ def _slim(x):
 
 
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--report-url", default="")
+    args = ap.parse_args()
     data = _slim(json.loads(DATA.read_text(encoding="utf-8")))
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", blob)
+    html = html.replace("__REPORT_URL__", args.report_url)
     OUT.write_text(html, encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)} ({len(html) // 1024} KB)")
 
