@@ -10,6 +10,12 @@ its pieces, then only those 1,578 rows were trained. But Thai is still
 The regex fix is not free, and repairing only the rows does not make it
 free.**
 
+**Update (lr 1e-4 rerun, `QWEN_REPAIR_lr1e-4.md`):** the English damage was
+caused by the learning rate. At 1e-4 instead of 2e-3 the same repair recovers
+82-87% of the Thai loss (bits per character 1.942 / 2.286 / 3.069 on
+Wikipedia / news / social) and leaves English exactly unchanged. Thai is still
+14-37% worse than with the shipped tokenizer, so the conclusion stands.
+
 ## What was tested
 
 `DECOMPOSITION.md` found that 1,578 of Qwen2.5's 2,570 Thai vocabulary

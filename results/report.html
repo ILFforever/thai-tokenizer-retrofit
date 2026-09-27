@@ -92,9 +92,11 @@ draft generated 28 September 2026 from the numbers in <code>results/</code></p>
   the mean of the pieces it replaces recovers most of the loss with no
   training, and 200 steps training only those rows ends <em>better</em> than the
   original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
-  at a third of the tokens, with English unchanged. "No retraining" is
-  narrowed to: no expansion and no pretraining; swapped rows re-set and
-  lightly tuned.</li>
+  at a third of the tokens, with English unchanged. <strong>On the target model,
+  Mistral-7B, that is not enough:</strong> it already reads Thai well, and a CPU-sized
+  row-only pass recovers only about half the loss. "No retraining" is
+  narrowed to: no expansion and no pretraining from scratch, but the swapped
+  rows must be re-set and trained, with a real budget at 7B scale.</li>
 <li><strong>Several earlier claims did not survive checking</strong> and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
   costs more on social text", and the novelty of fixed-size replacement for
@@ -690,7 +692,8 @@ about 19 bits to predict.</p>
 <p><strong>Can the rows be repaired cheaply? Only partly.</strong> Each of the 1,578 rows was
 set to the mean of the embeddings of the pieces the shipped tokenizer splits
 that word into, and then only those rows were trained on Thai text (200 steps
-of 8 × 256 tokens; every other tensor verified bit-identical afterwards):</p>
+of 8 × 256 tokens; every other tensor verified bit-identical afterwards). Two
+learning rates were run (<code>QWEN_UNREACHABLE.md</code>, <code>QWEN_REPAIR_lr1e-4.md</code>):</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -699,7 +702,8 @@ of 8 × 256 tokens; every other tensor verified bit-identical afterwards):</p>
 <th style="text-align: right;">Shipped</th>
 <th style="text-align: right;">Rows untrained</th>
 <th style="text-align: right;">Mean init</th>
-<th style="text-align: right;">Mean + row tuning</th>
+<th style="text-align: right;">+ tuning, lr 2e-3</th>
+<th style="text-align: right;">+ tuning, lr 1e-4</th>
 </tr>
 </thead>
 <tbody>
@@ -709,7 +713,8 @@ of 8 × 256 tokens; every other tensor verified bit-identical afterwards):</p>
 <td style="text-align: right;">1.415</td>
 <td style="text-align: right;">4.302</td>
 <td style="text-align: right;">2.765</td>
-<td style="text-align: right;">2.147 (+52% vs shipped)</td>
+<td style="text-align: right;">2.147</td>
+<td style="text-align: right;"><strong>1.942</strong> (+37% vs shipped)</td>
 </tr>
 <tr>
 <td>News</td>
@@ -717,7 +722,8 @@ of 8 × 256 tokens; every other tensor verified bit-identical afterwards):</p>
 <td style="text-align: right;">1.776</td>
 <td style="text-align: right;">4.687</td>
 <td style="text-align: right;">3.196</td>
-<td style="text-align: right;">2.528 (+42%)</td>
+<td style="text-align: right;">2.528</td>
+<td style="text-align: right;"><strong>2.286</strong> (+29%)</td>
 </tr>
 <tr>
 <td>Social</td>
@@ -725,21 +731,40 @@ of 8 × 256 tokens; every other tensor verified bit-identical afterwards):</p>
 <td style="text-align: right;">2.694</td>
 <td style="text-align: right;">5.525</td>
 <td style="text-align: right;">3.868</td>
-<td style="text-align: right;">3.368 (+25%)</td>
+<td style="text-align: right;">3.368</td>
+<td style="text-align: right;"><strong>3.069</strong> (+14%)</td>
+</tr>
+<tr>
+<td>English, Wikipedia</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">0.888</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">0.888</td>
+<td style="text-align: right;">0.956</td>
+<td style="text-align: right;"><strong>0.888</strong></td>
+</tr>
+<tr>
+<td>English, OPUS</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">1.353</td>
+<td style="text-align: right;">-</td>
+<td style="text-align: right;">1.353</td>
+<td style="text-align: right;">1.487</td>
+<td style="text-align: right;"><strong>1.353</strong></td>
 </tr>
 </tbody>
 </table></div>
 <p>Mean initialisation wins back about half of the loss for free and leaves
-English untouched; row-only tuning wins back about three quarters, then
-stalls. Thai stays 25-52% worse than with the shipped tokenizer, and because
-the tuning text was all Thai and the matrix is shared between reading and
-predicting, the repaired rows started taking 11-20% of the probability at
-English positions: English bits per character rose 8-10% (Wikipedia 0.888 →
-0.956, OPUS 1.353 → 1.487). <strong>For Qwen2.5 the regex fix plus row repair is
-not enough</strong>; the rest of the network learned Thai in ~1.6x more pieces and
-is frozen here. Mixing English into the tuning data, and adapting more than
-the rows (for example LoRA on the attention layers), are the obvious next
-tests - neither was run.</p>
+English untouched. Row-only tuning at the gentler learning rate wins back
+82-87% and still leaves English exactly unchanged; at the twenty-times larger
+rate it recovered less (about 75%) <em>and</em> pushed English up 8-10%, because the
+repaired rows - shared between reading and predicting - started taking
+probability at English positions. So the English leak was the learning rate,
+not the method. Even so, Thai stays 14-37% worse than with the shipped
+tokenizer: <strong>for Qwen2.5, the regex fix plus row repair is not enough.</strong> The
+rest of the network learned Thai in about 1.6 times more pieces and is frozen
+here; adapting more than the rows (for example LoRA on the attention layers)
+is the obvious next test and was not run.</p>
 <h3 id="76-what-the-swapped-rows-need">7.6 What the swapped rows need</h3>
 <p><em>Source: <code>EMBED_ADAPT_bloom-th5000.md</code>.</em></p>
 <p>BLOOM-560m was retrofitted with 5,000 Thai entries (2.0% of its 250,680 rows)
@@ -837,17 +862,77 @@ changed, 0 outside the swap). Tuning used 204,800 tokens of Thai training text
   third of the Thai token cost. BLOOM was not pretrained on Thai, so its
   reference is weak.</p>
 </li>
-<li><strong>Contrast with Qwen2.5 (§7.5).</strong> There the same recipe recovered only three
-  quarters of the loss and pushed English up 8-10%. Two differences are
-  plausible and neither is separated here: Qwen already models Thai well
-  through its shipped tokenizer (a strong reference to match), and its repair
-  used a learning rate twenty times larger (2e-3 vs 1e-4). A Qwen repair at
-  1e-4 was started to test the second; see <code>QWEN_REPAIR_lr1e-4.md</code> if present.</li>
+<li><strong>Contrast with Qwen2.5 (§7.5).</strong> There the same recipe, at the same
+  learning rate (1e-4), recovers 82-87% of the loss but does not reach the
+  shipped tokenizer, with English again unchanged. The difference is the
+  reference: Qwen already models Thai well through its shipped tokenizer,
+  while BLOOM barely models Thai at all, so BLOOM has far less to match.</li>
 </ul>
+<p><strong>At the target scale: Mistral-7B</strong> (<code>MISTRAL_ROWS_mistral-7b-th2483.md</code>).
+Mistral-7B was evaluated in bfloat16 on the CPU, and the swapped rows were
+tuned briefly (160 steps of 4 × 128 tokens, one English window per batch,
+float32 master copies of the rows). With the 2,483-slot retrofit, on
+40 held-out passages of ~400 characters per domain:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Swapped rows set by</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">English</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>original tokenizer (reference)</em></td>
+<td style="text-align: right;">1.505</td>
+<td style="text-align: right;">2.262</td>
+<td style="text-align: right;">2.267</td>
+<td style="text-align: right;">0.709</td>
+</tr>
+<tr>
+<td>left as they were</td>
+<td style="text-align: right;">4.431</td>
+<td style="text-align: right;">5.134</td>
+<td style="text-align: right;">4.973</td>
+<td style="text-align: right;">0.709</td>
+</tr>
+<tr>
+<td>mean of old pieces, no training</td>
+<td style="text-align: right;">3.490</td>
+<td style="text-align: right;">4.035</td>
+<td style="text-align: right;">3.903</td>
+<td style="text-align: right;">0.709</td>
+</tr>
+<tr>
+<td>mean + 160 row-only steps</td>
+<td style="text-align: right;">3.100</td>
+<td style="text-align: right;">3.543</td>
+<td style="text-align: right;">3.477</td>
+<td style="text-align: right;">0.709</td>
+</tr>
+</tbody>
+</table></div>
+<p>Mistral-7B already models Thai well character by character (1.5 bits per
+character on Wikipedia, against BLOOM-560m's 3.3), so it has much more to
+lose: mean initialisation recovers only 32-40% of the damage here, against
+~80% on BLOOM. English is untouched in every condition. <strong>At the target scale
+the swapped rows need training, not just a good starting point.</strong></p>
+<p>A short row-only tuning pass (81,920 tokens, about an hour on the CPU) recovers
+45-55% of the damage and was still improving when it stopped (quick-check
+Wikipedia 3.54 → 3.18 over 160 steps), with English unchanged. It is nowhere
+near the original. At 7B scale the swapped rows need a real training budget -
+far more tokens, and probably adaptation beyond the rows - which is what
+Typhoon's continued pretraining supplied and what this project could not run
+without a GPU.</p>
 <p><strong>So the honest version of the "no retraining" claim is:</strong> no vocabulary
-expansion and no pretraining, but the swapped rows must be re-set - the mean
-of the old pieces works without any training - and a short row-only tuning
-pass, a few hundred steps on a CPU for a 560M model, recovers the rest.</p>
+expansion and no pretraining from scratch, but the swapped rows must be
+re-set (the mean of the old pieces is the right start) and trained. For a
+model that reads Thai poorly (BLOOM-560m) a few hundred row-only steps on a
+CPU are enough; for one that already reads Thai well (Mistral-7B) a CPU-sized
+pass recovers about half, and a real training budget is needed. Whether that
+budget is much smaller than Typhoon's continued pretraining was not measured.</p>
 <h2 id="8-robustness-fairness-and-cost">8. Robustness, fairness and cost</h2>
 <p>All numbers in this section are from <code>ROBUSTNESS.md</code>.</p>
 <h3 id="81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</h3>
@@ -1024,8 +1109,10 @@ embedding matrix's shape, so nothing is added and no full pretraining is
 needed. It does not mean zero adaptation: each swapped row still holds the
 vector of the token it used to be, and §7.6 shows that using the retrofit
 without touching those rows is harmful. The defensible claim is: <em>no
-vocabulary expansion and no full pretraining; only the swapped rows need
-re-initialising and light tuning.</em></p>
+vocabulary expansion and no pretraining from scratch; the swapped rows need
+re-initialising and training - lightly for a model weak in Thai, with a real
+budget (not measured here) for one that is already strong, such as
+Mistral-7B.</em></p>
 <p><strong>Who can use it.</strong> Only self-hosted open-weight deployments (on-device and
 edge, or organisations that must self-host for PDPA or data-residency
 reasons). A hosted API's tokenizer cannot be changed by its users, so GPT-4,
@@ -1036,11 +1123,12 @@ mostly Cyrillic, other-language Latin-script and markup pieces, CJK and
 Hangul, so a deployment that also serves those languages would pay for the
 Thai gain (§8.4). The prune list is published so a
 deployment can check it against its own traffic.</p>
-<p><strong>Scale of the model experiments.</strong> The tokenizer results are for Mistral-7B's
-tokenizer, but the embedding experiments ran on small models that fit a CPU
-(BLOOM-560m, Qwen2.5-0.5B), with a few hundred optimisation steps and bits per
-character as the only quality measure. They show the direction and rough size
-of the effect, not the downstream task quality of a tuned 7B model.</p>
+<p><strong>Scale of the model experiments.</strong> Everything ran on a CPU. The full
+initialisation-and-tuning comparison used small models (BLOOM-560m,
+Qwen2.5-0.5B); Mistral-7B itself was evaluated on 40 passages per domain and
+tuned for only 160 steps. Bits per character is the only quality measure.
+These results show the direction and rough size of the effect, not the
+downstream task quality of a properly tuned 7B model.</p>
 <p><strong>Data.</strong> The social domain is small (189k evaluation characters) and comes
 from brand-monitoring posts, so brand and product names are over-represented
 (<code>เบียร์ช้าง</code>, <code>โตโยต้า</code> appear among the added tokens); OPUS-100
@@ -1091,10 +1179,12 @@ vocabulary's training data.</p>
    Thai bits per character on BLOOM-560m and random rows quadruple it; the
    mean of the old pieces recovers most of the loss with no training, and
    200 steps of row-only tuning end at least as good as the original on Thai
-   with a third of the tokens and English unchanged. On Qwen2.5, where the
-   rows were never trained and the reference is strong, the same recipe
-   recovers three quarters and leaks into English: row-only repair is enough
-   for a retrofit of a weak-Thai model, not for unlocking Qwen's dead rows.</li>
+   with a third of the tokens and English unchanged. On models that already
+   model Thai well the same recipe falls short: Mistral-7B recovers 45-55% of
+   the damage after 160 steps and Qwen2.5's dead rows 82-87% after 200, both
+   with English unchanged at learning rate 1e-4. Row-only repair is enough for
+   a weak-Thai model; for a strong one the rows need a real training budget,
+   which this CPU-only project could not provide.</li>
 </ol>
 <p><strong>What to do next.</strong></p>
 <ul>

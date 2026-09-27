@@ -831,7 +831,7 @@ function legend(host, items) {
   const order = ["base", "stale", "random", "mean", "random+tune", "mean+tune"].filter(k => R[k]);
   const label = { base: "original tokenizer", stale: "rows left as they were", random: "random re-start (Csaki et al.)", mean: "mean of old pieces (FVT)", "random+tune": "random + row-only tuning", "mean+tune": "mean + row-only tuning" };
   const best = order.filter(k => k !== "base").sort((a, b) => R[a].wikipedia_bpc - R[b].wikipedia_bpc)[0];
-  $("#rows-tldr").innerHTML = `The retrofit keeps the embedding matrix's shape, but each swapped row still holds the vector of the token it replaced. On BLOOM-560m (retrofitted with ${int(meta.swapped_rows)} Thai entries, ${(meta.swapped_rows / meta.vocab * 100).toFixed(1)}% of its vocabulary), leaving the rows alone or re-drawing them at random makes the model much worse at Thai. Setting each row to the average of the pieces it replaces recovers almost everything with no training at all. The honest claim is "no vocabulary expansion, no full pretraining - only the swapped rows need re-setting and light tuning."`;
+  $("#rows-tldr").innerHTML = `The retrofit keeps the embedding matrix's shape, but each swapped row still holds the vector of the token it replaced. On BLOOM-560m (retrofitted with ${int(meta.swapped_rows)} Thai entries, ${(meta.swapped_rows / meta.vocab * 100).toFixed(1)}% of its vocabulary), leaving the rows alone or re-drawing them at random makes the model much worse at Thai. Setting each row to the average of the pieces it replaces recovers most of the loss with no training, and 200 steps of training only those rows ends better than the original on Thai (the original got no Thai training here, so read that as "at least as good"). On Mistral-7B, which already handles Thai well, the same start recovers only about a third: at the target scale the rows need a real training budget. The honest claim is "no vocabulary expansion and no pretraining from scratch - but the swapped rows must be re-set and trained."`;
   const grid = h("div", { class: "grid3" });
   for (const d of [...DOMAINS]) {
     const card = h("div", { class: "card" }, h("h3", {}, `${DNAME[d]}: bits per character`));
@@ -848,6 +848,31 @@ function legend(host, items) {
     { max: Math.max(...order.map(k => R[k].english_bpc)) * 1.05, ref: R.base.english_bpc, refLabel: "original", fmtV: v => v.toFixed(3) });
   const tokNote = h("p", { class: "caption" }, `Thai tokens per 100 characters: original tokenizer ${DOMAINS.map(d => fmt(R.base[`${d}_tok100`])).join(" / ")}, retrofit ${DOMAINS.map(d => fmt(R.mean[`${d}_tok100`])).join(" / ")} (Wikipedia / news / social). Tuning: ${meta.steps} steps × ${meta.batch} × ${meta.seq} tokens (${int(meta.train_tokens_seen)} tokens) on Thai training text, only the swapped rows trainable. ${meta.eval_passages_per_domain} held-out passages of ~${meta.passage_chars} characters per domain.`);
   box.append(h("div", { style: { marginTop: "16px", display: "grid", gap: "16px" } }, en, tokNote));
+
+  // the target model: Mistral-7B, evaluated on CPU in bfloat16
+  const M = Object.values(DATA.mistral_rows || {})[0];
+  if (M) {
+    const MR = M.results;
+    const mOrder = ["base", "stale", "mean", "mean+tune"].filter(k => MR[k]);
+    const mLabel = { base: "original tokenizer", stale: "rows left as they were", mean: "mean of old pieces (FVT)", "mean+tune": "mean + row-only tuning" };
+    const card = h("div", { class: "card", style: { marginTop: "16px" } },
+      h("h3", {}, `At the target scale: Mistral-7B (${int(M.meta.swapped_rows)} swapped rows)`));
+    const g = h("div", { class: "grid3" });
+    for (const d of DOMAINS) {
+      const c = h("div", {}, h("p", { class: "ink2", style: { fontSize: "13px", marginBottom: "6px" } }, `${DNAME[d]}: bits per character`));
+      const rowsM = mOrder.map(k => ({ label: mLabel[k], value: MR[k][`${d}_bpc`], k }));
+      barChart(c, rowsM.map(r => ({ ...r, color: r.k === "base" ? cssv("base") : r.k === "mean+tune" ? cssv("accent") : cssv("other"), strong: r.k === "base",
+        tip: `<b>${r.label}</b><br>${r.value.toFixed(3)} bits per character<br>${fmt(MR[r.k][`${d}_tok100`])} tokens per 100 characters` })),
+        { max: Math.max(...rowsM.map(r => r.value)) * 1.05, ref: MR.base[`${d}_bpc`], refLabel: "original", fmtV: v => v.toFixed(2), stacked: true });
+      g.append(c);
+    }
+    const t = M.meta.tune;
+    card.append(g, h("p", { class: "caption" },
+      `Mistral-7B already models Thai well one character at a time, so it has more to lose: mean initialisation alone recovers only about a third of the damage here (about 80% on BLOOM). ` +
+      (t ? `Row-only tuning on CPU (${t.steps} steps, ${int(t.train_tokens_seen)} tokens, one English window per batch) moves it only part of the way - at 7B scale the swapped rows need a real training budget, as Typhoon's continued pretraining had. ` : "") +
+      `English is unchanged in every condition (${MR.base.english_bpc.toFixed(3)} bits per character).`));
+    box.append(card);
+  }
 })();
 
 /* ---------- 10. qwen ---------- */
@@ -857,7 +882,7 @@ function legend(host, items) {
   const rows = [["unreachable Thai (1,578)", g.unreachable_thai, cssv("crit")], ["padding, no token (271)", g.padding, cssv("base")], ["reachable Thai (992)", g.reachable_thai, cssv("accent")], ["all other tokens", g.other, cssv("other")]];
   barChart($("#ch-qnorm"), rows.map(([label, r, color]) => ({ label, value: r.norm.median, color, tip: `<b>${label}</b><br>median ${r.norm.median.toFixed(3)} (IQR ${r.norm.q1.toFixed(3)}-${r.norm.q3.toFixed(3)})<br>${int(r.collapsed)} of ${int(r.n)} collapsed onto the padding point` })),
     { max: 0.55, fmtV: v => v.toFixed(3), ticks: [0, 0.1, 0.2, 0.3, 0.4, 0.5], fmtT: v => v.toFixed(1) });
-  const R = DATA.qwen_repair;
+  const R = DATA["qwen_repair_lr1e-4"] || DATA.qwen_repair;
   const conds = [
     ["shipped", "shipped tokenizer", cssv("base")],
     ["dead", "pattern fixed, rows untrained", cssv("crit")],
@@ -878,7 +903,9 @@ function legend(host, items) {
   legend($("#lg-qbpc"), conds.map(([, lab, color]) => [lab, color]));
   if (R && R.english) {
     const ew = R.english.english_wiki, eo = R.english.english_opus;
-    $("#qbpc-caption").textContent = `Qwen2.5-0.5B, 50 passages of ~600 characters per domain; bits per character does not depend on how the text is split. Mean initialisation wins back about half the loss for free; training only the 1,578 rows (${R.meta.steps} steps, all-Thai text) wins back about three quarters, then stalls - Thai stays 25-52% worse than shipped, and English gets worse (Wikipedia ${ew.bpc_shipped.toFixed(3)} → ${ew.bpc_tune.toFixed(3)}, OPUS ${eo.bpc_shipped.toFixed(3)} → ${eo.bpc_tune.toFixed(3)}) because the repaired rows start taking probability at English positions.`;
+    const hi = DATA.qwen_repair && DATA.qwen_repair !== R ? DATA.qwen_repair : null;
+    $("#qbpc-caption").textContent = `Qwen2.5-0.5B, 50 passages of ~600 characters per domain; bits per character does not depend on how the text is split. Mean initialisation wins back about half the loss for free; training only the 1,578 rows (${R.meta.steps} steps, learning rate ${R.meta.lr}) wins back 82-87% but Thai stays 14-37% worse than shipped. English is unchanged (Wikipedia ${ew.bpc_shipped.toFixed(3)} → ${ew.bpc_tune.toFixed(3)}, OPUS ${eo.bpc_shipped.toFixed(3)} → ${eo.bpc_tune.toFixed(3)})` +
+      (hi ? `; at a 20× larger learning rate (${hi.meta.lr}) the repaired rows leaked into English (Wikipedia → ${hi.english.english_wiki.bpc_tune.toFixed(3)}, OPUS → ${hi.english.english_opus.bpc_tune.toFixed(3)}).` : ".");
   }
 })();
 
@@ -902,7 +929,7 @@ function legend(host, items) {
   const L = [
     "Only self-hosted open-weight deployments can use this. A hosted API's tokenizer cannot be changed.",
     "The retrofit is deployment-specific: slots are freed from languages the protected text does not contain (section 8).",
-    "The embedding experiments ran on small CPU-sized models (BLOOM-560m, Qwen2.5-0.5B) with a few hundred tuning steps, scored by bits per character only - not downstream task quality at 7B scale.",
+    "Everything ran on a CPU: the full embedding comparison used small models (BLOOM-560m, Qwen2.5-0.5B), and Mistral-7B was only evaluated and tuned for 160 steps. Quality is bits per character only - not downstream task quality of a properly tuned 7B model.",
     "The social domain is small (189k evaluation characters) and comes from brand-monitoring posts; OPUS-100 is partly subtitle text.",
     "Slots are allocated greedily, one merge at a time; an integer program could do slightly better. 98 of the top-100 candidate words become single tokens at 2,483 slots; the other two cost 2 tokens instead of 9 and 12.",
   ];

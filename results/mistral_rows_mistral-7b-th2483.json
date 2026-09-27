@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "model": "mistralai/Mistral-7B-v0.1",
+    "dtype": "bfloat16",
+    "tokenizer": "mistral-7b-th2483",
+    "swapped_rows": 2483,
+    "tied_embeddings": false,
+    "passages_per_domain": 40,
+    "passage_chars": 400,
+    "english_passages": 40,
+    "seconds": 3986.4,
+    "tune": {
+      "steps": 160,
+      "lr": 0.0001,
+      "batch": 4,
+      "seq": 128,
+      "english_windows_per_batch": 1,
+      "train_tokens_seen": 81920,
+      "log": [
+        {
+          "step": 0,
+          "wikipedia": 3.5377,
+          "news": 4.1304,
+          "social": 4.2354,
+          "seconds": 175.9
+        },
+        {
+          "step": 40,
+          "train_loss": 6.1697,
+          "wikipedia": 3.4682,
+          "news": 3.8909,
+          "social": 3.9805,
+          "seconds": 1176.2
+        },
+        {
+          "step": 80,
+          "train_loss": 5.7869,
+          "wikipedia": 3.3139,
+          "news": 3.7912,
+          "social": 3.8471,
+          "seconds": 2155.8
+        },
+        {
+          "step": 120,
+          "train_loss": 5.5269,
+          "wikipedia": 3.2387,
+          "news": 3.6986,
+          "social": 3.7937,
+          "seconds": 3115.0
+        },
+        {
+          "step": 160,
+          "train_loss": 4.9737,
+          "wikipedia": 3.1835,
+          "news": 3.6622,
+          "social": 3.732,
+          "seconds": 3743.5
+        }
+      ]
+    }
+  },
+  "results": {
+    "base": {
+      "wikipedia_bpc": 1.5052,
+      "wikipedia_tok100": 97.48,
+      "news_bpc": 2.2618,
+      "news_tok100": 100.3,
+      "social_bpc": 2.2669,
+      "social_tok100": 96.27,
+      "english_bpc": 0.709,
+      "english_tok100": 25.1
+    },
+    "stale": {
+      "wikipedia_bpc": 4.4315,
+      "wikipedia_tok100": 32.11,
+      "news_bpc": 5.1336,
+      "news_tok100": 37.01,
+      "social_bpc": 4.9734,
+      "social_tok100": 37.26,
+      "english_bpc": 0.709,
+      "english_tok100": 25.1
+    },
+    "mean": {
+      "wikipedia_bpc": 3.4904,
+      "wikipedia_tok100": 32.11,
+      "news_bpc": 4.0347,
+      "news_tok100": 37.01,
+      "social_bpc": 3.9029,
+      "social_tok100": 37.26,
+      "english_bpc": 0.709,
+      "english_tok100": 25.1
+    },
+    "mean+tune": {
+      "wikipedia_bpc": 3.0997,
+      "wikipedia_tok100": 32.11,
+      "news_bpc": 3.5431,
+      "news_tok100": 37.01,
+      "social_bpc": 3.4773,
+      "social_tok100": 37.26,
+      "english_bpc": 0.7093,
+      "english_tok100": 25.1
+    }
+  }
+}

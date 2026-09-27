@@ -29,9 +29,11 @@ draft generated 28 September 2026 from the numbers in `results/`
   the mean of the pieces it replaces recovers most of the loss with no
   training, and 200 steps training only those rows ends *better* than the
   original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
-  at a third of the tokens, with English unchanged. "No retraining" is
-  narrowed to: no expansion and no pretraining; swapped rows re-set and
-  lightly tuned.
+  at a third of the tokens, with English unchanged. **On the target model,
+  Mistral-7B, that is not enough:** it already reads Thai well, and a CPU-sized
+  row-only pass recovers only about half the loss. "No retraining" is
+  narrowed to: no expansion and no pretraining from scratch, but the swapped
+  rows must be re-set and trained, with a real budget at 7B scale.
 - **Several earlier claims did not survive checking** and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
   costs more on social text", and the novelty of fixed-size replacement for
@@ -484,25 +486,28 @@ about 19 bits to predict.
 **Can the rows be repaired cheaply? Only partly.** Each of the 1,578 rows was
 set to the mean of the embeddings of the pieces the shipped tokenizer splits
 that word into, and then only those rows were trained on Thai text (200 steps
-of 8 × 256 tokens; every other tensor verified bit-identical afterwards):
+of 8 × 256 tokens; every other tensor verified bit-identical afterwards). Two
+learning rates were run (`QWEN_UNREACHABLE.md`, `QWEN_REPAIR_lr1e-4.md`):
 
-| Domain | Tokens saved | Shipped | Rows untrained | Mean init | Mean + row tuning |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Wikipedia | 42% | 1.415 | 4.302 | 2.765 | 2.147 (+52% vs shipped) |
-| News | 34% | 1.776 | 4.687 | 3.196 | 2.528 (+42%) |
-| Social | 31% | 2.694 | 5.525 | 3.868 | 3.368 (+25%) |
+| Domain | Tokens saved | Shipped | Rows untrained | Mean init | + tuning, lr 2e-3 | + tuning, lr 1e-4 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Wikipedia | 42% | 1.415 | 4.302 | 2.765 | 2.147 | **1.942** (+37% vs shipped) |
+| News | 34% | 1.776 | 4.687 | 3.196 | 2.528 | **2.286** (+29%) |
+| Social | 31% | 2.694 | 5.525 | 3.868 | 3.368 | **3.069** (+14%) |
+| English, Wikipedia | - | 0.888 | - | 0.888 | 0.956 | **0.888** |
+| English, OPUS | - | 1.353 | - | 1.353 | 1.487 | **1.353** |
 
 Mean initialisation wins back about half of the loss for free and leaves
-English untouched; row-only tuning wins back about three quarters, then
-stalls. Thai stays 25-52% worse than with the shipped tokenizer, and because
-the tuning text was all Thai and the matrix is shared between reading and
-predicting, the repaired rows started taking 11-20% of the probability at
-English positions: English bits per character rose 8-10% (Wikipedia 0.888 →
-0.956, OPUS 1.353 → 1.487). **For Qwen2.5 the regex fix plus row repair is
-not enough**; the rest of the network learned Thai in ~1.6x more pieces and
-is frozen here. Mixing English into the tuning data, and adapting more than
-the rows (for example LoRA on the attention layers), are the obvious next
-tests - neither was run.
+English untouched. Row-only tuning at the gentler learning rate wins back
+82-87% and still leaves English exactly unchanged; at the twenty-times larger
+rate it recovered less (about 75%) *and* pushed English up 8-10%, because the
+repaired rows - shared between reading and predicting - started taking
+probability at English positions. So the English leak was the learning rate,
+not the method. Even so, Thai stays 14-37% worse than with the shipped
+tokenizer: **for Qwen2.5, the regex fix plus row repair is not enough.** The
+rest of the network learned Thai in about 1.6 times more pieces and is frozen
+here; adapting more than the rows (for example LoRA on the attention layers)
+is the obvious next test and was not run.
 
 ### 7.6 What the swapped rows need
 
@@ -548,17 +553,46 @@ changed, 0 outside the swap). Tuning used 204,800 tokens of Thai training text
   retrofitted model is *at least as good* at Thai as the original, at about a
   third of the Thai token cost. BLOOM was not pretrained on Thai, so its
   reference is weak.
-- **Contrast with Qwen2.5 (§7.5).** There the same recipe recovered only three
-  quarters of the loss and pushed English up 8-10%. Two differences are
-  plausible and neither is separated here: Qwen already models Thai well
-  through its shipped tokenizer (a strong reference to match), and its repair
-  used a learning rate twenty times larger (2e-3 vs 1e-4). A Qwen repair at
-  1e-4 was started to test the second; see `QWEN_REPAIR_lr1e-4.md` if present.
+- **Contrast with Qwen2.5 (§7.5).** There the same recipe, at the same
+  learning rate (1e-4), recovers 82-87% of the loss but does not reach the
+  shipped tokenizer, with English again unchanged. The difference is the
+  reference: Qwen already models Thai well through its shipped tokenizer,
+  while BLOOM barely models Thai at all, so BLOOM has far less to match.
+
+**At the target scale: Mistral-7B** (`MISTRAL_ROWS_mistral-7b-th2483.md`).
+Mistral-7B was evaluated in bfloat16 on the CPU, and the swapped rows were
+tuned briefly (160 steps of 4 × 128 tokens, one English window per batch,
+float32 master copies of the rows). With the 2,483-slot retrofit, on
+40 held-out passages of ~400 characters per domain:
+
+| Swapped rows set by | Wikipedia | News | Social | English |
+| --- | ---: | ---: | ---: | ---: |
+| *original tokenizer (reference)* | 1.505 | 2.262 | 2.267 | 0.709 |
+| left as they were | 4.431 | 5.134 | 4.973 | 0.709 |
+| mean of old pieces, no training | 3.490 | 4.035 | 3.903 | 0.709 |
+| mean + 160 row-only steps | 3.100 | 3.543 | 3.477 | 0.709 |
+
+Mistral-7B already models Thai well character by character (1.5 bits per
+character on Wikipedia, against BLOOM-560m's 3.3), so it has much more to
+lose: mean initialisation recovers only 32-40% of the damage here, against
+~80% on BLOOM. English is untouched in every condition. **At the target scale
+the swapped rows need training, not just a good starting point.**
+
+A short row-only tuning pass (81,920 tokens, about an hour on the CPU) recovers
+45-55% of the damage and was still improving when it stopped (quick-check
+Wikipedia 3.54 → 3.18 over 160 steps), with English unchanged. It is nowhere
+near the original. At 7B scale the swapped rows need a real training budget -
+far more tokens, and probably adaptation beyond the rows - which is what
+Typhoon's continued pretraining supplied and what this project could not run
+without a GPU.
 
 **So the honest version of the "no retraining" claim is:** no vocabulary
-expansion and no pretraining, but the swapped rows must be re-set - the mean
-of the old pieces works without any training - and a short row-only tuning
-pass, a few hundred steps on a CPU for a 560M model, recovers the rest.
+expansion and no pretraining from scratch, but the swapped rows must be
+re-set (the mean of the old pieces is the right start) and trained. For a
+model that reads Thai poorly (BLOOM-560m) a few hundred row-only steps on a
+CPU are enough; for one that already reads Thai well (Mistral-7B) a CPU-sized
+pass recovers about half, and a real training budget is needed. Whether that
+budget is much smaller than Typhoon's continued pretraining was not measured.
 
 ## 8. Robustness, fairness and cost
 
@@ -641,8 +675,10 @@ embedding matrix's shape, so nothing is added and no full pretraining is
 needed. It does not mean zero adaptation: each swapped row still holds the
 vector of the token it used to be, and §7.6 shows that using the retrofit
 without touching those rows is harmful. The defensible claim is: *no
-vocabulary expansion and no full pretraining; only the swapped rows need
-re-initialising and light tuning.*
+vocabulary expansion and no pretraining from scratch; the swapped rows need
+re-initialising and training - lightly for a model weak in Thai, with a real
+budget (not measured here) for one that is already strong, such as
+Mistral-7B.*
 
 **Who can use it.** Only self-hosted open-weight deployments (on-device and
 edge, or organisations that must self-host for PDPA or data-residency
@@ -656,11 +692,12 @@ Hangul, so a deployment that also serves those languages would pay for the
 Thai gain (§8.4). The prune list is published so a
 deployment can check it against its own traffic.
 
-**Scale of the model experiments.** The tokenizer results are for Mistral-7B's
-tokenizer, but the embedding experiments ran on small models that fit a CPU
-(BLOOM-560m, Qwen2.5-0.5B), with a few hundred optimisation steps and bits per
-character as the only quality measure. They show the direction and rough size
-of the effect, not the downstream task quality of a tuned 7B model.
+**Scale of the model experiments.** Everything ran on a CPU. The full
+initialisation-and-tuning comparison used small models (BLOOM-560m,
+Qwen2.5-0.5B); Mistral-7B itself was evaluated on 40 passages per domain and
+tuned for only 160 steps. Bits per character is the only quality measure.
+These results show the direction and rough size of the effect, not the
+downstream task quality of a properly tuned 7B model.
 
 **Data.** The social domain is small (189k evaluation characters) and comes
 from brand-monitoring posts, so brand and product names are over-represented
@@ -716,10 +753,12 @@ vocabulary's training data.
    Thai bits per character on BLOOM-560m and random rows quadruple it; the
    mean of the old pieces recovers most of the loss with no training, and
    200 steps of row-only tuning end at least as good as the original on Thai
-   with a third of the tokens and English unchanged. On Qwen2.5, where the
-   rows were never trained and the reference is strong, the same recipe
-   recovers three quarters and leaks into English: row-only repair is enough
-   for a retrofit of a weak-Thai model, not for unlocking Qwen's dead rows.
+   with a third of the tokens and English unchanged. On models that already
+   model Thai well the same recipe falls short: Mistral-7B recovers 45-55% of
+   the damage after 160 steps and Qwen2.5's dead rows 82-87% after 200, both
+   with English unchanged at learning rate 1e-4. Row-only repair is enough for
+   a weak-Thai model; for a strong one the rows need a real training budget,
+   which this CPU-only project could not provide.
 
 **What to do next.**
 

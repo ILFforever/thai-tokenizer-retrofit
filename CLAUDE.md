@@ -18,7 +18,7 @@ Mid-term proposal was presented 26 Sep. Final delivery: November 2026.
 written** (`results/REPORT.md`, also published as a page with a results
 dashboard; see README). Every number comes from `results/`. Branch `week2`.
 Remaining: map the report onto the proposal's ten components, final polish,
-Week 8 buffer. A Qwen repair at lr 1e-4 (`--tag _lr1e-4`) may still be running.
+Week 8 buffer.
 
 ## The core idea, and how it differs from prior work
 
@@ -71,8 +71,11 @@ Embedding rows (`results/EMBED_ADAPT_bloom-th5000.md`, BLOOM-560m, 5,000
 swapped rows): stale rows nearly double Thai bits/char, random quadruples it;
 mean-of-old-pieces init recovers most with no training; + 200 row-only steps
 ends better than the original on Thai (caveat: the reference got no Thai
-training) with English unchanged. Qwen2.5 repair recovers only ~75% and
-leaks into English (lr 2e-3, all-Thai tuning data).
+training) with English unchanged. Mistral-7B (`MISTRAL_ROWS_*.md`, bf16 on
+CPU): mean init recovers only 32-40% and 160 row-only steps 45-55% - at 7B
+the rows need a real (GPU) budget. Qwen2.5 dead-row repair at lr 1e-4
+recovers 82-87% with English unchanged (lr 2e-3 leaked into English); Thai
+still 14-37% worse than shipped.
 
 Week 6 (`results/ROBUSTNESS.md`): segmenter does not change rankings
 (Kendall tau 1.00); retrofit informal/formal spread 1.110 vs Typhoon 1.117,

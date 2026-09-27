@@ -153,6 +153,9 @@ def main() -> None:
         if run["meta"]["steps"] < 50:  # a smoke test, not a result
             continue
         data.setdefault("embed_adapt", {})[p.stem.replace("embed_adapt_", "")] = run
+    for p in sorted(RESULTS.glob("mistral_rows_*.json")):
+        data.setdefault("mistral_rows", {})[p.stem.replace("mistral_rows_", "")] = json.loads(
+            p.read_text(encoding="utf-8"))
     for p in sorted(RESULTS.glob("qwen_repair*.json")):
         data[p.stem] = json.loads(p.read_text(encoding="utf-8"))
     for p in sorted(RESULTS.glob("retrofit_*_meta.json")):
