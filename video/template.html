@@ -232,19 +232,60 @@ scene(0, "Who can fix it", 8, "A hosted API's tokenizer is fixed by its provider
   text("Mistral, Qwen, BLOOM: tokenizer is yours to change", M + 1280, 715, { size: 28, align: "center", color: C.ink2, alpha: b });
 });
 
-scene(1, "Two stages of a tokenizer", 10, "A tokenizer works in two stages. A pattern first cuts the text into pieces; then the vocabulary joins letters inside each piece into tokens. No token can ever cross a cut.", t => {
-  eyebrow("Act 2 · Diagnosis"); heading("Every tokenizer has two stages", t);
-  const boxes = [["Text", "ภาษาไทย ที่ดิน"], ["1 · Pre-tokenizer", "a pattern cuts the text"], ["2 · Vocabulary", "merges join letters"], ["Tokens", "what the model reads"]];
-  boxes.forEach(([h, s], i) => {
-    const x = M + i * 440, a = eo(seg(t, .6 + i * .7, 1.4 + i * .7));
-    rr(x, 380, 380, 220, 18, i === 1 || i === 2 ? "#10223a" : C.bg2, i === 1 || i === 2 ? C.blue : C.rule);
-    text(h, x + 190, 470, { size: 36, font: FD, weight: 600, align: "center", alpha: a });
-    text(s, x + 190, 530, { size: 28, align: "center", color: C.ink2, alpha: a });
-    if (i < 3) arrow(x + 384, 490, x + 436, 490, C.muted, eo(seg(t, 1.2 + i * .7, 1.7 + i * .7)));
+// one row of chips mid-merge: state k -> k+1 at progress p, centred on cx
+function traceRow(st, k, p, cx, y, fsz, o = {}) {
+  const gap = 12, lay = s => { const ws = s.map(x => Math.max(fsz * .7, tw(SP(x), fsz)) + fsz * .5), tot = ws.reduce((a, b) => a + b, 0) + gap * (s.length - 1); let x = cx - tot / 2, c = 0; return s.map((x2, i) => { const r = { x, w: ws[i], a: c, b: c + x2.length }; c += x2.length; x += ws[i] + gap; return r; }); };
+  const nxt = k < st.length - 1 && (p > 0 || k > 0) ? k + 1 : k;
+  const A = lay(st[k]), B = lay(st[nxt]);
+  st[nxt].forEach((s, i) => {
+    const bb = B[i], left = A.find(q => q.a === bb.a), right = A.find(q => q.b === bb.b);
+    const x = lerp(left.x, bb.x, p), w = lerp(right.x + right.w - left.x, bb.w, p), merged = left !== right;
+    ctx.save(); ctx.globalAlpha *= o.alpha ?? 1;
+    rr(x, y, w, fsz * 1.5, 10, o.done ? C.blueSoft : merged && p < 1 ? C.blueSoft : C.chip, o.done ? C.blue : merged ? C.blue : null);
+    text(SP(s), x + w / 2, y + fsz * 1.1, { size: fsz, align: "center" });
+    ctx.restore();
   });
-  const p = seg(t, 4.5, 8.5), dx = M + 190 + p * 1320;
-  ctx.save(); ctx.fillStyle = C.yellow; ctx.globalAlpha = seg(t, 4.5, 5); ctx.beginPath(); ctx.arc(dx, 660, 14, 0, 7); ctx.fill(); ctx.restore();
-  text("A cut made in stage 1 can never be joined in stage 2", W / 2, 780, { size: 38, font: FD, weight: 600, align: "center", alpha: eo(seg(t, 6, 7)) });
+  return st[nxt].length + (st[k].length - st[nxt].length) * (1 - p);
+}
+
+scene(1, "Two stages of a tokenizer", 14, "A tokenizer works in two stages. First the text is cut into pieces - here at the space. Then the vocabulary merges letters inside each piece, one learned pair at a time. No token can ever cross a cut.", t => {
+  eyebrow("Act 2 · Diagnosis"); heading("Every tokenizer has two stages", t);
+  const E = D.stages, act = t < 3 ? 0 : t < 4.6 ? 1 : t < 10.6 ? 2 : 3;
+  const boxes = [["Text", "what you type"], ["1 · Pre-tokenizer", "cuts the text"], ["2 · Vocabulary", "merges letters"], ["Tokens", "what the model reads"]];
+  boxes.forEach(([h, s], i) => {
+    const x = M + i * 440, a = eo(seg(t, .4 + i * .35, 1 + i * .35)), on = t > 2 && act === i;
+    ctx.save(); ctx.globalAlpha *= a;
+    rr(x, 220, 380, 130, 16, i === 1 || i === 2 ? "#10223a" : C.bg2, on ? C.yellow : i === 1 || i === 2 ? C.blue : C.rule);
+    text(h, x + 190, 272, { size: 32, font: FD, weight: 600, align: "center", color: on ? C.yellow : C.ink });
+    text(s, x + 190, 318, { size: 24, align: "center", color: C.ink2 });
+    ctx.restore();
+    if (i < 3) arrow(x + 384, 285, x + 436, 285, C.muted, eo(seg(t, .8 + i * .35, 1.2 + i * .35)));
+  });
+  text(`real example: ${E.tokenizer}'s tokenizer`, M, 440, { size: 24, font: FM, color: C.muted, alpha: seg(t, 2, 2.6) });
+  const [w1, w2] = E.text.split(" "), fsz = 64, y = 520;
+  const cx = [W / 2 - 400, W / 2 + 400];
+  // text -> cut at the space -> the two pieces slide apart
+  const sep = eo(seg(t, 3.3, 4.2)), chipsA = seg(t, 4.1, 4.6);
+  if (chipsA < 1) {
+    const l1 = tw(w1, 72), l2 = tw(w2, 72), sp = tw(" ", 72), tot = l1 + sp + l2;
+    const x1 = lerp(W / 2 - tot / 2 + l1 / 2, cx[0], sep), x2 = lerp(W / 2 + tot / 2 - l2 / 2, cx[1], sep);
+    text(w1, x1, y + 78, { size: 72, align: "center", alpha: eo(seg(t, 2, 2.6)) * (1 - chipsA) });
+    text(w2, x2, y + 78, { size: 72, align: "center", alpha: eo(seg(t, 2, 2.6)) * (1 - chipsA) });
+  }
+  const cut = seg(t, 3, 3.3);
+  if (cut > 0) { ctx.save(); ctx.globalAlpha *= cut; ctx.setLineDash([10, 10]); ctx.strokeStyle = C.yellow; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(W / 2, y - 40); ctx.lineTo(W / 2, lerp(y - 40, y + 140, cut)); ctx.stroke(); ctx.restore(); }
+  // merges inside each piece, in the tokenizer's own order
+  let n = 0;
+  E.traces.forEach((st, i) => {
+    const steps = st.length - 1, prog = seg(t, 4.8, 10.4) * steps, k = Math.min(Math.floor(prog), steps - 1), p = eio(clamp(prog - k));
+    n += chipsA > 0 ? traceRow(st, k, p, cx[i], y, fsz, { alpha: chipsA, done: t > 10.6 }) : 0;
+  });
+  if (chipsA > 0) {
+    const a = seg(t, 4.6, 5);
+    counter(n, W / 2 - 20, 800, { color: t > 10.6 ? C.blue : C.ink, align: "right" });
+    text(t > 10.6 ? "tokens" : "so far", W / 2 + 10, 800, { size: 34, color: C.muted, alpha: a });
+  }
+  text("A cut made in stage 1 can never be joined in stage 2", W / 2, 910, { size: 36, font: FD, weight: 600, align: "center", alpha: eo(seg(t, 11.2, 12)) });
 });
 
 scene(1, "The \\p{L} vs \\p{M} cut", 12, "GPT-4's and Qwen2.5's pattern matches letters with \\p{L}. Thai vowel and tone marks are \\p{M} - not letters to the pattern - so every mark is cut off its consonant before the vocabulary sees it. Mistral's pattern never cuts Thai.", t => {
@@ -556,18 +597,6 @@ scene(4, "Twice the Thai per token", 10, "In generated answers the retrofitted m
   });
 });
 
-scene(4, "What checking changed", 10, "Four early claims did not survive checking: a flawed diagnostic, a backwards recommendation, a novelty claim that prior work (Csaki et al., 2023) already covered, and an overstated \"no retraining\".", t => {
-  eyebrow("Act 5 · Making a model use it"); heading("What checking changed", t);
-  const items = [["\"Mark-split rate\" measures the pre-tokenizer", "It missed byte fragments - replaced"], ["Retrofit GPT-4's tokenizer", "Backwards - its regex cuts every mark"], ["Untested on Thai", "Csaki et al. (2023) did it - claim narrowed"], ["No retraining needed", "Swapped rows must be re-set and trained"]];
-  items.forEach(([a, b], i) => {
-    const x = M + (i % 2) * 850, y = 280 + Math.floor(i / 2) * 300, p = eo(seg(t, .6 + i * 1.2, 1.4 + i * 1.2)), q = eo(seg(t, 1.6 + i * 1.2, 2.4 + i * 1.2));
-    rr(x, y, 810, 250, 16, C.bg2, q > .5 ? C.aqua : C.rule);
-    text(a, x + 30, y + 80, { size: 32, color: C.ink2, alpha: p });
-    if (q > .1) { ctx.save(); ctx.strokeStyle = C.red; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x + 30, y + 70); ctx.lineTo(x + 30 + tw(a, 32) * q, y + 70); ctx.stroke(); ctx.restore(); }
-    text(b, x + 30, y + 170, { size: 32, weight: 600, color: C.aqua, alpha: q });
-  });
-});
-
 scene(4, "Try it", 8, "Paste any Thai into the live Thai Token Meter to see seven tokenizers split it. The dashboard and the full report have every number, method detail and reference.", t => {
   for (const b of bgChars) text(b.c, (b.x + t * b.v) % W, b.y, { size: b.s, alpha: b.a, color: C.ink });
   const a = eo(seg(t, .3, 1.3));
@@ -587,44 +616,44 @@ const spread = (a, b, n, max = 20) => { const k = Math.min(n, Math.round((b - a)
 const inv3 = p => 1 - Math.cbrt(1 - p);  // time fraction at which eo() reaches p
 const range = n => Array.from({ length: n }, (_, i) => i);
 const CUE = {
-  "Title": () => [[.2, "swell"], [.7, "chord", 0]],
-  "What a token is": () => spread(2, 6.5, S.en_pieces.length).map(t => [t, "tick", 0]),
-  "Thai under Mistral-7B": () => [...spread(1.6, 8, S.mistral.length).map(t => [t, "tick", 1]), [8.5, "thud"]],
-  "The penalty": () => D.penalty.map((_, i) => [1 + i * .35, "bar", i]),
-  "Why it matters": () => range(3).map(i => [.8 + i * .8, "pop", i]),
+  "Title": () => [[.2, "swell"], [.7, "chord", 0], [1.4, "sparkle"]],
+  "What a token is": () => spread(2, 6.5, S.en_pieces.length).map(t => [t, "tick", 1]),
+  "Thai under Mistral-7B": () => [...spread(1.6, 8, S.mistral.length).map(t => [t, "tick", 2]), [8.5, "thud"]],
+  "The penalty": () => D.penalty.map((_, i) => [1 + i * .35, "bar", 8 - i]),
+  "Why it matters": () => range(3).map(i => [.8 + i * .8, "pluck", [2, 4, 6][i]]),
   "Who can fix it": () => [[.6, "clunk"], [1.8, "chime", 0]],
-  "Two stages of a tokenizer": () => [...range(4).map(i => [.6 + i * .7, "pop", i]), [4.5, "whoosh"], [6, "ding", 0]],
-  "The \\p{L} vs \\p{M} cut": () => [[.4, "pop", 2], ...range(3).map(i => [1.6 + i * 1.2, "pop", i]),
+  "Two stages of a tokenizer": () => [...range(4).map(i => [.4 + i * .35, "blip", i + 2]), [3, "snip"], [3.12, "snip"], [3.3, "trans", 1],
+    ...D.stages.traces.flatMap(st => range(st.length - 1).map(k => [4.8 + 5.6 * (k + .5) / (st.length - 1), "snap", k + 2])), [10.6, "ding", 1]],
+  "The \p{L} vs \p{M} cut": () => [[.4, "pop", 2], ...range(3).map(i => [1.6 + i * 1.2, "blip", i + 3]),
     ...[0, 1].flatMap(i => range(3).map(k => [2.3 + i * 1.2 + k * .12, "snip"])), [4.4, "chime", 1]],
-  "Where the penalty comes from": () => [...range(6).map(i => [.6 + i * .2, "tick", 2]), [3, "whoosh"], [6, "whoosh"], [7.5, "chime", 0]],
-  "Qwen's dead words": () => [[.5, "swell"], [2, "fall"], ...range(5).map(i => [5.5 + i * .08, "tick", 3])],
-  "The target": () => [[.4, "pop", 0], [1.6, "whoosh"], [1.9, "pop", 2], [2.1, "pop", 4]],
-  "32,000 slots": () => [[.5, "swell"]],
-  "Who uses what": () => range(4).map(i => [1 + i * 2, "pop", i]),
-  "Safe to free": () => [[1, "ding", 2]],
+  "Where the penalty comes from": () => [...range(6).map(i => [.6 + i * .2, "tick", 3]), [3, "trans", 1], [6, "trans", 0], [7.5, "chime", 0]],
+  "Qwen's dead words": () => [[.5, "sparkle"], [2, "fall"], ...range(5).map(i => [5.5 + i * .08, "tick", 4])],
+  "The target": () => [[.4, "pop", 0], [1.6, "trans", 0], [1.9, "pluck", 2], [2.1, "pluck", 4]],
+  "32,000 slots": () => [[.5, "roll"], [.5, "sparkle"]],
+  "Who uses what": () => range(4).map(i => [1 + i * 2, "blip", [2, 4, 6, 1][i]]),
+  "Safe to free": () => [[1, "sparkle"], [1, "ding", 2]],
   "What they were": () => range(4).map(g => [.6 + g * .7, "pop", g]),
-  "What Thai needs": () => range(10).map(i => [.8 + i * .25, "bar", 9 - i]),
+  "What Thai needs": () => range(10).map(i => [.8 + i * .25, "pluck", 9 - i]),
   "Missing letters": () => [...D.atoms.map((_, i) => [.9 + i * .12, "tick", 4]), [5, "chime", 1]],
-  "Merging": () => { const n = D.merge.length - 1; return [...range(n).map(k => [1 + 11 * (k + .5) / n, "click", k]), [12, "ding", 1]]; },
-  "Filling the slots": () => [[.5, "swell"], ...range(14).map(j => [.5 + 5 * inv3((j + 1) / 14), "tick", 5])],
-  "Same size": () => [[.3, "thud"], [1.2, "whoosh"], [1.8, "chord", 1], [3, "pop", 3]],
-  "One sentence again": () => [...[S.mistral, S.typhoon, S.retrofit].flatMap((l, i) => spread(.5 + i * 2.5, 2.5 + i * 2.5, l.length).map(t => [t, "tick", i])), [7.6, "ding", 1]],
+  "Merging": () => { const n = D.merge.length - 1; return [...range(n).map(k => [1 + 11 * (k + .5) / n, "snap", k]), [12, "ding", 1]]; },
+  "Filling the slots": () => [[.5, "swell"], ...range(14).map(j => [.5 + 5 * inv3((j + 1) / 14), "tick", 3])],
+  "Same size": () => [[.3, "thud"], [1.2, "trans", 1], [1.8, "chord", 1], [3, "pluck", 5]],
+  "One sentence again": () => [...[S.mistral, S.typhoon, S.retrofit].flatMap((l, i) => spread(.5 + i * 2.5, 2.5 + i * 2.5, l.length).map(t => [t, "tick", [2, 1, 3][i]])), [7.6, "ding", 1]],
   "Per domain": () => [...range(3).map(i => [1 + i * .5, "fall2"]), [4, "ding", 0]],
-  "More slots, fewer tokens": () => [...range(6).map(i => [1 + 5 * (i + 1) / 6, "pop", i]), [6.5, "clunk"]],
-  "Against Typhoon": () => [...range(3).map(i => [.6 + i * .5, "bar", i + 2]), [3, "ding", 1]],
-  "Fairness": () => range(4).map(i => [.8 + i * .8, "bar", i + 1]),
+  "More slots, fewer tokens": () => [...range(6).map(i => [1 + 5 * (i + 1) / 6, "blip", i + 2]), [6.5, "clunk"]],
+  "Against Typhoon": () => [...range(3).map(i => [.6 + i * .5, "pluck", i + 3]), [3, "ding", 1]],
+  "Fairness": () => range(4).map(i => [.8 + i * .8, "blip", i + 1]),
   "Who pays": () => range(5).map(i => [.8 + i * .6, "bar", 6 - i]),
-  "The rows problem": () => [[.5, "pop", 1], [.9, "whoosh"], [4.3, "chime", 0]],
-  "Four ways to set the rows": () => range(5).map(i => [.6 + i, "bar", [3, 5, 7, 2, 1][i]]),
+  "The rows problem": () => [[.5, "pop", 1], [.9, "trans", 0], [4.3, "chime", 0]],
+  "Four ways to set the rows": () => range(5).map(i => [.6 + i, "pluck", [3, 5, 7, 2, 1][i]]),
   "Mistral-7B on a laptop GPU": () => range(3).flatMap(i => range(3).map(j => [1 + i * .6 + j * .3, "bar", j + i])),
   "Twice the Thai per token": () => [D.stream.answers.control, D.stream.answers.retrofit].flatMap((a, c) => {
     const rate = a.tokens / a.seconds, out = [];
     for (let m = 0; m < a.tokens && m / rate <= 25; m++) out.push([.8 + (m / rate) / 25 * 8.7, "type", c]);
     return out; }),
-  "What checking changed": () => range(4).flatMap(i => [[.6 + i * 1.2, "pop", i], [1.7 + i * 1.2, "chime", 0]]),
-  "Try it": () => [[.2, "swell"], [1, "chord", 2]],
+  "Try it": () => [[.2, "swell"], [1, "chord", 2], [1.6, "sparkle"]],
 };
-window.__cues = SC.flatMap((s, i) => [...(i ? [[s.start - .12, "whoosh", 1]] : []),
+window.__cues = SC.flatMap((s, i) => [...(i ? [[s.start - .12, ...(s.act !== SC[i - 1].act ? ["impact", 0] : ["trans", i % 4])]] : []),
   ...(CUE[s.title] ? CUE[s.title]() : []).map(([t, k, v]) => [s.start + t, k, v ?? 0])]);
 window.__acts = SC.map(s => [s.start, s.act]);
 function render(T) {

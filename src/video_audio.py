@@ -49,12 +49,6 @@ def _bell(f: float, sec: float, vol: float) -> np.ndarray:
         * np.minimum(1, t / .004)
 
 
-def tick(v):
-    f = SCALE[5 + int(v) % 4] * 2 * (1 + RNG.uniform(-.03, .03))
-    t = _t(.06)
-    return .10 * np.sin(2 * np.pi * f * t) * _env(len(t), .002, .012)
-
-
 def pop(v):
     f = SCALE[int(v) % len(SCALE)]
     t = _t(.18)
@@ -140,12 +134,6 @@ def fall2(v):
     return .12 * np.sin(2 * np.pi * np.cumsum(f) / SR) * _env(len(t), .01, .3)
 
 
-def click(v):
-    t = _t(.12)
-    f = SCALE[int(v) % len(SCALE)]
-    return .16 * np.sin(2 * np.pi * f * t) * _env(len(t), .001, .03)
-
-
 def type_(v):
     t = _t(.03)
     n = RNG.standard_normal(len(t))
@@ -153,9 +141,137 @@ def type_(v):
     return .045 * (_lowpass(n, tone) * 3 + .3 * np.sin(2 * np.pi * tone * t)) * _env(len(t), .0005, .006)
 
 
+def tick(v):
+    """A short note in one of five timbres (v % 5); pitch is a random scale note."""
+    fam = int(v) % 5
+    f = SCALE[5 + RNG.integers(0, 5)] * (1 + RNG.uniform(-.01, .01))
+    if fam == 1:  # marimba: fundamental + a quick 4th partial
+        t = _t(.3)
+        return .13 * (np.sin(2 * np.pi * f / 2 * t) * _env(len(t), .001, .06)
+                      + .4 * np.sin(2 * np.pi * 2 * f * t) * _env(len(t), .001, .012))
+    if fam == 2:  # wood block: band of noise + a resonant knock
+        t = _t(.09)
+        n = RNG.standard_normal(len(t))
+        band = _lowpass(n, 2600) - _lowpass(n, 700)
+        return .10 * band * _env(len(t), .0005, .01) + .10 * np.sin(2 * np.pi * (700 + f / 2) * t) * _env(len(t), .0005, .02)
+    if fam == 3:  # glass: high, inharmonic, short ring
+        t = _t(.25)
+        g = f * 3
+        return .05 * (np.sin(2 * np.pi * g * t) + .5 * np.sin(2 * np.pi * 2.76 * g * t)) * _env(len(t), .001, .06)
+    if fam == 4:  # bubble: fast upward glide
+        t = _t(.09)
+        glide = f * (1 + np.minimum(1, t / .04))
+        return .11 * np.sin(2 * np.pi * np.cumsum(glide) / SR) * _env(len(t), .002, .025)
+    t = _t(.06)  # soft blip
+    return .10 * np.sin(2 * np.pi * 2 * f * t) * _env(len(t), .002, .012)
+
+
+def pluck(v):
+    """Karplus-Strong plucked string."""
+    f = SCALE[int(v) % len(SCALE)] / 2
+    n, N = int(.9 * SR), int(SR / f)
+    y = np.zeros(n)
+    y[:N] = RNG.uniform(-1, 1, N)
+    for i in range(N, n):
+        y[i] = .996 * .5 * (y[i - N] + y[i - N - 1])
+    return .18 * _lowpass(y, 3000)
+
+
+def blip(v):
+    """Soft square-wave synth note."""
+    f = SCALE[int(v) % len(SCALE)]
+    t = _t(.35)
+    return .07 * _lowpass(np.sign(np.sin(2 * np.pi * f * t)), 1800) * _env(len(t), .005, .09)
+
+
+def snap(v):
+    """Magnetic snap for a merge: a click and a note that drops into place."""
+    f = SCALE[int(v) % len(SCALE)]
+    t = _t(.16)
+    glide = f * (1 + .6 * np.exp(-t / .012))
+    tone = np.sin(2 * np.pi * np.cumsum(glide) / SR) * _env(len(t), .001, .045)
+    n = RNG.standard_normal(len(t))
+    return .15 * tone + .06 * (n - _lowpass(n, 2500)) * _env(len(t), .0003, .004)
+
+
+def click(v):
+    return snap(v)
+
+
+def trans(v):
+    """Scene change, four styles so consecutive cuts differ."""
+    style = int(v) % 4
+    if style == 1:  # riser
+        t = _t(.35)
+        n = RNG.standard_normal(len(t))
+        x = _lowpass(n, 300 + 5000 * (t / t[-1]) ** 2)
+        return .09 * x / (np.abs(x).max() + 1e-9) * (t / t[-1]) ** 1.5
+    if style == 2:  # page turn: two soft brushes
+        out = np.zeros(int(.25 * SR))
+        for start in (0, .09):
+            m = int(.07 * SR)
+            n = _lowpass(RNG.standard_normal(m), 2200)
+            i = int(start * SR)
+            out[i:i + m] += .12 * n / (np.abs(n).max() + 1e-9) * np.sin(np.pi * np.arange(m) / m)
+        return out
+    if style == 3:  # airy low tom
+        t = _t(.3)
+        f = 90 + 60 * np.exp(-t / .04)
+        return .16 * np.sin(2 * np.pi * np.cumsum(f) / SR) * _env(len(t), .002, .09)
+    return whoosh(1)
+
+
+def impact(v):
+    """New act: a low boom with a bright shimmer on top."""
+    t = _t(1.4)
+    f = 45 + 40 * np.exp(-t / .06)
+    boom = np.sin(2 * np.pi * np.cumsum(f) / SR) * _env(len(t), .003, .35)
+    air = _lowpass(RNG.standard_normal(len(t)), 900) * _env(len(t), .002, .08)
+    return .38 * boom + .06 * air + _bell(SCALE[8], 1.4, .05)
+
+
+def roll(v):
+    """Counter rolling up: clicks that speed up, then stop."""
+    out = np.zeros(int(3.2 * SR))
+    t, gap, k = 0.0, .09, 0
+    while t < 2.9:
+        c = tick(2)
+        c = c * (.5 + .5 * t / 2.9)
+        i = int(t * SR)
+        out[i:i + len(c)] += c[:len(out) - i]
+        gap = max(.022, gap * .94)
+        t += gap
+        k += 1
+    return .7 * out
+
+
+def sparkle(v):
+    """Scattered high glints, for the vocabulary grid lighting up."""
+    out = np.zeros(int(1.8 * SR))
+    for _ in range(36):
+        f = RNG.uniform(2200, 5200)
+        g = _t(.05)
+        grain = .035 * np.sin(2 * np.pi * f * g) * _env(len(g), .003, .012)
+        i = int(RNG.uniform(0, 1.7) * SR)
+        out[i:i + len(grain)] += grain
+    return out
+
+
+def buzz(v):
+    """'Wrong' - two short low buzzes."""
+    out = np.zeros(int(.34 * SR))
+    for start in (0, .16):
+        t = _t(.13)
+        x = _lowpass(np.sign(np.sin(2 * np.pi * 110 * t)), 900) * _env(len(t), .004, .06)
+        i = int(start * SR)
+        out[i:i + len(x)] += .10 * x
+    return out
+
+
 SOUNDS = {"tick": tick, "pop": pop, "bar": bar, "ding": ding, "chime": chime, "chord": chord, "swell": swell,
           "whoosh": whoosh, "thud": thud, "clunk": clunk, "snip": snip, "fall": fall, "fall2": fall2,
-          "click": click, "type": type_}
+          "click": click, "type": type_, "pluck": pluck, "blip": blip, "snap": snap, "trans": trans,
+          "impact": impact, "roll": roll, "sparkle": sparkle, "buzz": buzz}
 
 
 def synth(cues: list, acts: list, total: float) -> np.ndarray:

@@ -58,6 +58,21 @@ def merge_trace(tok_dir: Path, word: str) -> list[list[str]]:
     return [[s.replace("▁", " ") for s in st] for st in states]
 
 
+def two_stages() -> dict:
+    """Worked example for the two-stage scene: Typhoon-7B's tokenizer on a short
+    phrase. SentencePiece cuts at whitespace first; each piece is then merged
+    in the tokenizer's own merge order. Checked against its real output."""
+    from huggingface_hub import hf_hub_download
+    from transformers import AutoTokenizer
+
+    text = "ภาษาไทย ที่ดิน"
+    d = Path(hf_hub_download("scb10x/typhoon-7b", "tokenizer.json")).parent
+    traces = [merge_trace(d, " " + w) for w in text.split(" ")]
+    real = [t.replace("▁", " ") for t in AutoTokenizer.from_pretrained("scb10x/typhoon-7b").tokenize(text)]
+    assert [p for tr in traces for p in tr[-1]] == real, (traces, real)
+    return {"text": text, "tokenizer": "Typhoon-7B", "traces": traces}
+
+
 def vocab_map() -> dict:
     """Category of each of Mistral-7B's 32,000 entries, as the retrofit saw it."""
     from candidates import train_texts
@@ -92,7 +107,14 @@ def vocab_map() -> dict:
 def main() -> None:
     from transformers import AutoTokenizer
 
+    if "--patch" in sys.argv:  # recompute only the cheap parts into the existing file
+        D = json.loads(OUT.read_text(encoding="utf-8"))
+        D["stages"] = two_stages()
+        OUT.write_text(json.dumps(D, ensure_ascii=False), encoding="utf-8")
+        print(f"patched {OUT.relative_to(ROOT)}: stages {D['stages']['traces']}")
+        return
     D: dict = {}
+    D["stages"] = two_stages()
     mistral = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
     retro = AutoTokenizer.from_pretrained(str(ROOT / "tokenizers" / "mistral-7b-th2483"))
     typhoon = AutoTokenizer.from_pretrained("scb10x/typhoon-7b")
