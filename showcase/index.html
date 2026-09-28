@@ -1,0 +1,449 @@
+<title>Thai Token Meter</title>
+<meta name="description" content="Type Thai and watch how many tokens seven tokenizers spend on it, including this project's retrofits of Mistral-7B and Qwen2.5.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f4f1;
+  --surface: #fcfcfb;
+  --sunk: #eceee8;
+  --ink: #101411;
+  --ink-2: #4a4f4b;
+  --muted: #7c8078;
+  --rule: #dcdfd7;
+  --accent: #2a78d6;
+  --accent-soft: #dce9f9;
+  --typhoon: #eb6834;
+  --typhoon-soft: #fbe3d9;
+  --base: #6f746d;
+  --hosted: #9a9d95;
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --crit: #d03b3b;
+  --display: "Bai Jamjuree", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", "Noto Sans Thai", "Leelawadee UI", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0d0f0d; --surface: #171917; --sunk: #202320; --ink: #f1f3ef; --ink-2: #c3c5bc; --muted: #8b8f87;
+    --rule: #2b2e2a; --accent: #3987e5; --accent-soft: #15263b; --typhoon: #d95926; --typhoon-soft: #3a2117;
+    --base: #9a9e96; --hosted: #6d716a; --good-ink: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d0f0d; --surface: #171917; --sunk: #202320; --ink: #f1f3ef; --ink-2: #c3c5bc; --muted: #8b8f87;
+  --rule: #2b2e2a; --accent: #3987e5; --accent-soft: #15263b; --typhoon: #d95926; --typhoon-soft: #3a2117;
+  --base: #9a9e96; --hosted: #6d716a; --good-ink: #0ca30c;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.6 var(--body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 72px; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(32px, 5.5vw, 52px); line-height: 1.02; font-weight: 700; }
+h2 { font-size: clamp(21px, 2.6vw, 26px); font-weight: 600; line-height: 1.2; }
+h3 { font-size: 15px; font-weight: 600; letter-spacing: 0; }
+p { margin: 0; max-width: 70ch; }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: .9em; }
+.eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.ink2 { color: var(--ink-2); }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 18px 20px; display: grid; gap: 14px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: 500 13px/1 var(--body); padding: 8px 12px; border-radius: 999px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.btn:hover { color: var(--ink); border-color: var(--muted); }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn:focus-visible, textarea:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* hero + input */
+header.hero { display: grid; gap: 10px; }
+.hero .lede { font-size: 17px; color: var(--ink-2); max-width: 68ch; }
+.meter { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+textarea { width: 100%; min-height: 250px; resize: vertical; font: 400 19px/1.65 var(--body); color: var(--ink); background: var(--sunk); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+.inputmeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font: 500 12.5px/1.4 var(--mono); color: var(--muted); }
+
+/* board */
+.board { display: grid; gap: 14px; }
+.family { display: grid; gap: 6px; }
+.family .fam { font: 600 11.5px/1.3 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding-bottom: 2px; }
+.tk { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; padding: 8px 12px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--rule); cursor: pointer; }
+.tk:hover { border-color: var(--muted); }
+.tk[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
+.tk .name { font-size: 13.5px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.tk .name b { color: var(--ink); font-weight: 600; }
+.tk .num { font: 700 26px/1 var(--display); font-variant-numeric: tabular-nums; text-align: right; }
+.tk .sub { font: 500 12px/1.3 var(--mono); color: var(--muted); }
+.tk .delta { font: 600 12px/1.3 var(--mono); text-align: right; }
+.tk .delta.good { color: var(--good-ink); }
+.tk .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--sunk); overflow: hidden; margin-top: 6px; }
+.tk .bar i { display: block; height: 100%; border-radius: 3px; background: var(--base); transition: width .18s ease; }
+.tk.me .bar i { background: var(--accent); }
+.tk.me { border-color: color-mix(in srgb, var(--accent) 45%, var(--rule)); }
+.tk.me .num { color: var(--accent); }
+.tk.ty .bar i { background: var(--typhoon); }
+.tk.hosted .bar i { background: var(--hosted); }
+.tag { font: 600 10.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; padding: 4px 6px; border-radius: 4px; background: var(--sunk); color: var(--ink-2); }
+.tag.me { background: var(--accent-soft); color: var(--accent); }
+.tag.ty { background: var(--typhoon-soft); color: var(--typhoon); }
+.loading { font: 500 12.5px/1.4 var(--mono); color: var(--muted); }
+
+/* chips */
+.chipsrow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.chipcol { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.chipcol .hd { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.chipcol select { font: 500 13px/1 var(--body); padding: 6px 8px; border-radius: 8px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); max-width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; max-height: 340px; overflow-y: auto; padding: 2px; }
+.chip { font: 400 16px/1 var(--body); padding: 6px 5px 5px; border-radius: 4px; background: var(--sunk); white-space: pre; min-width: 12px; text-align: center; }
+.chip.alt { background: color-mix(in srgb, var(--sunk) 55%, var(--rule)); }
+.chip.part { background: repeating-linear-gradient(135deg, var(--sunk) 0 3px, color-mix(in srgb, var(--crit) 25%, var(--sunk)) 3px 5px); }
+.chip.sp { color: var(--muted); }
+.chip.mk { box-shadow: inset 0 -2px 0 var(--crit); }
+.chipcol.me .chip { background: var(--accent-soft); }
+.chipcol.me .chip.alt { background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface)); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 12px; border-radius: 3px; background: var(--sunk); border: 1px solid var(--rule); }
+
+/* calculators */
+.calc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.calc label { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; }
+.calc input[type="number"], .calc input[type="range"] { width: 100%; }
+.calc input[type="number"] { font: 500 14px/1 var(--mono); padding: 7px 8px; border-radius: 8px; border: 1px solid var(--rule); background: var(--sunk); color: var(--ink); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 11.5px/1.3 var(--mono); color: var(--muted); letter-spacing: .03em; text-transform: uppercase; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+tr.me td { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+tr.me td:first-child { font-weight: 600; }
+.tablewrap { overflow-x: auto; }
+
+/* model showcase */
+.qa { display: grid; gap: 14px; }
+.prompt { font-size: 16px; font-weight: 500; }
+.answers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ans { border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; align-content: start; background: var(--surface); }
+.ans.me { border-color: color-mix(in srgb, var(--accent) 50%, var(--rule)); }
+.ans .who { display: flex; justify-content: space-between; gap: 8px; font: 600 12px/1.3 var(--mono); color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; }
+.ans .txt { font-size: 15px; line-height: 1.65; white-space: pre-wrap; max-height: 320px; overflow-y: auto; }
+.ans .stats { font: 500 12px/1.4 var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.note { border-left: 3px solid var(--accent); padding: 2px 0 2px 14px; color: var(--ink-2); max-width: 76ch; }
+.note b { color: var(--ink); }
+footer { color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+
+@media (max-width: 900px) {
+  .meter, .chipsrow { grid-template-columns: 1fr; }
+  .calc, .answers { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .wrap { padding-inline: 16px; }
+  textarea { font-size: 17px; min-height: 180px; }
+  .tk .num { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Thai tokenizer retrofit · CEDT AI course project · Tanabodhi Mukura</div>
+    <h1>Thai Token Meter</h1>
+    <p class="lede">Type or paste Thai. Every tokenizer below splits it live in your browser - the same splits the real tokenizers make, checked id for id on 2,114 test texts. Blue rows are this project's retrofits: the same vocabulary size, far fewer Thai tokens.</p>
+  </header>
+
+  <section class="meter" aria-label="Token meter">
+    <div class="card">
+      <div class="row" id="samples" role="group" aria-label="Sample texts"></div>
+      <label for="input" class="eyebrow">Your text</label>
+      <textarea id="input" spellcheck="false"></textarea>
+      <div class="inputmeta"><span id="chars">0 characters</span><span class="loading" id="loading">Loading tokenizers…</span><span id="thaishare"></span></div>
+    </div>
+    <div class="board" id="board" aria-live="polite"></div>
+  </section>
+
+  <section class="card" aria-label="Where each tokenizer cuts">
+    <div style="display:grid;gap:6px">
+      <h2>Where the cuts fall</h2>
+      <p class="ink2">One box per token. Pick any two tokenizers; click a row on the board to put it on the left.</p>
+    </div>
+    <div class="legend">
+      <span><i class="sw"></i>one token</span>
+      <span><i class="sw" style="background:repeating-linear-gradient(135deg,var(--sunk) 0 3px,color-mix(in srgb,var(--crit) 25%,var(--sunk)) 3px 5px)"></i>part of one Thai character's bytes</span>
+      <span><i class="sw" style="box-shadow:inset 0 -2px 0 var(--crit)"></i>starts with a vowel or tone mark (cut off its consonant)</span>
+    </div>
+    <div class="chipsrow">
+      <div class="chipcol" id="colA"></div>
+      <div class="chipcol" id="colB"></div>
+    </div>
+  </section>
+
+  <section class="card" aria-label="What it means">
+    <div style="display:grid;gap:6px">
+      <h2>What the difference means for this text</h2>
+      <p class="ink2">Tokens are what a model is billed, limited and timed by. Change the assumptions; everything recomputes from the text above.</p>
+    </div>
+    <div class="calc">
+      <label for="price">Price per million tokens (USD)<input id="price" type="number" min="0" step="0.05" value="0.50"></label>
+      <label for="msgs">Messages like this one<input id="msgs" type="number" min="1" step="1000" value="100000"></label>
+      <label for="tps">Generation speed (tokens per second)<input id="tps" type="number" min="1" step="1" value="30"></label>
+    </div>
+    <div class="tablewrap"><table id="calc"></table></div>
+    <p class="muted" style="font-size:13px">Context: how many copies of this text fit in an 8,192-token window. Hosted GPT rows are for reference - their tokenizer cannot be changed by users, which is why this project targets self-hosted open-weight models.</p>
+  </section>
+
+  <section class="card" id="models" aria-label="The retrofitted model" hidden>
+    <div style="display:grid;gap:6px">
+      <div class="eyebrow">A working retrofitted model</div>
+      <h2 id="models-h"></h2>
+      <p class="ink2" id="models-lede"></p>
+    </div>
+    <div class="tablewrap"><table id="quality"></table></div>
+    <div class="note" id="models-note"></div>
+    <div class="row" id="qa-tabs" role="group" aria-label="Prompts"></div>
+    <div class="qa" id="qa"></div>
+  </section>
+
+  <footer>
+    <div>Tokenizers: Mistral-7B, Typhoon-7B, Qwen2.5 and this project's retrofits (Hugging Face tokenizer files), GPT-4 cl100k and GPT-4o o200k (tiktoken ranks), run by a 250-line JavaScript BPE (<code>bpe.js</code>) verified against the originals.</div>
+    <div id="links"></div>
+  </footer>
+</div>
+
+<script type="module">
+import { BPETokenizer } from "./bpe.js";
+
+const LINKS = { dashboard: "https://claude.ai/artifact/2AQJGmJ8gcX2JqMcPPKruJ", report: "https://claude.ai/artifact/3kTu4csfQn1XuJRfZAjtkQ" };
+const ROWS = [
+  { fam: "Mistral-7B family", key: "mistral", name: "Mistral-7B", note: "original, 32,000 entries" },
+  { fam: "Mistral-7B family", key: "mistral_th", name: "Mistral-7B + Thai retrofit", tag: ["me", "this project"], note: "2,483 slots swapped, still 32,000", base: "mistral" },
+  { fam: "Mistral-7B family", key: "typhoon", name: "Typhoon-7B", tag: ["ty", "expanded"], note: "3,219 entries added, 35,219", base: "mistral" },
+  { fam: "Qwen2.5 family", key: "qwen", name: "Qwen2.5", note: "original, 151,665 entries" },
+  { fam: "Qwen2.5 family", key: "qwen_th", name: "Qwen2.5 + regex fix + Thai retrofit", tag: ["me", "this project"], note: "3,000 slots swapped, still 151,665", base: "qwen" },
+  { fam: "Hosted, for reference", key: "gpt4", name: "GPT-4", tag: ["", "API"], note: "cl100k, 100,277 entries", hosted: true },
+  { fam: "Hosted, for reference", key: "gpt4o", name: "GPT-4o", tag: ["", "API"], note: "o200k, 200,019 entries", hosted: true },
+];
+const SAMPLES = [
+  ["Wikipedia", "ดาราศาสตร์ คือวิชาวิทยาศาสตร์ที่ศึกษาวัตถุในท้องฟ้า (เช่น ดาวฤกษ์ ดาวเคราะห์ ดาวหาง ดาราจักร) รวมทั้งปรากฏการณ์ทางธรรมชาติต่าง ๆ ที่เกิดขึ้นนอกชั้นบรรยากาศของโลก โดยศึกษาเกี่ยวกับวิวัฒนาการ ลักษณะทางกายภาพ และคุณสมบัติทางเคมีของวัตถุเหล่านั้น"],
+  ["News", "เมื่อวันที่ 6 ม.ค. ที่ทำเนียบรัฐบาล รองนายกรัฐมนตรี กล่าวถึงกรณีการปรับปรุงหลักเกณฑ์การพิจารณางบประมาณประจำปี ว่าหน่วยงานที่เกี่ยวข้องจะต้องเสนอรายละเอียดโครงการให้คณะกรรมการพิจารณาภายในสิ้นเดือนนี้ เพื่อให้การเบิกจ่ายเป็นไปอย่างมีประสิทธิภาพ"],
+  ["Social", "วันนี้ไปกินร้านใหม่แถวบ้านมาาา อร่อยมากกก ราคาไม่แพงด้วย พนักงานน่ารักสุดๆ 555 ใครอยู่แถวนี้ต้องลองนะ แต่ที่จอดรถหายากไปหน่อย ไปตอนเย็นๆ คนเยอะมาก รอคิวนานเลย 😅"],
+  ["Chat question", "ช่วยอธิบายความแตกต่างระหว่างภาวะเงินเฟ้อกับภาวะเงินฝืดให้เข้าใจง่าย ๆ หน่อยครับ พร้อมยกตัวอย่างที่เกิดขึ้นในประเทศไทย"],
+  ["English", "Thai is written without spaces between words, so the same meaning often costs far more tokens in Thai than in English under common tokenizers."],
+];
+const MARK = /^[ัิ-ฺ็-๎]/;
+const THAI = /[฀-๿]/g;
+const $ = s => document.querySelector(s);
+const h = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) { if (v == null || v === false) continue; if (k === "class") e.className = v; else e.setAttribute(k, v); }
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+};
+const fmt = n => n.toLocaleString("en-US");
+const toks = {};
+const input = $("#input");
+let lastIds = {};
+let left = "mistral", right = "mistral_th";
+
+/* ---- sample buttons ---- */
+SAMPLES.forEach(([name, text], i) => {
+  const b = h("button", { class: "btn", type: "button", "aria-pressed": i === 0 ? "true" : "false" }, name);
+  b.addEventListener("click", () => {
+    input.value = text;
+    document.querySelectorAll("#samples .btn").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    update();
+  });
+  $("#samples").append(b);
+});
+input.value = SAMPLES[0][1];
+
+/* ---- board ---- */
+const board = $("#board");
+function buildBoard() {
+  board.innerHTML = "";
+  let fam = null, famBox = null;
+  for (const r of ROWS) {
+    if (r.fam !== fam) { fam = r.fam; famBox = h("div", { class: "family" }, h("div", { class: "fam" }, fam)); board.append(famBox); }
+    const cls = "tk" + (r.tag && r.tag[0] === "me" ? " me" : "") + (r.tag && r.tag[0] === "ty" ? " ty" : "") + (r.hosted ? " hosted" : "");
+    const el = h("div", { class: cls, id: "tk-" + r.key, role: "button", tabindex: "0", "aria-pressed": String(r.key === left) },
+      h("div", { class: "name" }, h("b", {}, r.name), r.tag ? h("span", { class: "tag " + r.tag[0] }, r.tag[1]) : null),
+      h("div", { class: "num" }, "…"),
+      h("div", { class: "sub" }, r.note),
+      h("div", { class: "delta" }, ""),
+      h("div", { class: "bar" }, h("i", { style: "width:0%" })));
+    const pick = () => { left = r.key; if (right === left) right = r.base || (left === "mistral" ? "mistral_th" : "mistral"); syncSelects(); updateChips(); markPicked(); };
+    el.addEventListener("click", pick);
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+    famBox.append(el);
+  }
+}
+function markPicked() { for (const r of ROWS) $("#tk-" + r.key)?.setAttribute("aria-pressed", String(r.key === left)); }
+
+/* ---- chips ---- */
+function chipCol(host, key, onChange) {
+  host.innerHTML = "";
+  const sel = h("select", { "aria-label": "Tokenizer" }, ...ROWS.map(r => { const o = h("option", { value: r.key }, r.name); if (r.key === key) o.selected = true; return o; }));
+  sel.addEventListener("change", () => onChange(sel.value));
+  host.className = "chipcol" + (ROWS.find(r => r.key === key)?.tag?.[0] === "me" ? " me" : "");
+  host.append(h("div", { class: "hd" }, sel, h("span", { class: "muted", style: "font:500 12.5px var(--mono)" }, "")), h("div", { class: "chips" }));
+}
+function syncSelects() {
+  chipCol($("#colA"), left, v => { left = v; markPicked(); syncSelects(); updateChips(); });
+  chipCol($("#colB"), right, v => { right = v; syncSelects(); updateChips(); });
+}
+const DEC = new TextDecoder("utf-8", { fatal: true });
+function pieces(tok, ids) {
+  const out = [];
+  let buf = [], pend = [];
+  for (const id of ids) {
+    const b = tok.tokenBytes(id);
+    buf.push(...b);
+    out.push({ t: "", part: true });
+    pend.push(out.length - 1);
+    let s;
+    try { s = DEC.decode(Uint8Array.from(buf)); } catch { continue; }
+    const whole = pend.length === 1;
+    for (const i of pend) out[i] = { t: s, part: !whole };
+    buf = []; pend = [];
+  }
+  return out;
+}
+function renderChips(host, key) {
+  const tok = toks[key], ids = lastIds[key];
+  if (!tok || !ids) return;
+  const box = host.querySelector(".chips"), count = host.querySelector(".hd span");
+  box.innerHTML = "";
+  count.textContent = fmt(ids.length) + " tokens";
+  const frag = document.createDocumentFragment();
+  const ps = pieces(tok, ids.slice(0, 1500));
+  ps.forEach((p, i) => {
+    const sp = /^\s+$/.test(p.t);
+    let txt = sp ? "␣" : p.t.replace(/^ /, "␣").replace(/\n/g, "↵");
+    const mk = !p.part && MARK.test(p.t);
+    if (mk) txt = "◌" + txt;
+    const c = h("span", { class: "chip" + (i % 2 ? " alt" : "") + (p.part ? " part" : "") + (sp ? " sp" : "") + (mk ? " mk" : ""),
+      title: p.part ? `part of the bytes of "${p.t}"` : `token ${ids[i]}` }, txt);
+    frag.append(c);
+  });
+  if (ids.length > 1500) frag.append(h("span", { class: "muted" }, ` … ${fmt(ids.length - 1500)} more`));
+  box.append(frag);
+}
+function updateChips() { renderChips($("#colA"), left); renderChips($("#colB"), right); }
+
+/* ---- calculator ---- */
+function updateCalc() {
+  const price = +$("#price").value || 0, msgs = +$("#msgs").value || 0, tps = +$("#tps").value || 1;
+  const t = $("#calc");
+  t.innerHTML = "";
+  t.append(h("thead", {}, h("tr", {}, h("th", {}, "Tokenizer"), h("th", { class: "r" }, "Tokens"), h("th", { class: "r" }, `Cost of ${fmt(msgs)}`), h("th", { class: "r" }, "Time to generate"), h("th", { class: "r" }, "Copies in 8k context"))));
+  const body = h("tbody");
+  for (const r of ROWS) {
+    const n = lastIds[r.key]?.length;
+    if (n == null) continue;
+    const cost = n * msgs / 1e6 * price;
+    body.append(h("tr", { class: r.tag?.[0] === "me" ? "me" : "" }, h("td", {}, r.name),
+      h("td", { class: "r" }, fmt(n)),
+      h("td", { class: "r" }, "$" + cost.toLocaleString("en-US", { maximumFractionDigits: cost < 10 ? 2 : 0 })),
+      h("td", { class: "r" }, (n / tps).toFixed(1) + " s"),
+      h("td", { class: "r" }, n ? fmt(Math.floor(8192 / n)) : "-")));
+  }
+  t.append(body);
+}
+["#price", "#msgs", "#tps"].forEach(s => $(s).addEventListener("input", updateCalc));
+
+/* ---- main update ---- */
+let timer = null;
+function update() {
+  clearTimeout(timer);
+  timer = setTimeout(run, 60);
+}
+function run() {
+  const text = input.value;
+  const chars = [...text].length, thai = (text.match(THAI) || []).length;
+  $("#chars").textContent = fmt(chars) + " characters";
+  $("#thaishare").textContent = chars ? `${Math.round(thai / chars * 100)}% Thai` : "";
+  for (const r of ROWS) if (toks[r.key]) lastIds[r.key] = toks[r.key].encode(text);
+  const counts = ROWS.filter(r => lastIds[r.key]).map(r => lastIds[r.key].length);
+  const max = Math.max(1, ...counts);
+  for (const r of ROWS) {
+    const el = $("#tk-" + r.key); if (!el) continue;
+    const ids = lastIds[r.key];
+    if (!ids) continue;
+    el.querySelector(".num").textContent = fmt(ids.length);
+    el.querySelector(".sub").textContent = `${r.note} · ${ids.length ? (chars / ids.length).toFixed(2) : "0"} chars per token`;
+    el.querySelector(".bar i").style.width = (ids.length / max * 100) + "%";
+    const d = el.querySelector(".delta");
+    if (r.base && lastIds[r.base] && lastIds[r.base].length) {
+      const ch = ids.length / lastIds[r.base].length - 1;
+      d.textContent = (ch <= 0 ? "−" : "+") + Math.abs(ch * 100).toFixed(0) + "% vs original";
+      d.className = "delta" + (ch < 0 ? " good" : "");
+    } else d.textContent = "";
+  }
+  updateChips();
+  updateCalc();
+}
+input.addEventListener("input", () => { document.querySelectorAll("#samples .btn").forEach(x => x.setAttribute("aria-pressed", "false")); update(); });
+
+/* ---- load tokenizers (small ones first so the meter comes alive fast) ---- */
+buildBoard();
+syncSelects();
+const order = ["mistral", "mistral_th", "typhoon", "gpt4", "gpt4o", "qwen", "qwen_th"];
+let loaded = 0;
+for (const key of order) {
+  try {
+    const res = await fetch(`tok/${key}.json`);
+    toks[key] = new BPETokenizer(await res.json());
+  } catch (e) {
+    console.error("tokenizer failed to load", key, e);
+    const el = $("#tk-" + key);
+    if (el) el.querySelector(".sub").textContent = "could not load";
+  }
+  loaded++;
+  const ld = $("#loading");
+  if (ld) ld.textContent = loaded < order.length ? `Loading tokenizers… ${loaded}/${order.length}` : "";
+  run();
+}
+$("#loading")?.remove();
+
+/* ---- model showcase (filled when showcase data exists) ---- */
+try {
+  const res = await fetch("data.json");
+  if (res.ok) renderModels(await res.json());
+} catch (e) { /* no model data published yet */ }
+
+function renderModels(D) {
+  if (!D || !D.models) return;
+  $("#models").hidden = false;
+  $("#models-h").textContent = D.title;
+  $("#models-lede").textContent = D.lede;
+  const q = $("#quality");
+  const cols = D.quality_columns;
+  q.append(h("thead", {}, h("tr", {}, h("th", {}, "Model"), ...cols.map(c => h("th", { class: "r" }, c.label)))));
+  q.append(h("tbody", {}, ...D.quality.map(r => h("tr", { class: r.me ? "me" : "" }, h("td", {}, r.name), ...cols.map(c => h("td", { class: "r" }, r[c.key] ?? "-"))))));
+  $("#models-note").innerHTML = D.note;
+  const tabs = $("#qa-tabs"), qa = $("#qa");
+  const show = i => {
+    tabs.querySelectorAll(".btn").forEach((b, j) => b.setAttribute("aria-pressed", String(i === j)));
+    const p = D.prompts[i];
+    qa.innerHTML = "";
+    qa.append(h("div", { class: "prompt" }, p.prompt));
+    const grid = h("div", { class: "answers" });
+    for (const a of p.answers) {
+      grid.append(h("div", { class: "ans" + (a.me ? " me" : "") },
+        h("div", { class: "who" }, h("span", {}, a.model), h("span", {}, a.tokens + " tokens")),
+        h("div", { class: "txt" }, a.text),
+        h("div", { class: "stats" }, h("span", {}, `${a.chars} characters`), h("span", {}, `${a.seconds.toFixed(1)} s`), h("span", {}, `${a.chars_per_s.toFixed(1)} chars/s`))));
+    }
+    qa.append(grid);
+  };
+  D.prompts.forEach((p, i) => { const b = h("button", { class: "btn", type: "button" }, p.label); b.addEventListener("click", () => show(i)); tabs.append(b); });
+  show(0);
+}
+
+const L = $("#links");
+if (LINKS.dashboard.startsWith("http")) L.append("Results dashboard: ", h("a", { href: LINKS.dashboard }, "open"), " · ");
+if (LINKS.report.startsWith("http")) L.append("Full report: ", h("a", { href: LINKS.report }, "open"));
+</script>

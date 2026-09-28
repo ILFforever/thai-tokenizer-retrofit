@@ -7,3 +7,6 @@ data/
 
 # large retrofitted tokenizers (rebuild with src/retrofit.py)
 tokenizers/bloom-*
+tokenizers/qwen*
+models/
+showcase/tok/

@@ -340,6 +340,10 @@ def save_hf(tk, base_hf, path: Path) -> None:
         unk_token=base_hf.unk_token,
         pad_token=base_hf.pad_token,
     )
+    # An instruct model's chat template has to survive the rebuild, or the
+    # retrofitted tokenizer can no longer format a conversation.
+    if getattr(base_hf, "chat_template", None):
+        hf.chat_template = base_hf.chat_template
     path.mkdir(parents=True, exist_ok=True)
     hf.save_pretrained(str(path))
 
@@ -379,6 +383,12 @@ def main() -> None:
     ap.add_argument("--train-domains", nargs="+", default=DOMAINS,
                     help="Thai domains the new merges are learned from (ablation: "
                          "formal-only = wikipedia news)")
+    ap.add_argument("--hf-repo", default=None,
+                    help="load the base tokenizer from this Hugging Face repo instead of the "
+                         "registry (e.g. Qwen/Qwen2.5-0.5B-Instruct); --target is then its name")
+    ap.add_argument("--mark-aware", action="store_true",
+                    help="first make the pre-tokenizer mark-aware (the regex fix), so merges "
+                         "can span a Thai consonant and its marks")
     args = ap.parse_args()
     # `learn_variant` changes the learned merges; `variant` also names the
     # protection profile, which changes only the prune list.
@@ -390,9 +400,26 @@ def main() -> None:
     from candidates import train_texts
     from registry import load_all
 
-    tok = load_all(verbose=False, only=[args.target])[0][0]
+    if args.hf_repo:
+        from transformers import AutoTokenizer
+
+        from registry import Tok
+
+        hf = AutoTokenizer.from_pretrained(args.hf_repo)
+        tok = Tok(args.target, "open-weight", lambda s, _t=hf: _t.encode(s, add_special_tokens=False),
+                  hf.decode, len(hf), raw=hf, kind="hf")
+    else:
+        tok = load_all(verbose=False, only=[args.target])[0][0]
+    save_base = tok.raw  # special tokens and chat template come from the original
+    if args.mark_aware:
+        from pretok import with_mark_aware_pretok
+
+        fixed = with_mark_aware_pretok(tok)
+        if fixed is None:
+            raise SystemExit(f"{args.target}'s pre-tokenizer already keeps marks with their base")
+        tok = fixed
     bpe = load_bpe(tok)
-    slug = re.sub(r"[^a-z0-9]+", "-", args.target.lower()).strip("-")
+    slug = re.sub(r"[^a-z0-9]+", "-", args.target.lower()).strip("-") + ("-ma" if args.mark_aware else "")
     print(f"{args.target}: vocab {len(bpe.vocab):,}, merges {len(bpe.merges):,}, "
           f"byte_level={bpe.byte_level}", flush=True)
 
@@ -501,7 +528,7 @@ def main() -> None:
             slots += took
         tk, pruned = build(bpe, order, toks_k, merges_k)
         name = f"{slug}-th{k}{variant}"
-        save_hf(tk, tok.raw, OUT / name)
+        save_hf(tk, save_base, OUT / name)
         id_to = bpe.id_to_tok
         with (RESULTS / f"prune_list_{name}.csv").open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)

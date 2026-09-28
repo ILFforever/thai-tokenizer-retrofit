@@ -61,6 +61,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("path")
     ap.add_argument("--base", default="Mistral-7B")
+    ap.add_argument("--base-repo", default=None,
+                    help="compare against a Hugging Face repo's tokenizer instead of a registry label")
+    ap.add_argument("--mark-aware", action="store_true",
+                    help="the retrofit was built on the mark-aware regex; compare against that")
     ap.add_argument("--n", type=int, default=10000)
     args = ap.parse_args()
 
@@ -68,7 +72,16 @@ def main() -> None:
 
     from registry import load_all
 
-    base = load_all(verbose=False, only=[args.base])[0][0].raw
+    if args.base_repo:
+        from registry import Tok
+
+        base = AutoTokenizer.from_pretrained(args.base_repo)
+        if args.mark_aware:
+            from pretok import with_mark_aware_pretok
+
+            base = with_mark_aware_pretok(Tok(args.base_repo, "", None, None, len(base), raw=base, kind="hf")).raw
+    else:
+        base = load_all(verbose=False, only=[args.base])[0][0].raw
     new = AutoTokenizer.from_pretrained(args.path)
     name = Path(args.path).name
     checks: list[tuple[str, bool, str]] = []

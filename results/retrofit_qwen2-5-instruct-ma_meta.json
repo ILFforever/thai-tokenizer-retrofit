@@ -1,0 +1,83 @@
+{
+  "target": "Qwen2.5-Instruct",
+  "mode": "plain",
+  "prunable": 58238,
+  "train_domains": [
+    "wikipedia",
+    "news",
+    "social"
+  ],
+  "english_prune_docs": 8000,
+  "english_prune_chars": 83723487,
+  "used_by_english": 64517,
+  "code_prune_docs": 5000,
+  "code_prune_chars": 49600398,
+  "used_by_code": 64083,
+  "used_by_thai": 24122,
+  "used_by_any": 91695,
+  "thai_run_types": 266042,
+  "atoms": [],
+  "bpe_char_cap_per_domain": 4000000,
+  "runs": [
+    {
+      "name": "qwen2-5-instruct-ma-th1000",
+      "k": 1000,
+      "atoms": 0,
+      "merged": 1000,
+      "merges_added": 1000,
+      "pruned_scripts": {
+        "other": 651,
+        "cjk": 22,
+        "hangul": 322,
+        "cyrillic": 3,
+        "latin-ext": 2
+      }
+    },
+    {
+      "name": "qwen2-5-instruct-ma-th3000",
+      "k": 3000,
+      "atoms": 0,
+      "merged": 3000,
+      "merges_added": 3000,
+      "pruned_scripts": {
+        "other": 2208,
+        "hangul": 659,
+        "latin-ext": 50,
+        "cyrillic": 51,
+        "cjk": 32
+      }
+    },
+    {
+      "name": "qwen2-5-instruct-ma-th5000",
+      "k": 5000,
+      "atoms": 0,
+      "merged": 5000,
+      "merges_added": 5000,
+      "pruned_scripts": {
+        "other": 3687,
+        "cyrillic": 97,
+        "hangul": 1075,
+        "latin-ext": 104,
+        "cjk": 35,
+        "thai": 2
+      }
+    },
+    {
+      "name": "qwen2-5-instruct-ma-th8000",
+      "k": 8000,
+      "atoms": 0,
+      "merged": 8000,
+      "merges_added": 8000,
+      "pruned_scripts": {
+        "other": 4752,
+        "hangul": 2136,
+        "cyrillic": 450,
+        "cjk": 186,
+        "ascii": 304,
+        "latin-ext": 169,
+        "thai": 3
+      }
+    }
+  ],
+  "seconds": 72.9
+}
