@@ -5226,6 +5226,582 @@
    }
   }
  },
+ "mistral_adapt": {
+  "control": {
+   "meta": {
+    "base": "mistralai/Mistral-7B-v0.1",
+    "quantization": "4-bit NF4, double quant, bf16 compute",
+    "arm": "control",
+    "tokenizer": "mistralai/Mistral-7B-v0.1",
+    "steps": 400,
+    "batch": 8,
+    "seq": 512,
+    "english_windows_per_batch": 2,
+    "train_tokens_seen": 1638400,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0002,
+    "rows_learned": 0,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "log": [
+     {
+      "step": 1,
+      "loss": 1.6522,
+      "seconds": 183.3,
+      "gpu_gb": 4.99
+     },
+     {
+      "step": 25,
+      "loss": 1.4218,
+      "seconds": 681.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 50,
+      "loss": 1.498,
+      "seconds": 1233.6,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 75,
+      "loss": 1.512,
+      "seconds": 1737.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 100,
+      "loss": 1.516,
+      "seconds": 2161.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 125,
+      "loss": 1.5489,
+      "seconds": 2545.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 150,
+      "loss": 1.3349,
+      "seconds": 2855.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 175,
+      "loss": 1.4679,
+      "seconds": 3166.0,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 200,
+      "loss": 1.4519,
+      "seconds": 3565.0,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 225,
+      "loss": 1.4879,
+      "seconds": 3909.5,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 250,
+      "loss": 1.28,
+      "seconds": 4232.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 275,
+      "loss": 1.4065,
+      "seconds": 4557.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 300,
+      "loss": 1.37,
+      "seconds": 4875.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 325,
+      "loss": 1.5634,
+      "seconds": 5194.6,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 350,
+      "loss": 1.5882,
+      "seconds": 5513.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 375,
+      "loss": 1.6067,
+      "seconds": 5831.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 400,
+      "loss": 1.3889,
+      "seconds": 6150.5,
+      "gpu_gb": 5.29
+     }
+    ],
+    "saved_to": "models\\mistral-7b-qlora-control",
+    "seconds": 6205.2
+   },
+   "results": {
+    "original": {
+     "wikipedia_bpc": 1.5556,
+     "wikipedia_tok100": 97.48,
+     "news_bpc": 2.3331,
+     "news_tok100": 100.3,
+     "social_bpc": 2.3112,
+     "social_tok100": 96.27,
+     "english_bpc": 0.7226,
+     "english_tok100": 25.1
+    },
+    "trained": {
+     "wikipedia_bpc": 1.4555,
+     "wikipedia_tok100": 97.48,
+     "news_bpc": 2.0128,
+     "news_tok100": 100.3,
+     "social_bpc": 2.0471,
+     "social_tok100": 96.27,
+     "english_bpc": 0.7327,
+     "english_tok100": 25.1
+    }
+   }
+  },
+  "retrofit": {
+   "meta": {
+    "base": "mistralai/Mistral-7B-v0.1",
+    "quantization": "4-bit NF4, double quant, bf16 compute",
+    "arm": "retrofit",
+    "tokenizer": "tokenizers/mistral-7b-th2483",
+    "steps": 400,
+    "batch": 8,
+    "seq": 512,
+    "english_windows_per_batch": 2,
+    "train_tokens_seen": 1638400,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0002,
+    "rows_learned": 2483,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "log": [
+     {
+      "step": 1,
+      "loss": 6.2172,
+      "seconds": 175.6,
+      "gpu_gb": 5.56
+     },
+     {
+      "step": 25,
+      "loss": 4.7351,
+      "seconds": 658.9,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 50,
+      "loss": 4.1862,
+      "seconds": 1180.9,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 75,
+      "loss": 4.2756,
+      "seconds": 1709.5,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 100,
+      "loss": 3.6865,
+      "seconds": 2243.9,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 125,
+      "loss": 3.6389,
+      "seconds": 2771.6,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 150,
+      "loss": 3.3879,
+      "seconds": 3286.1,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 175,
+      "loss": 3.9333,
+      "seconds": 3804.9,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 200,
+      "loss": 3.6148,
+      "seconds": 4321.5,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 225,
+      "loss": 3.472,
+      "seconds": 4839.1,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 250,
+      "loss": 3.0971,
+      "seconds": 5345.6,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 275,
+      "loss": 3.1536,
+      "seconds": 5856.3,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 300,
+      "loss": 3.0579,
+      "seconds": 6373.6,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 325,
+      "loss": 3.5209,
+      "seconds": 6899.0,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 350,
+      "loss": 3.1843,
+      "seconds": 7422.4,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 375,
+      "loss": 3.3299,
+      "seconds": 7937.8,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 400,
+      "loss": 2.9484,
+      "seconds": 8465.3,
+      "gpu_gb": 6.06
+     }
+    ],
+    "saved_to": "models\\mistral-7b-qlora-retrofit-mistral-7b-th2483",
+    "seconds": 8540.9
+   },
+   "results": {
+    "mean_init": {
+     "wikipedia_bpc": 3.5139,
+     "wikipedia_tok100": 32.11,
+     "news_bpc": 4.0437,
+     "news_tok100": 37.01,
+     "social_bpc": 3.9131,
+     "social_tok100": 37.26,
+     "english_bpc": 0.7227,
+     "english_tok100": 25.1
+    },
+    "trained": {
+     "wikipedia_bpc": 1.5962,
+     "wikipedia_tok100": 32.11,
+     "news_bpc": 2.0279,
+     "news_tok100": 37.01,
+     "social_bpc": 2.2232,
+     "social_tok100": 37.26,
+     "english_bpc": 0.7512,
+     "english_tok100": 25.1
+    }
+   }
+  }
+ },
+ "qwen_adapt": {
+  "control": {
+   "meta": {
+    "base": "Qwen/Qwen2.5-0.5B-Instruct",
+    "arm": "control",
+    "tokenizer": "Qwen/Qwen2.5-0.5B-Instruct",
+    "tied_embeddings": true,
+    "steps": 400,
+    "batch": 8,
+    "seq": 256,
+    "mix_thai_english_instr": "4,2,2",
+    "train_tokens_seen": 819200,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0001,
+    "rows_learned": 0,
+    "eval_passages": {
+     "wikipedia": 50,
+     "news": 50,
+     "social": 50,
+     "english": 47,
+     "instructions": 40
+    },
+    "saved_to": "models\\qwen2.5-0.5b-instruct-control",
+    "log": [
+     {
+      "step": 1,
+      "loss": 2.2983,
+      "seconds": 678.2
+     },
+     {
+      "step": 25,
+      "loss": 2.3541,
+      "seconds": 1311.0
+     },
+     {
+      "step": 50,
+      "loss": 2.4915,
+      "seconds": 1987.2
+     },
+     {
+      "step": 75,
+      "loss": 2.5499,
+      "seconds": 2646.3
+     },
+     {
+      "step": 100,
+      "loss": 2.384,
+      "seconds": 3309.1
+     },
+     {
+      "step": 125,
+      "loss": 2.4317,
+      "seconds": 3993.9
+     },
+     {
+      "step": 150,
+      "loss": 1.9491,
+      "seconds": 4678.9
+     },
+     {
+      "step": 175,
+      "loss": 2.1908,
+      "seconds": 5430.1
+     },
+     {
+      "step": 200,
+      "loss": 2.2687,
+      "seconds": 6395.1
+     },
+     {
+      "step": 225,
+      "loss": 2.2117,
+      "seconds": 7458.2
+     },
+     {
+      "step": 250,
+      "loss": 2.2747,
+      "seconds": 8518.8
+     },
+     {
+      "step": 275,
+      "loss": 2.2545,
+      "seconds": 9577.6
+     },
+     {
+      "step": 300,
+      "loss": 2.2003,
+      "seconds": 10636.1
+     },
+     {
+      "step": 325,
+      "loss": 2.3361,
+      "seconds": 11692.8
+     },
+     {
+      "step": 350,
+      "loss": 2.4798,
+      "seconds": 12753.4
+     },
+     {
+      "step": 375,
+      "loss": 2.5449,
+      "seconds": 13824.1
+     },
+     {
+      "step": 400,
+      "loss": 2.1823,
+      "seconds": 14798.9
+     }
+    ],
+    "seconds": 15728.6
+   },
+   "results": {
+    "original": {
+     "wikipedia_bpc": 1.4699,
+     "wikipedia_tok100": 55.66,
+     "news_bpc": 1.8583,
+     "news_tok100": 59.62,
+     "social_bpc": 2.0719,
+     "social_tok100": 56.88,
+     "english_bpc": 0.993,
+     "english_tok100": 23.25,
+     "instructions_bpc": 1.0949,
+     "instructions_tok100": 51.93
+    },
+    "trained": {
+     "wikipedia_bpc": 1.4409,
+     "wikipedia_tok100": 55.66,
+     "news_bpc": 1.7883,
+     "news_tok100": 59.62,
+     "social_bpc": 1.9514,
+     "social_tok100": 56.88,
+     "english_bpc": 0.9901,
+     "english_tok100": 23.25,
+     "instructions_bpc": 1.0217,
+     "instructions_tok100": 51.93
+    }
+   }
+  },
+  "retrofit": {
+   "meta": {
+    "base": "Qwen/Qwen2.5-0.5B-Instruct",
+    "arm": "retrofit",
+    "tokenizer": "tokenizers/qwen2-5-instruct-ma-th3000",
+    "tied_embeddings": true,
+    "steps": 400,
+    "batch": 8,
+    "seq": 256,
+    "mix_thai_english_instr": "4,2,2",
+    "train_tokens_seen": 819200,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0001,
+    "rows_learned": 4578,
+    "eval_passages": {
+     "wikipedia": 50,
+     "news": 50,
+     "social": 50,
+     "english": 47,
+     "instructions": 40
+    },
+    "saved_to": "models\\qwen2.5-0.5b-instruct-retrofit-qwen2-5-instruct-ma-th3000",
+    "log": [
+     {
+      "step": 1,
+      "loss": 6.4345,
+      "seconds": 451.0
+     },
+     {
+      "step": 25,
+      "loss": 4.8873,
+      "seconds": 1194.0
+     },
+     {
+      "step": 50,
+      "loss": 4.5985,
+      "seconds": 1947.1
+     },
+     {
+      "step": 75,
+      "loss": 4.5338,
+      "seconds": 2690.5
+     },
+     {
+      "step": 100,
+      "loss": 4.6452,
+      "seconds": 3441.6
+     },
+     {
+      "step": 125,
+      "loss": 4.8926,
+      "seconds": 4215.5
+     },
+     {
+      "step": 150,
+      "loss": 4.0783,
+      "seconds": 5005.6
+     },
+     {
+      "step": 175,
+      "loss": 3.945,
+      "seconds": 5923.2
+     },
+     {
+      "step": 200,
+      "loss": 4.3629,
+      "seconds": 7096.9
+     },
+     {
+      "step": 225,
+      "loss": 4.1041,
+      "seconds": 8286.4
+     },
+     {
+      "step": 250,
+      "loss": 3.9639,
+      "seconds": 9465.9
+     },
+     {
+      "step": 275,
+      "loss": 4.3429,
+      "seconds": 10642.2
+     },
+     {
+      "step": 300,
+      "loss": 3.8705,
+      "seconds": 11816.8
+     },
+     {
+      "step": 325,
+      "loss": 3.956,
+      "seconds": 12996.2
+     },
+     {
+      "step": 350,
+      "loss": 4.2234,
+      "seconds": 14134.7
+     },
+     {
+      "step": 375,
+      "loss": 4.0319,
+      "seconds": 15336.9
+     },
+     {
+      "step": 400,
+      "loss": 3.4702,
+      "seconds": 16206.8
+     }
+    ],
+    "seconds": 16526.1
+   },
+   "results": {
+    "mean_init": {
+     "wikipedia_bpc": 2.9811,
+     "wikipedia_tok100": 26.27,
+     "news_bpc": 3.453,
+     "news_tok100": 30.82,
+     "social_bpc": 3.4488,
+     "social_tok100": 30.37,
+     "english_bpc": 0.9933,
+     "english_tok100": 23.25,
+     "instructions_bpc": 2.4447,
+     "instructions_tok100": 25.94
+    },
+    "trained": {
+     "wikipedia_bpc": 1.6474,
+     "wikipedia_tok100": 26.27,
+     "news_bpc": 2.0423,
+     "news_tok100": 30.82,
+     "social_bpc": 2.1122,
+     "social_tok100": 30.37,
+     "english_bpc": 0.988,
+     "english_tok100": 23.25,
+     "instructions_bpc": 1.171,
+     "instructions_tok100": 25.94,
+     "rows_changed": 4578,
+     "rows_changed_outside_learned": 0
+    }
+   }
+  }
+ },
  "mistral_rows": {
   "mistral-7b-th2483": {
    "meta": {
@@ -10585,6 +11161,89 @@
     }
    ],
    "seconds": 632.8
+  },
+  "retrofit_qwen2-5-instruct-ma_meta": {
+   "target": "Qwen2.5-Instruct",
+   "mode": "plain",
+   "prunable": 58238,
+   "train_domains": [
+    "wikipedia",
+    "news",
+    "social"
+   ],
+   "english_prune_docs": 8000,
+   "english_prune_chars": 83723487,
+   "used_by_english": 64517,
+   "code_prune_docs": 5000,
+   "code_prune_chars": 49600398,
+   "used_by_code": 64083,
+   "used_by_thai": 24122,
+   "used_by_any": 91695,
+   "thai_run_types": 266042,
+   "atoms": [],
+   "bpe_char_cap_per_domain": 4000000,
+   "runs": [
+    {
+     "name": "qwen2-5-instruct-ma-th1000",
+     "k": 1000,
+     "atoms": 0,
+     "merged": 1000,
+     "merges_added": 1000,
+     "pruned_scripts": {
+      "other": 651,
+      "cjk": 22,
+      "hangul": 322,
+      "cyrillic": 3,
+      "latin-ext": 2
+     }
+    },
+    {
+     "name": "qwen2-5-instruct-ma-th3000",
+     "k": 3000,
+     "atoms": 0,
+     "merged": 3000,
+     "merges_added": 3000,
+     "pruned_scripts": {
+      "other": 2208,
+      "hangul": 659,
+      "latin-ext": 50,
+      "cyrillic": 51,
+      "cjk": 32
+     }
+    },
+    {
+     "name": "qwen2-5-instruct-ma-th5000",
+     "k": 5000,
+     "atoms": 0,
+     "merged": 5000,
+     "merges_added": 5000,
+     "pruned_scripts": {
+      "other": 3687,
+      "cyrillic": 97,
+      "hangul": 1075,
+      "latin-ext": 104,
+      "cjk": 35,
+      "thai": 2
+     }
+    },
+    {
+     "name": "qwen2-5-instruct-ma-th8000",
+     "k": 8000,
+     "atoms": 0,
+     "merged": 8000,
+     "merges_added": 8000,
+     "pruned_scripts": {
+      "other": 4752,
+      "hangul": 2136,
+      "cyrillic": 450,
+      "cjk": 186,
+      "ascii": 304,
+      "latin-ext": 169,
+      "thai": 3
+     }
+    }
+   ],
+   "seconds": 72.9
   }
  },
  "retrofit_checks": {
@@ -11034,6 +11693,38 @@
     "check": "English id sequences unchanged (>= 99.5%)",
     "pass": true,
     "detail": "9,992/10,000 samples byte-identical (99.92%)"
+   }
+  ],
+  "qwen2-5-instruct-ma-th3000": [
+   {
+    "check": "vocabulary size identical, ids contiguous",
+    "pass": true,
+    "detail": "base 151,665, retrofit 151,665"
+   },
+   {
+    "check": "Thai round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 3, base 3, new failures introduced by retrofit 0"
+   },
+   {
+    "check": "English round-trips losslessly (10,000 samples)",
+    "pass": true,
+    "detail": "failures: retrofit 0, base 0, new failures introduced by retrofit 0"
+   },
+   {
+    "check": "top 100 candidates each encode to one token",
+    "pass": true,
+    "detail": "100/100 single-token"
+   },
+   {
+    "check": "added tokens used on held-out Thai",
+    "pass": true,
+    "detail": "2,983/3,000 used (99.4%); threshold 95%"
+   },
+   {
+    "check": "English id sequences unchanged (>= 99.5%)",
+    "pass": true,
+    "detail": "9,999/10,000 samples byte-identical (99.99%)"
    }
   ]
  },
@@ -12079,7 +12770,7 @@
      "count": 33
     },
     {
-     "tokenizer": "Typhoon-7B (expanded)",
+     "tokenizer": "Typhoon-7B (SCB 10X, vocabulary expanded - not this project)",
      "pieces": [
       {
        "t": " ด",
@@ -13223,7 +13914,7 @@
      "count": 28
     },
     {
-     "tokenizer": "Typhoon-7B (expanded)",
+     "tokenizer": "Typhoon-7B (SCB 10X, vocabulary expanded - not this project)",
      "pieces": [
       {
        "t": " เมื่อวันที่",
@@ -14099,7 +14790,7 @@
      "count": 21
     },
     {
-     "tokenizer": "Typhoon-7B (expanded)",
+     "tokenizer": "Typhoon-7B (SCB 10X, vocabulary expanded - not this project)",
      "pieces": [
       {
        "t": " เปิด",

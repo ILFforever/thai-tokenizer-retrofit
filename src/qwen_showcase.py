@@ -154,7 +154,9 @@ def main() -> None:
                  f"({speed['original']['tokens_per_s']} / {speed['control']['tokens_per_s']} / "
                  f"{speed['retrofit']['tokens_per_s']}) - each retrofit token carries more Thai. "
                  f"Answers are greedy and capped at {args.max_new} new tokens; prompts come from the "
-                 f"WangchanThaiInstruct test split (CC BY-SA 4.0), which no model here was trained on."),
+                 f"WangchanThaiInstruct test split (CC BY-SA 4.0), which no model here was trained on. "
+                 f"<b>Read the answers as a demo of tokens, not of quality</b>: a 0.5B model answers roughly "
+                 f"in any form, and quality is the bits-per-character table above."),
         "prompts": [{"label": p["label"], "prompt": p["prompt"], "answers": p["answers"]} for p in ps],
     }
     (ROOT / "showcase" / "data.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")

@@ -30,10 +30,12 @@ draft generated 28 September 2026 from the numbers in `results/`
   training, and 200 steps training only those rows ends *better* than the
   original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
   at a third of the tokens, with English unchanged. **On the target model,
-  Mistral-7B, that is not enough:** it already reads Thai well, and a CPU-sized
-  row-only pass recovers only about half the loss. "No retraining" is
-  narrowed to: no expansion and no pretraining from scratch, but the swapped
-  rows must be re-set and trained, with a real budget at 7B scale.
+  Mistral-7B, a CPU-sized pass is not enough** - it already reads Thai well -
+  but 400 QLoRA steps on a laptop GPU bring the retrofitted Mistral-7B level
+  with an equally trained control on news and within ~9% on Wikipedia and
+  social, at a third of the Thai tokens (§8.5). "No retraining" is narrowed
+  to: no expansion and no pretraining from scratch, but the swapped rows must
+  be re-set and trained.
 - **Several earlier claims did not survive checking** and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
   costs more on social text", and the novelty of fixed-size replacement for
@@ -581,18 +583,18 @@ the swapped rows need training, not just a good starting point.**
 A short row-only tuning pass (81,920 tokens, about an hour on the CPU) recovers
 45-55% of the damage and was still improving when it stopped (quick-check
 Wikipedia 3.54 → 3.18 over 160 steps), with English unchanged. It is nowhere
-near the original. At 7B scale the swapped rows need a real training budget -
-far more tokens, and probably adaptation beyond the rows - which is what
-Typhoon's continued pretraining supplied and what this project could not run
-without a GPU.
+near the original. At 7B scale the swapped rows need a real training budget:
+with LoRA plus the rows on a laptop GPU (1.6M tokens) the gap to an equally
+trained control falls to 1-10% (§8.5).
 
 **So the honest version of the "no retraining" claim is:** no vocabulary
 expansion and no pretraining from scratch, but the swapped rows must be
 re-set (the mean of the old pieces is the right start) and trained. For a
 model that reads Thai poorly (BLOOM-560m) a few hundred row-only steps on a
 CPU are enough; for one that already reads Thai well (Mistral-7B) a CPU-sized
-pass recovers about half, and a real training budget is needed. Whether that
-budget is much smaller than Typhoon's continued pretraining was not measured.
+pass recovers about half, and 1.6M tokens of QLoRA on a laptop GPU get within
+1-10% of an equally trained control (§8.5) - a budget far below Typhoon's
+continued pretraining, though the two were not compared on equal terms.
 
 ## 8. Robustness, fairness and cost
 
@@ -668,6 +670,82 @@ against 936 without code protection, which is why Chinese moves +12.9%
 instead of +44.7% (the code corpus evidently contains CJK text, most likely
 in comments and strings - not checked).
 
+## 8.5 Showcase: the retrofit in a working model
+
+*Source: `qwen_adapt_*.json`, `qwen_showcase.json`; live page: the Thai Token Meter.*
+
+To show the method end to end on hardware a student has, both interventions
+were applied to **Qwen2.5-0.5B-Instruct**, a small open model that already
+handles Thai: the mark-aware regex (so its 1,578 dead Thai entries become
+reachable) plus a fixed-size retrofit of 3,000 Thai entries into slots that
+English, code and Thai never use. On held-out text this tokenizer needs
+46-51% fewer Thai tokens than the shipped one (penalty 2.38x → 1.22x), with
+English unchanged; it passes every Week 4 check (including all 100 top
+candidates as single tokens and 99.99% of English samples byte-identical).
+
+**Fair comparison.** Two copies of the model were trained identically on the
+CPU - same data (Thai text from all three domains, English text, and Thai
+instructions from WangchanThaiInstruct in the model's chat format), same 400
+steps of 8 × 256 tokens, same LoRA (rank 16 on every attention and MLP
+projection) - one with the shipped tokenizer (*control*), one with the
+retrofitted tokenizer, where the 4,578 unseen rows (3,000 added, 1,578
+previously unreachable) start at the mean of their pieces and train alongside
+the LoRA. Any difference between the two arms is the tokenizer's.
+
+| Qwen2.5-0.5B-Instruct | Wikipedia | News | Social | Thai chat | English | Thai tok/100ch |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| original (no training) | 1.470 | 1.858 | 2.072 | 1.095 | 0.993 | 55 / 60 / 59 |
+| control: 400 steps, shipped tokenizer | 1.441 | 1.788 | 1.951 | 1.022 | 0.990 | same |
+| retrofit, rows mean-initialised, untrained | 2.981 | 3.453 | 3.449 | 2.445 | 0.993 | about half |
+| **retrofit: 400 steps, retrofitted tokenizer** | **1.647** | **2.042** | **2.112** | **1.171** | **0.988** | about half |
+
+(Bits per character on held-out text, lower is better; 50 passages per
+domain, 25 + 25 English passages, 40 held-out chat conversations.)
+
+Training closes most of the gap - from about +100% to +8-14% against the
+control - but **after 400 CPU steps the retrofitted model is still 8-14%
+behind the control on Thai and 14% on Thai chat**, while reading Thai in about
+half as many tokens and leaving English unchanged. The retrofit arm had 4,578
+rows to learn from scratch and the control none, so equal training is not
+equal starting line; its loss was still falling at the end. In generated
+answers to held-out instructions the retrofitted model produces about twice
+as much Thai text per token (20-30 characters per second on this CPU against
+10-17), but a 0.5B model's answers are rough in every arm and the retrofit's
+are sometimes off-topic: the showcase demonstrates cheaper Thai, not better
+answers.
+
+**The target model with a real training budget (optional GPU extra).** The
+CPU could give Mistral-7B's swapped rows only 160 steps (§7.6). With the
+author's approval, the same two-arm design was run on a laptop GPU (RTX 4070,
+8 GB) in 4-bit NF4 (QLoRA): 400 steps of 8 × 512 tokens (1.6M tokens), LoRA
+rank 16 on every projection, 6 Thai + 2 English windows per batch; the
+retrofit arm also trains the 2,483 swapped rows of the input embedding and
+the output head from their mean initialisation (`mistral_adapt_*.json`).
+Every condition is measured under the same 4-bit weights, on the §7.6
+passages:
+
+| Mistral-7B, 4-bit | Wikipedia | News | Social | English | Thai tokens |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| original (no training) | 1.556 | 2.333 | 2.311 | 0.723 | 100% |
+| control: 400 steps, shipped tokenizer | 1.456 | 2.013 | 2.047 | 0.733 | 100% |
+| retrofit, rows mean-initialised, untrained | 3.514 | 4.044 | 3.913 | 0.723 | ~35% |
+| **retrofit: 400 steps, retrofitted tokenizer** | **1.596** | **2.028** | **2.223** | **0.751** | **~35%** |
+
+With 1.6M tokens of training the retrofitted Mistral-7B **matches the
+equally trained control on news (+0.7%) and is ~9% behind on Wikipedia and
+social**, while reading Thai in about a third of the tokens; it is already
+better than the untrained original on news and social. English rises 2.5%
+against the control (both arms drift slightly on English because the tuning
+text is three-quarters Thai). Compared with the CPU run's 160 steps (Wikipedia
+3.10), the gap closes from ~100% to ~9%, which answers the question §7.6 left
+open: at 7B scale the swapped rows can be trained back, and a single laptop
+GPU is enough to get most of the way. The loss was still falling at 400 steps.
+
+The **Thai Token Meter** page runs all seven tokenizers in the browser with a
+250-line JavaScript BPE that reproduces the originals exactly (identical ids
+on all 2,114 held-out test texts for every tokenizer), so anyone can paste
+Thai and see the difference.
+
 ## 9. Limitations and ethics
 
 **What "no retraining" can honestly mean.** A fixed-size retrofit keeps the
@@ -692,10 +770,12 @@ Hangul, so a deployment that also serves those languages would pay for the
 Thai gain (§8.4). The prune list is published so a
 deployment can check it against its own traffic.
 
-**Scale of the model experiments.** Everything ran on a CPU. The full
-initialisation-and-tuning comparison used small models (BLOOM-560m,
-Qwen2.5-0.5B); Mistral-7B itself was evaluated on 40 passages per domain and
-tuned for only 160 steps. Bits per character is the only quality measure.
+**Scale of the model experiments.** Everything except one clearly marked
+extra ran on a CPU. The full initialisation-and-tuning comparison used small
+models (BLOOM-560m, Qwen2.5-0.5B); Mistral-7B was evaluated on 40 passages per
+domain, tuned for 160 steps on the CPU, and - the extra - trained for 400
+QLoRA steps in 4-bit on a laptop GPU (§8.5), so its trained numbers are for
+4-bit weights. Bits per character is the only quality measure.
 These results show the direction and rough size of the effect, not the
 downstream task quality of a properly tuned 7B model.
 
@@ -757,8 +837,9 @@ vocabulary's training data.
    model Thai well the same recipe falls short: Mistral-7B recovers 45-55% of
    the damage after 160 steps and Qwen2.5's dead rows 82-87% after 200, both
    with English unchanged at learning rate 1e-4. Row-only repair is enough for
-   a weak-Thai model; for a strong one the rows need a real training budget,
-   which this CPU-only project could not provide.
+   a weak-Thai model; for a strong one the rows need a real training budget -
+   and 1.6M tokens of QLoRA on a laptop GPU brought Mistral-7B within 1-10% of
+   an equally trained control at a third of the Thai tokens (§8.5).
 
 **What to do next.**
 

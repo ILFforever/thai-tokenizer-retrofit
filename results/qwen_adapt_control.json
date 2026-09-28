@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "base": "Qwen/Qwen2.5-0.5B-Instruct",
+    "arm": "control",
+    "tokenizer": "Qwen/Qwen2.5-0.5B-Instruct",
+    "tied_embeddings": true,
+    "steps": 400,
+    "batch": 8,
+    "seq": 256,
+    "mix_thai_english_instr": "4,2,2",
+    "train_tokens_seen": 819200,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0001,
+    "rows_learned": 0,
+    "eval_passages": {
+      "wikipedia": 50,
+      "news": 50,
+      "social": 50,
+      "english": 47,
+      "instructions": 40
+    },
+    "saved_to": "models\\qwen2.5-0.5b-instruct-control",
+    "log": [
+      {
+        "step": 1,
+        "loss": 2.2983,
+        "seconds": 678.2
+      },
+      {
+        "step": 25,
+        "loss": 2.3541,
+        "seconds": 1311.0
+      },
+      {
+        "step": 50,
+        "loss": 2.4915,
+        "seconds": 1987.2
+      },
+      {
+        "step": 75,
+        "loss": 2.5499,
+        "seconds": 2646.3
+      },
+      {
+        "step": 100,
+        "loss": 2.384,
+        "seconds": 3309.1
+      },
+      {
+        "step": 125,
+        "loss": 2.4317,
+        "seconds": 3993.9
+      },
+      {
+        "step": 150,
+        "loss": 1.9491,
+        "seconds": 4678.9
+      },
+      {
+        "step": 175,
+        "loss": 2.1908,
+        "seconds": 5430.1
+      },
+      {
+        "step": 200,
+        "loss": 2.2687,
+        "seconds": 6395.1
+      },
+      {
+        "step": 225,
+        "loss": 2.2117,
+        "seconds": 7458.2
+      },
+      {
+        "step": 250,
+        "loss": 2.2747,
+        "seconds": 8518.8
+      },
+      {
+        "step": 275,
+        "loss": 2.2545,
+        "seconds": 9577.6
+      },
+      {
+        "step": 300,
+        "loss": 2.2003,
+        "seconds": 10636.1
+      },
+      {
+        "step": 325,
+        "loss": 2.3361,
+        "seconds": 11692.8
+      },
+      {
+        "step": 350,
+        "loss": 2.4798,
+        "seconds": 12753.4
+      },
+      {
+        "step": 375,
+        "loss": 2.5449,
+        "seconds": 13824.1
+      },
+      {
+        "step": 400,
+        "loss": 2.1823,
+        "seconds": 14798.9
+      }
+    ],
+    "seconds": 15728.6
+  },
+  "results": {
+    "original": {
+      "wikipedia_bpc": 1.4699,
+      "wikipedia_tok100": 55.66,
+      "news_bpc": 1.8583,
+      "news_tok100": 59.62,
+      "social_bpc": 2.0719,
+      "social_tok100": 56.88,
+      "english_bpc": 0.993,
+      "english_tok100": 23.25,
+      "instructions_bpc": 1.0949,
+      "instructions_tok100": 51.93
+    },
+    "trained": {
+      "wikipedia_bpc": 1.4409,
+      "wikipedia_tok100": 55.66,
+      "news_bpc": 1.7883,
+      "news_tok100": 59.62,
+      "social_bpc": 1.9514,
+      "social_tok100": 56.88,
+      "english_bpc": 0.9901,
+      "english_tok100": 23.25,
+      "instructions_bpc": 1.0217,
+      "instructions_tok100": 51.93
+    }
+  }
+}

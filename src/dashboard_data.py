@@ -66,7 +66,7 @@ def token_examples() -> list[dict]:
         ("Mistral-7B", toks["Mistral-7B"].raw, "hf"),
         (f"Mistral-7B +TH{strict.name.split('-th')[1]} (this project)",
          AutoTokenizer.from_pretrained(str(strict)), "hf"),
-        ("Typhoon-7B (expanded)", toks["Typhoon-7B"].raw, "hf"),
+        ("Typhoon-7B (SCB 10X, vocabulary expanded - not this project)", toks["Typhoon-7B"].raw, "hf"),
     ]
     picks: dict[str, str] = {}
     for d in DOMAINS:
@@ -153,6 +153,12 @@ def main() -> None:
         if run["meta"]["steps"] < 50:  # a smoke test, not a result
             continue
         data.setdefault("embed_adapt", {})[p.stem.replace("embed_adapt_", "")] = run
+    for p in sorted(RESULTS.glob("mistral_adapt_*.json")):
+        d = json.loads(p.read_text(encoding="utf-8"))
+        data.setdefault("mistral_adapt", {})[d["meta"]["arm"]] = d
+    for p in sorted(RESULTS.glob("qwen_adapt_*.json")):
+        d = json.loads(p.read_text(encoding="utf-8"))
+        data.setdefault("qwen_adapt", {})[d["meta"]["arm"]] = d
     for p in sorted(RESULTS.glob("mistral_rows_*.json")):
         data.setdefault("mistral_rows", {})[p.stem.replace("mistral_rows_", "")] = json.loads(
             p.read_text(encoding="utf-8"))

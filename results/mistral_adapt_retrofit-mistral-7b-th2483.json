@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "base": "mistralai/Mistral-7B-v0.1",
+    "quantization": "4-bit NF4, double quant, bf16 compute",
+    "arm": "retrofit",
+    "tokenizer": "tokenizers/mistral-7b-th2483",
+    "steps": 400,
+    "batch": 8,
+    "seq": 512,
+    "english_windows_per_batch": 2,
+    "train_tokens_seen": 1638400,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0002,
+    "rows_learned": 2483,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "log": [
+      {
+        "step": 1,
+        "loss": 6.2172,
+        "seconds": 175.6,
+        "gpu_gb": 5.56
+      },
+      {
+        "step": 25,
+        "loss": 4.7351,
+        "seconds": 658.9,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 50,
+        "loss": 4.1862,
+        "seconds": 1180.9,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 75,
+        "loss": 4.2756,
+        "seconds": 1709.5,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 100,
+        "loss": 3.6865,
+        "seconds": 2243.9,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 125,
+        "loss": 3.6389,
+        "seconds": 2771.6,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 150,
+        "loss": 3.3879,
+        "seconds": 3286.1,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 175,
+        "loss": 3.9333,
+        "seconds": 3804.9,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 200,
+        "loss": 3.6148,
+        "seconds": 4321.5,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 225,
+        "loss": 3.472,
+        "seconds": 4839.1,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 250,
+        "loss": 3.0971,
+        "seconds": 5345.6,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 275,
+        "loss": 3.1536,
+        "seconds": 5856.3,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 300,
+        "loss": 3.0579,
+        "seconds": 6373.6,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 325,
+        "loss": 3.5209,
+        "seconds": 6899.0,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 350,
+        "loss": 3.1843,
+        "seconds": 7422.4,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 375,
+        "loss": 3.3299,
+        "seconds": 7937.8,
+        "gpu_gb": 6.06
+      },
+      {
+        "step": 400,
+        "loss": 2.9484,
+        "seconds": 8465.3,
+        "gpu_gb": 6.06
+      }
+    ],
+    "saved_to": "models\\mistral-7b-qlora-retrofit-mistral-7b-th2483",
+    "seconds": 8540.9
+  },
+  "results": {
+    "mean_init": {
+      "wikipedia_bpc": 3.5139,
+      "wikipedia_tok100": 32.11,
+      "news_bpc": 4.0437,
+      "news_tok100": 37.01,
+      "social_bpc": 3.9131,
+      "social_tok100": 37.26,
+      "english_bpc": 0.7227,
+      "english_tok100": 25.1
+    },
+    "trained": {
+      "wikipedia_bpc": 1.5962,
+      "wikipedia_tok100": 32.11,
+      "news_bpc": 2.0279,
+      "news_tok100": 37.01,
+      "social_bpc": 2.2232,
+      "social_tok100": 37.26,
+      "english_bpc": 0.7512,
+      "english_tok100": 25.1
+    }
+  }
+}

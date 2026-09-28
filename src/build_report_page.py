@@ -83,6 +83,7 @@ td[style*="right"], th[style*="right"] { font-variant-numeric: tabular-nums; }
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dashboard-url", default="")
+    ap.add_argument("--meter-url", default="")
     args = ap.parse_args()
 
     md_text = SRC.read_text(encoding="utf-8")
@@ -109,6 +110,8 @@ def main() -> None:
                     f'<li><a href="#{c["id"]}">{c["name"]}</a></li>' for c in t["children"]) + "</ol></li>")
     list(walk(conv.toc_tokens))
     dash = f'<a class="dash" href="{args.dashboard_url}">Open the results dashboard →</a>' if args.dashboard_url else ""
+    if args.meter_url:
+        dash += f'<br><a class="dash" href="{args.meter_url}">Try the live Thai Token Meter →</a>'
 
     html = f"""<title>Thai Retrofit Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">

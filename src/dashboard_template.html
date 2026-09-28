@@ -476,6 +476,7 @@ footer { padding-block: 40px 0; color: var(--muted); font-size: 13px; display: g
 <script>
 const DATA = /*__DATA__*/null;
 const REPORT_URL = "__REPORT_URL__";
+const METER_URL = "__METER_URL__";
 const DOMAINS = ["wikipedia", "news", "social"];
 const DNAME = { wikipedia: "Wikipedia", news: "News", social: "Social" };
 const $ = (s, r = document) => r.querySelector(s);
@@ -549,6 +550,7 @@ const ci = s => (typeof s === "string" ? s.split("..").map(Number) : s);
   ];
   $("#weeks").append(...weeks.map(([t, c]) => h("span", { class: "pill " + c }, h("span", { class: "dot" }), t)));
   if (REPORT_URL.startsWith("http")) $("#report-link").append("The full write-up, with method, references and limits: ", h("a", { href: REPORT_URL }, "read the report"), ".");
+  if (METER_URL.startsWith("http")) $("#report-link").append(" Paste your own Thai into the ", h("a", { href: METER_URL }, "live Thai Token Meter"), ".");
 })();
 
 /* ---------- generic HTML bar chart ---------- */
@@ -704,7 +706,7 @@ function legend(host, items) {
     svg.append(S("text", { x: X(last.k) - 6, y: Y(-last.r[`th_${d}_change`]) + 18, "text-anchor": "middle", class: "lbl" }, pct(last.r[`th_${d}_change`], 0)));
     $("#ch-budget").append(h("div", {}, svg));
   }
-  legend($("#lg-budget"), [["retrofit, strict", cssv("accent"), "line"], ["retrofit, English-only", cssv("accent"), "line"], ["Week 3 projection", cssv("muted"), "line"], ["Typhoon (expanded)", cssv("typhoon"), "diamond"]]);
+  legend($("#lg-budget"), [["retrofit, strict", cssv("accent"), "line"], ["retrofit, English-only", cssv("accent"), "line"], ["Week 3 projection", cssv("muted"), "line"], ["Typhoon-7B (SCB 10X, expanded vocabulary)", cssv("typhoon"), "diamond"]]);
   $("#lg-budget").children[1].querySelector(".sw").style.background = `repeating-linear-gradient(90deg, var(--accent) 0 5px, transparent 5px 9px)`;
   $("#lg-budget").children[2].querySelector(".sw").style.background = `repeating-linear-gradient(90deg, var(--muted) 0 2px, transparent 2px 5px)`;
 
@@ -831,7 +833,7 @@ function legend(host, items) {
   const order = ["base", "stale", "random", "mean", "random+tune", "mean+tune"].filter(k => R[k]);
   const label = { base: "original tokenizer", stale: "rows left as they were", random: "random re-start (Csaki et al.)", mean: "mean of old pieces (FVT)", "random+tune": "random + row-only tuning", "mean+tune": "mean + row-only tuning" };
   const best = order.filter(k => k !== "base").sort((a, b) => R[a].wikipedia_bpc - R[b].wikipedia_bpc)[0];
-  $("#rows-tldr").innerHTML = `The retrofit keeps the embedding matrix's shape, but each swapped row still holds the vector of the token it replaced. On BLOOM-560m (retrofitted with ${int(meta.swapped_rows)} Thai entries, ${(meta.swapped_rows / meta.vocab * 100).toFixed(1)}% of its vocabulary), leaving the rows alone or re-drawing them at random makes the model much worse at Thai. Setting each row to the average of the pieces it replaces recovers most of the loss with no training, and 200 steps of training only those rows ends better than the original on Thai (the original got no Thai training here, so read that as "at least as good"). On Mistral-7B, which already handles Thai well, the same start recovers only about a third: at the target scale the rows need a real training budget. The honest claim is "no vocabulary expansion and no pretraining from scratch - but the swapped rows must be re-set and trained."`;
+  $("#rows-tldr").innerHTML = `The retrofit keeps the embedding matrix's shape, but each swapped row still holds the vector of the token it replaced. On BLOOM-560m (retrofitted with ${int(meta.swapped_rows)} Thai entries, ${(meta.swapped_rows / meta.vocab * 100).toFixed(1)}% of its vocabulary), leaving the rows alone or re-drawing them at random makes the model much worse at Thai. Setting each row to the average of the pieces it replaces recovers most of the loss with no training, and 200 steps of training only those rows ends better than the original on Thai (the original got no Thai training here, so read that as "at least as good"). On Mistral-7B, which already handles Thai well, the same start recovers only about a third; with a real training budget (400 QLoRA steps on a laptop GPU) it comes within 1-10% of an equally trained control at a third of the Thai tokens. The honest claim is "no vocabulary expansion and no pretraining from scratch - but the swapped rows must be re-set and trained."`;
   const grid = h("div", { class: "grid3" });
   for (const d of [...DOMAINS]) {
     const card = h("div", { class: "card" }, h("h3", {}, `${DNAME[d]}: bits per character`));
@@ -873,6 +875,24 @@ function legend(host, items) {
       `English is unchanged in every condition (${MR.base.english_bpc.toFixed(3)} bits per character).`));
     box.append(card);
   }
+
+  // two-arm training runs: Mistral-7B QLoRA on a laptop GPU, Qwen2.5-0.5B on CPU
+  const armTable = (title, A, keys, caption) => {
+    if (!A || !A.control || !A.retrofit) return;
+    const rows = [["original, no training", A.control.results.original], ["control: same training, original tokenizer", A.control.results.trained],
+      ["retrofit, rows mean-initialised", A.retrofit.results.mean_init], ["retrofit: same training, retrofitted tokenizer", A.retrofit.results.trained, true]];
+    const t = h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "Condition"), ...keys.map(([k, n]) => h("th", { class: "r" }, n)))),
+      h("tbody", {}, ...rows.map(([n, r, me]) => h("tr", { class: me ? "me" : "" }, h("td", {}, n), ...keys.map(([k]) => h("td", { class: "r" }, r[`${k}_bpc`].toFixed(3)))))));
+    box.append(h("div", { class: "card", style: { marginTop: "16px" } }, h("h3", {}, title), h("div", { class: "tablewrap" }, t), h("p", { class: "caption" }, caption)));
+  };
+  const MA = DATA.mistral_adapt;
+  if (MA && MA.control) armTable(`Mistral-7B with a real training budget: ${MA.control.meta.steps} QLoRA steps on a laptop GPU (bits per character)`, MA,
+    [["wikipedia", "Wikipedia"], ["news", "News"], ["social", "Social"], ["english", "English"]],
+    `Optional GPU extra (${MA.control.meta.gpu}, 4-bit NF4, ${int(MA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${MA.control.meta.lora_rank} + the ${int(MA.retrofit.meta.rows_learned)} swapped rows). The retrofitted model matches the equally trained control on news and is about 9% behind on Wikipedia and social, while reading Thai in about a third of the tokens.`);
+  const QA = DATA.qwen_adapt;
+  if (QA && QA.control) armTable(`Qwen2.5-0.5B-Instruct, regex fix + 3,000 Thai slots: ${QA.control.meta.steps} steps on the CPU (bits per character)`, QA,
+    [["wikipedia", "Wikipedia"], ["news", "News"], ["social", "Social"], ["instructions", "Thai chat"], ["english", "English"]],
+    `CPU run, ${int(QA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${QA.control.meta.lora_rank} + ${int(QA.retrofit.meta.rows_learned)} rows (3,000 new + 1,578 never trained). After this budget the retrofit is still 8-14% behind the control on Thai, at about half the Thai tokens; English is unchanged.`);
 })();
 
 /* ---------- 10. qwen ---------- */
@@ -929,7 +949,7 @@ function legend(host, items) {
   const L = [
     "Only self-hosted open-weight deployments can use this. A hosted API's tokenizer cannot be changed.",
     "The retrofit is deployment-specific: slots are freed from languages the protected text does not contain (section 8).",
-    "Everything ran on a CPU: the full embedding comparison used small models (BLOOM-560m, Qwen2.5-0.5B), and Mistral-7B was only evaluated and tuned for 160 steps. Quality is bits per character only - not downstream task quality of a properly tuned 7B model.",
+    "Everything but one marked extra ran on a CPU: the full embedding comparison used small models (BLOOM-560m, Qwen2.5-0.5B); Mistral-7B was tuned for 160 steps on the CPU and, as the extra, 400 QLoRA steps in 4-bit on a laptop GPU. Quality is bits per character only - not downstream task quality.",
     "The social domain is small (189k evaluation characters) and comes from brand-monitoring posts; OPUS-100 is partly subtitle text.",
     "Slots are allocated greedily, one merge at a time; an integer program could do slightly better. 98 of the top-100 candidate words become single tokens at 2,483 slots; the other two cost 2 tokens instead of 9 and 12.",
   ];

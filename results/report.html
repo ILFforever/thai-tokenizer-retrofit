@@ -62,7 +62,7 @@ td[style*="right"], th[style*="right"] { font-variant-numeric: tabular-nums; }
 }
 </style>
 <div class="layout">
-  <aside aria-label="Contents"><div class="eyebrow">Contents</div><ol><li><a href="#tldr">TL;DR</a></li><li><a href="#1-problem">1. Problem</a></li><li><a href="#2-research-questions">2. Research questions</a></li><li><a href="#3-prior-work-and-what-is-new-here">3. Prior work, and what is new here</a></li><li><a href="#4-data">4. Data</a></li><li><a href="#5-metrics">5. Metrics</a></li><li><a href="#6-method">6. Method</a></li><li class="sub"><ol><li><a href="#61-decomposing-the-penalty-week-2">6.1 Decomposing the penalty (Week 2)</a></li><li><a href="#62-candidates-week-3">6.2 Candidates (Week 3)</a></li><li><a href="#63-the-retrofit-week-4">6.3 The retrofit (Week 4)</a></li><li><a href="#64-evaluation-week-5">6.4 Evaluation (Week 5)</a></li><li><a href="#65-embedding-adaptation-week-6">6.5 Embedding adaptation (Week 6)</a></li></ol></li><li><a href="#7-results">7. Results</a></li><li class="sub"><ol><li><a href="#71-the-baseline-reproduces-one-of-its-diagnostics-did-not">7.1 The baseline reproduces; one of its diagnostics did not</a></li><li><a href="#72-where-the-penalty-comes-from">7.2 Where the penalty comes from</a></li><li><a href="#73-what-the-candidates-promise">7.3 What the candidates promise</a></li><li><a href="#74-the-retrofit">7.4 The retrofit</a></li><li><a href="#75-qwen25s-thai-vocabulary-it-cannot-use">7.5 Qwen2.5's Thai vocabulary it cannot use</a></li><li><a href="#76-what-the-swapped-rows-need">7.6 What the swapped rows need</a></li></ol></li><li><a href="#8-robustness-fairness-and-cost">8. Robustness, fairness and cost</a></li><li class="sub"><ol><li><a href="#81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</a></li><li><a href="#82-register-the-retrofit-widens-the-formalinformal-gap-like-every-thai-capable-tokenizer">8.2 Register: the retrofit widens the formal/informal gap, like every Thai-capable tokenizer</a></li><li><a href="#83-embedding-row-accounting">8.3 Embedding-row accounting</a></li><li><a href="#84-who-pays-for-the-freed-slots">8.4 Who pays for the freed slots</a></li></ol></li><li><a href="#9-limitations-and-ethics">9. Limitations and ethics</a></li><li><a href="#10-conclusion-and-next-steps">10. Conclusion and next steps</a></li><li><a href="#appendix-reproducing-every-number">Appendix: reproducing every number</a></li><li><a href="#references">References</a></li></ol><a class="dash" href="https://claude.ai/artifact/2AQJGmJ8gcX2JqMcPPKruJ">Open the results dashboard →</a></aside>
+  <aside aria-label="Contents"><div class="eyebrow">Contents</div><ol><li><a href="#tldr">TL;DR</a></li><li><a href="#1-problem">1. Problem</a></li><li><a href="#2-research-questions">2. Research questions</a></li><li><a href="#3-prior-work-and-what-is-new-here">3. Prior work, and what is new here</a></li><li><a href="#4-data">4. Data</a></li><li><a href="#5-metrics">5. Metrics</a></li><li><a href="#6-method">6. Method</a></li><li class="sub"><ol><li><a href="#61-decomposing-the-penalty-week-2">6.1 Decomposing the penalty (Week 2)</a></li><li><a href="#62-candidates-week-3">6.2 Candidates (Week 3)</a></li><li><a href="#63-the-retrofit-week-4">6.3 The retrofit (Week 4)</a></li><li><a href="#64-evaluation-week-5">6.4 Evaluation (Week 5)</a></li><li><a href="#65-embedding-adaptation-week-6">6.5 Embedding adaptation (Week 6)</a></li></ol></li><li><a href="#7-results">7. Results</a></li><li class="sub"><ol><li><a href="#71-the-baseline-reproduces-one-of-its-diagnostics-did-not">7.1 The baseline reproduces; one of its diagnostics did not</a></li><li><a href="#72-where-the-penalty-comes-from">7.2 Where the penalty comes from</a></li><li><a href="#73-what-the-candidates-promise">7.3 What the candidates promise</a></li><li><a href="#74-the-retrofit">7.4 The retrofit</a></li><li><a href="#75-qwen25s-thai-vocabulary-it-cannot-use">7.5 Qwen2.5's Thai vocabulary it cannot use</a></li><li><a href="#76-what-the-swapped-rows-need">7.6 What the swapped rows need</a></li></ol></li><li><a href="#8-robustness-fairness-and-cost">8. Robustness, fairness and cost</a></li><li class="sub"><ol><li><a href="#81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</a></li><li><a href="#82-register-the-retrofit-widens-the-formalinformal-gap-like-every-thai-capable-tokenizer">8.2 Register: the retrofit widens the formal/informal gap, like every Thai-capable tokenizer</a></li><li><a href="#83-embedding-row-accounting">8.3 Embedding-row accounting</a></li><li><a href="#84-who-pays-for-the-freed-slots">8.4 Who pays for the freed slots</a></li></ol></li><li><a href="#85-showcase-the-retrofit-in-a-working-model">8.5 Showcase: the retrofit in a working model</a></li><li><a href="#9-limitations-and-ethics">9. Limitations and ethics</a></li><li><a href="#10-conclusion-and-next-steps">10. Conclusion and next steps</a></li><li><a href="#appendix-reproducing-every-number">Appendix: reproducing every number</a></li><li><a href="#references">References</a></li></ol><a class="dash" href="https://claude.ai/artifact/2AQJGmJ8gcX2JqMcPPKruJ">Open the results dashboard →</a><br><a class="dash" href="https://claude.ai/artifact/AYE74dz6n21h5tJt856RUJ">Try the live Thai Token Meter →</a></aside>
   <main><h1 id="retrofitting-thai-into-an-open-weight-tokenizer-at-fixed-vocabulary-size">Retrofitting Thai into an open-weight tokenizer at fixed vocabulary size</h1>
 <p>Tanabodhi Mukura (Dean) · CEDT, Chulalongkorn University · AI course project ·
 draft generated 28 September 2026 from the numbers in <code>results/</code></p>
@@ -93,10 +93,12 @@ draft generated 28 September 2026 from the numbers in <code>results/</code></p>
   training, and 200 steps training only those rows ends <em>better</em> than the
   original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
   at a third of the tokens, with English unchanged. <strong>On the target model,
-  Mistral-7B, that is not enough:</strong> it already reads Thai well, and a CPU-sized
-  row-only pass recovers only about half the loss. "No retraining" is
-  narrowed to: no expansion and no pretraining from scratch, but the swapped
-  rows must be re-set and trained, with a real budget at 7B scale.</li>
+  Mistral-7B, a CPU-sized pass is not enough</strong> - it already reads Thai well -
+  but 400 QLoRA steps on a laptop GPU bring the retrofitted Mistral-7B level
+  with an equally trained control on news and within ~9% on Wikipedia and
+  social, at a third of the Thai tokens (§8.5). "No retraining" is narrowed
+  to: no expansion and no pretraining from scratch, but the swapped rows must
+  be re-set and trained.</li>
 <li><strong>Several earlier claims did not survive checking</strong> and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
   costs more on social text", and the novelty of fixed-size replacement for
@@ -922,17 +924,17 @@ the swapped rows need training, not just a good starting point.</strong></p>
 <p>A short row-only tuning pass (81,920 tokens, about an hour on the CPU) recovers
 45-55% of the damage and was still improving when it stopped (quick-check
 Wikipedia 3.54 → 3.18 over 160 steps), with English unchanged. It is nowhere
-near the original. At 7B scale the swapped rows need a real training budget -
-far more tokens, and probably adaptation beyond the rows - which is what
-Typhoon's continued pretraining supplied and what this project could not run
-without a GPU.</p>
+near the original. At 7B scale the swapped rows need a real training budget:
+with LoRA plus the rows on a laptop GPU (1.6M tokens) the gap to an equally
+trained control falls to 1-10% (§8.5).</p>
 <p><strong>So the honest version of the "no retraining" claim is:</strong> no vocabulary
 expansion and no pretraining from scratch, but the swapped rows must be
 re-set (the mean of the old pieces is the right start) and trained. For a
 model that reads Thai poorly (BLOOM-560m) a few hundred row-only steps on a
 CPU are enough; for one that already reads Thai well (Mistral-7B) a CPU-sized
-pass recovers about half, and a real training budget is needed. Whether that
-budget is much smaller than Typhoon's continued pretraining was not measured.</p>
+pass recovers about half, and 1.6M tokens of QLoRA on a laptop GPU get within
+1-10% of an equally trained control (§8.5) - a budget far below Typhoon's
+continued pretraining, though the two were not compared on equal terms.</p>
 <h2 id="8-robustness-fairness-and-cost">8. Robustness, fairness and cost</h2>
 <p>All numbers in this section are from <code>ROBUSTNESS.md</code>.</p>
 <h3 id="81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</h3>
@@ -1103,6 +1105,156 @@ Protecting code also protects CJK: the strict profile frees 473 CJK entries
 against 936 without code protection, which is why Chinese moves +12.9%
 instead of +44.7% (the code corpus evidently contains CJK text, most likely
 in comments and strings - not checked).</p>
+<h2 id="85-showcase-the-retrofit-in-a-working-model">8.5 Showcase: the retrofit in a working model</h2>
+<p><em>Source: <code>qwen_adapt_*.json</code>, <code>qwen_showcase.json</code>; live page: the Thai Token Meter.</em></p>
+<p>To show the method end to end on hardware a student has, both interventions
+were applied to <strong>Qwen2.5-0.5B-Instruct</strong>, a small open model that already
+handles Thai: the mark-aware regex (so its 1,578 dead Thai entries become
+reachable) plus a fixed-size retrofit of 3,000 Thai entries into slots that
+English, code and Thai never use. On held-out text this tokenizer needs
+46-51% fewer Thai tokens than the shipped one (penalty 2.38x → 1.22x), with
+English unchanged; it passes every Week 4 check (including all 100 top
+candidates as single tokens and 99.99% of English samples byte-identical).</p>
+<p><strong>Fair comparison.</strong> Two copies of the model were trained identically on the
+CPU - same data (Thai text from all three domains, English text, and Thai
+instructions from WangchanThaiInstruct in the model's chat format), same 400
+steps of 8 × 256 tokens, same LoRA (rank 16 on every attention and MLP
+projection) - one with the shipped tokenizer (<em>control</em>), one with the
+retrofitted tokenizer, where the 4,578 unseen rows (3,000 added, 1,578
+previously unreachable) start at the mean of their pieces and train alongside
+the LoRA. Any difference between the two arms is the tokenizer's.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Qwen2.5-0.5B-Instruct</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">Thai chat</th>
+<th style="text-align: right;">English</th>
+<th style="text-align: right;">Thai tok/100ch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>original (no training)</td>
+<td style="text-align: right;">1.470</td>
+<td style="text-align: right;">1.858</td>
+<td style="text-align: right;">2.072</td>
+<td style="text-align: right;">1.095</td>
+<td style="text-align: right;">0.993</td>
+<td style="text-align: right;">55 / 60 / 59</td>
+</tr>
+<tr>
+<td>control: 400 steps, shipped tokenizer</td>
+<td style="text-align: right;">1.441</td>
+<td style="text-align: right;">1.788</td>
+<td style="text-align: right;">1.951</td>
+<td style="text-align: right;">1.022</td>
+<td style="text-align: right;">0.990</td>
+<td style="text-align: right;">same</td>
+</tr>
+<tr>
+<td>retrofit, rows mean-initialised, untrained</td>
+<td style="text-align: right;">2.981</td>
+<td style="text-align: right;">3.453</td>
+<td style="text-align: right;">3.449</td>
+<td style="text-align: right;">2.445</td>
+<td style="text-align: right;">0.993</td>
+<td style="text-align: right;">about half</td>
+</tr>
+<tr>
+<td><strong>retrofit: 400 steps, retrofitted tokenizer</strong></td>
+<td style="text-align: right;"><strong>1.647</strong></td>
+<td style="text-align: right;"><strong>2.042</strong></td>
+<td style="text-align: right;"><strong>2.112</strong></td>
+<td style="text-align: right;"><strong>1.171</strong></td>
+<td style="text-align: right;"><strong>0.988</strong></td>
+<td style="text-align: right;">about half</td>
+</tr>
+</tbody>
+</table></div>
+<p>(Bits per character on held-out text, lower is better; 50 passages per
+domain, 25 + 25 English passages, 40 held-out chat conversations.)</p>
+<p>Training closes most of the gap - from about +100% to +8-14% against the
+control - but <strong>after 400 CPU steps the retrofitted model is still 8-14%
+behind the control on Thai and 14% on Thai chat</strong>, while reading Thai in about
+half as many tokens and leaving English unchanged. The retrofit arm had 4,578
+rows to learn from scratch and the control none, so equal training is not
+equal starting line; its loss was still falling at the end. In generated
+answers to held-out instructions the retrofitted model produces about twice
+as much Thai text per token (20-30 characters per second on this CPU against
+10-17), but a 0.5B model's answers are rough in every arm and the retrofit's
+are sometimes off-topic: the showcase demonstrates cheaper Thai, not better
+answers.</p>
+<p><strong>The target model with a real training budget (optional GPU extra).</strong> The
+CPU could give Mistral-7B's swapped rows only 160 steps (§7.6). With the
+author's approval, the same two-arm design was run on a laptop GPU (RTX 4070,
+8 GB) in 4-bit NF4 (QLoRA): 400 steps of 8 × 512 tokens (1.6M tokens), LoRA
+rank 16 on every projection, 6 Thai + 2 English windows per batch; the
+retrofit arm also trains the 2,483 swapped rows of the input embedding and
+the output head from their mean initialisation (<code>mistral_adapt_*.json</code>).
+Every condition is measured under the same 4-bit weights, on the §7.6
+passages:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Mistral-7B, 4-bit</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">English</th>
+<th style="text-align: right;">Thai tokens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>original (no training)</td>
+<td style="text-align: right;">1.556</td>
+<td style="text-align: right;">2.333</td>
+<td style="text-align: right;">2.311</td>
+<td style="text-align: right;">0.723</td>
+<td style="text-align: right;">100%</td>
+</tr>
+<tr>
+<td>control: 400 steps, shipped tokenizer</td>
+<td style="text-align: right;">1.456</td>
+<td style="text-align: right;">2.013</td>
+<td style="text-align: right;">2.047</td>
+<td style="text-align: right;">0.733</td>
+<td style="text-align: right;">100%</td>
+</tr>
+<tr>
+<td>retrofit, rows mean-initialised, untrained</td>
+<td style="text-align: right;">3.514</td>
+<td style="text-align: right;">4.044</td>
+<td style="text-align: right;">3.913</td>
+<td style="text-align: right;">0.723</td>
+<td style="text-align: right;">~35%</td>
+</tr>
+<tr>
+<td><strong>retrofit: 400 steps, retrofitted tokenizer</strong></td>
+<td style="text-align: right;"><strong>1.596</strong></td>
+<td style="text-align: right;"><strong>2.028</strong></td>
+<td style="text-align: right;"><strong>2.223</strong></td>
+<td style="text-align: right;"><strong>0.751</strong></td>
+<td style="text-align: right;"><strong>~35%</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>With 1.6M tokens of training the retrofitted Mistral-7B <strong>matches the
+equally trained control on news (+0.7%) and is ~9% behind on Wikipedia and
+social</strong>, while reading Thai in about a third of the tokens; it is already
+better than the untrained original on news and social. English rises 2.5%
+against the control (both arms drift slightly on English because the tuning
+text is three-quarters Thai). Compared with the CPU run's 160 steps (Wikipedia
+3.10), the gap closes from ~100% to ~9%, which answers the question §7.6 left
+open: at 7B scale the swapped rows can be trained back, and a single laptop
+GPU is enough to get most of the way. The loss was still falling at 400 steps.</p>
+<p>The <strong>Thai Token Meter</strong> page runs all seven tokenizers in the browser with a
+250-line JavaScript BPE that reproduces the originals exactly (identical ids
+on all 2,114 held-out test texts for every tokenizer), so anyone can paste
+Thai and see the difference.</p>
 <h2 id="9-limitations-and-ethics">9. Limitations and ethics</h2>
 <p><strong>What "no retraining" can honestly mean.</strong> A fixed-size retrofit keeps the
 embedding matrix's shape, so nothing is added and no full pretraining is
@@ -1123,10 +1275,12 @@ mostly Cyrillic, other-language Latin-script and markup pieces, CJK and
 Hangul, so a deployment that also serves those languages would pay for the
 Thai gain (§8.4). The prune list is published so a
 deployment can check it against its own traffic.</p>
-<p><strong>Scale of the model experiments.</strong> Everything ran on a CPU. The full
-initialisation-and-tuning comparison used small models (BLOOM-560m,
-Qwen2.5-0.5B); Mistral-7B itself was evaluated on 40 passages per domain and
-tuned for only 160 steps. Bits per character is the only quality measure.
+<p><strong>Scale of the model experiments.</strong> Everything except one clearly marked
+extra ran on a CPU. The full initialisation-and-tuning comparison used small
+models (BLOOM-560m, Qwen2.5-0.5B); Mistral-7B was evaluated on 40 passages per
+domain, tuned for 160 steps on the CPU, and - the extra - trained for 400
+QLoRA steps in 4-bit on a laptop GPU (§8.5), so its trained numbers are for
+4-bit weights. Bits per character is the only quality measure.
 These results show the direction and rough size of the effect, not the
 downstream task quality of a properly tuned 7B model.</p>
 <p><strong>Data.</strong> The social domain is small (189k evaluation characters) and comes
@@ -1183,8 +1337,9 @@ vocabulary's training data.</p>
    model Thai well the same recipe falls short: Mistral-7B recovers 45-55% of
    the damage after 160 steps and Qwen2.5's dead rows 82-87% after 200, both
    with English unchanged at learning rate 1e-4. Row-only repair is enough for
-   a weak-Thai model; for a strong one the rows need a real training budget,
-   which this CPU-only project could not provide.</li>
+   a weak-Thai model; for a strong one the rows need a real training budget -
+   and 1.6M tokens of QLoRA on a laptop GPU brought Mistral-7B within 1-10% of
+   an equally trained control at a third of the Thai tokens (§8.5).</li>
 </ol>
 <p><strong>What to do next.</strong></p>
 <ul>
