@@ -1,0 +1,30 @@
+{
+  "name": "qwen_control",
+  "kind": "qwen",
+  "model": "models/qwen2.5-0.5b-instruct-control",
+  "adapter": null,
+  "device": "cpu",
+  "langs": {
+    "tha_Thai": {
+      "n": 900,
+      "correct": 312,
+      "accuracy": 0.3466666666666667,
+      "ci95": [
+        0.3162849949575493,
+        0.3783517644038255
+      ],
+      "passage_tok100": 55.71789387182927
+    },
+    "eng_Latn": {
+      "n": 900,
+      "correct": 362,
+      "accuracy": 0.4022222222222222,
+      "ci95": [
+        0.370667300787506,
+        0.43460831387771837
+      ],
+      "passage_tok100": 20.802471571588068
+    }
+  },
+  "seconds": 8818.7
+}

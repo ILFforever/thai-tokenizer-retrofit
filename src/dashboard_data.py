@@ -153,16 +153,19 @@ def main() -> None:
         if run["meta"]["steps"] < 50:  # a smoke test, not a result
             continue
         data.setdefault("embed_adapt", {})[p.stem.replace("embed_adapt_", "")] = run
-    # two-arm training runs: several budgets per arm (tagged files); the page
-    # shows the longest one per arm and keeps every run in "<key>_runs"
+    # two-arm training runs: several budgets per arm (tagged files). The page
+    # compares arms only at a step count both have (the largest such), and
+    # keeps every run in "<key>_runs"
     for key in ("mistral_adapt", "qwen_adapt"):
+        by_steps: dict[int, dict] = {}
         for p in sorted(RESULTS.glob(f"{key}_*.json")):
             d = json.loads(p.read_text(encoding="utf-8"))
             arm = "retrofit" if d["meta"]["arm"].startswith("retrofit") else "control"
             data.setdefault(f"{key}_runs", {})[p.stem.replace(f"{key}_", "")] = d
-            best = data.setdefault(key, {}).get(arm)
-            if best is None or d["meta"]["steps"] > best["meta"]["steps"]:
-                data[key][arm] = d
+            by_steps.setdefault(d["meta"]["steps"], {})[arm] = d
+        paired = [s for s, arms in by_steps.items() if len(arms) == 2]
+        if paired:
+            data[key] = by_steps[max(paired)]
     for p in sorted(RESULTS.glob("belebele_*.json")):
         data.setdefault("belebele", {})[p.stem.replace("belebele_", "")] = json.loads(p.read_text(encoding="utf-8"))
     for p in sorted(RESULTS.glob("mistral_rows_*.json")):

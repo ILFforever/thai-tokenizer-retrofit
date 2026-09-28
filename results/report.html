@@ -1251,6 +1251,64 @@ text is three-quarters Thai). Compared with the CPU run's 160 steps (Wikipedia
 3.10), the gap closes from ~100% to ~9%, which answers the question §7.6 left
 open: at 7B scale the swapped rows can be trained back, and a single laptop
 GPU is enough to get most of the way. The loss was still falling at 400 steps.</p>
+<p><strong>A longer retrofit run (unpaired).</strong> The retrofit arm was also trained for
+1,000 steps with more English in each batch (6 Thai + 3 English windows;
+<code>mistral_adapt_retrofit-mistral-7b-th2483_s1000.json</code>). Its matching
+1,000-step control was not run (the laptop was needed back), so this is <strong>not</strong>
+a controlled comparison: it shows only how the retrofit arm moves with more
+training.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Mistral-7B, 4-bit</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">English</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>original (no training)</td>
+<td style="text-align: right;">1.556</td>
+<td style="text-align: right;">2.333</td>
+<td style="text-align: right;">2.311</td>
+<td style="text-align: right;">0.723</td>
+</tr>
+<tr>
+<td>retrofit: 400 steps</td>
+<td style="text-align: right;">1.596</td>
+<td style="text-align: right;">2.028</td>
+<td style="text-align: right;">2.223</td>
+<td style="text-align: right;">0.751</td>
+</tr>
+<tr>
+<td>retrofit: 1,000 steps, more English</td>
+<td style="text-align: right;">1.485</td>
+<td style="text-align: right;">1.831</td>
+<td style="text-align: right;">2.128</td>
+<td style="text-align: right;">0.818</td>
+</tr>
+</tbody>
+</table></div>
+<p>With 2.5× the training the retrofitted model is <strong>better than the untrained
+original on all three Thai registers</strong> (−5% / −22% / −8%) at a third of the
+Thai tokens. But <strong>English got worse: 0.818 against 0.723 (+13%)</strong>, despite
+the extra English windows. The tokenizer cannot cause this (English text is
+tokenized identically), so it comes from the training: the LoRA update, the
+retrained output-head rows, or both. Without a 1,000-step control it is not
+possible to say how much of the drift any Thai fine-tune of this size would
+show; that control is the first thing to run with more GPU time, and a
+deployment should re-check English after any longer tuning.</p>
+<p><strong>Reading comprehension (Belebele, Thai and English, 900 questions each).</strong>
+Scored by per-character log-likelihood of the four answers
+(<code>src/belebele_eval.py</code>, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small
+for this task (chance is 25%): original Thai 36.2% [33.1, 39.4], English
+39.6% [36.4, 42.8]; after the 400-step control training Thai 34.7%
+[31.6, 37.8], English 40.2% [37.1, 43.5], so no measurable change. The
+retrofit arm's run was not completed, so the benchmark does not yet say
+whether the retrofit changes comprehension; at this model size it could only
+detect differences of about 4 points or more.</p>
 <p>The <strong>Thai Token Meter</strong> page runs all seven tokenizers in the browser with a
 250-line JavaScript BPE that reproduces the originals exactly (identical ids
 on all 2,114 held-out test texts for every tokenizer), so anyone can paste

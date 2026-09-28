@@ -741,6 +741,39 @@ text is three-quarters Thai). Compared with the CPU run's 160 steps (Wikipedia
 open: at 7B scale the swapped rows can be trained back, and a single laptop
 GPU is enough to get most of the way. The loss was still falling at 400 steps.
 
+**A longer retrofit run (unpaired).** The retrofit arm was also trained for
+1,000 steps with more English in each batch (6 Thai + 3 English windows;
+`mistral_adapt_retrofit-mistral-7b-th2483_s1000.json`). Its matching
+1,000-step control was not run (the laptop was needed back), so this is **not**
+a controlled comparison: it shows only how the retrofit arm moves with more
+training.
+
+| Mistral-7B, 4-bit | Wikipedia | News | Social | English |
+| --- | ---: | ---: | ---: | ---: |
+| original (no training) | 1.556 | 2.333 | 2.311 | 0.723 |
+| retrofit: 400 steps | 1.596 | 2.028 | 2.223 | 0.751 |
+| retrofit: 1,000 steps, more English | 1.485 | 1.831 | 2.128 | 0.818 |
+
+With 2.5× the training the retrofitted model is **better than the untrained
+original on all three Thai registers** (−5% / −22% / −8%) at a third of the
+Thai tokens. But **English got worse: 0.818 against 0.723 (+13%)**, despite
+the extra English windows. The tokenizer cannot cause this (English text is
+tokenized identically), so it comes from the training: the LoRA update, the
+retrained output-head rows, or both. Without a 1,000-step control it is not
+possible to say how much of the drift any Thai fine-tune of this size would
+show; that control is the first thing to run with more GPU time, and a
+deployment should re-check English after any longer tuning.
+
+**Reading comprehension (Belebele, Thai and English, 900 questions each).**
+Scored by per-character log-likelihood of the four answers
+(`src/belebele_eval.py`, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small
+for this task (chance is 25%): original Thai 36.2% [33.1, 39.4], English
+39.6% [36.4, 42.8]; after the 400-step control training Thai 34.7%
+[31.6, 37.8], English 40.2% [37.1, 43.5], so no measurable change. The
+retrofit arm's run was not completed, so the benchmark does not yet say
+whether the retrofit changes comprehension; at this model size it could only
+detect differences of about 4 points or more.
+
 The **Thai Token Meter** page runs all seven tokenizers in the browser with a
 250-line JavaScript BPE that reproduces the originals exactly (identical ids
 on all 2,114 held-out test texts for every tokenizer), so anyone can paste

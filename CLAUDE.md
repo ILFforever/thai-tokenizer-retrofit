@@ -82,7 +82,10 @@ slots (Thai tokens -46..-51%), two-arm LoRA training on CPU: retrofit still
 8-14% behind control on Thai after 400 steps, English unchanged. Mistral-7B
 two-arm QLoRA on the laptop GPU (optional extra, `src/mistral_adapt_gpu.py`,
 venv `~/.venvs/thaitok-gpu`): retrofit within 1-10% of control at ~1/3 of the
-Thai tokens. Live page: Thai Token Meter (`showcase/`, JS BPE verified
+Thai tokens. An unpaired 1,000-step retrofit run beats the untrained original
+on all Thai registers but English bits/char rose 13% (0.723 -> 0.818); its
+1,000-step control was never run, so the drift is not yet attributed. Belebele
+(Qwen2.5-0.5B, near chance): original vs control no change; retrofit arm not run. Live page: Thai Token Meter (`showcase/`, JS BPE verified
 id-for-id against 7 real tokenizers by `node tests/web_bpe.test.mjs`).
 Typhoon-7B is SCB 10X's model (vocabulary expanded), only used for comparison.
 
