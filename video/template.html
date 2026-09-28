@@ -1,0 +1,623 @@
+<meta charset="utf-8">
+<title>Thai Token Retrofit Film</title>
+<meta name="description" content="A five-minute animated walk through the Thai tokenizer retrofit project, built from its real data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+:root { color-scheme: dark; --bg: #0b0d0b; --panel: #151815; --ink: #f1f3ef; --muted: #8d9189; --rule: #2b2e2a; --accent: #3987e5; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 400 14px/1.5 "IBM Plex Sans Thai", system-ui, sans-serif; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 32px; display: grid; gap: 12px; }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #0e100e; border-radius: 10px; overflow: hidden; }
+canvas { width: 100%; height: 100%; display: block; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+button { font: 600 13px/1 "IBM Plex Mono", monospace; color: var(--ink); background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type=range] { flex: 1 1 240px; accent-color: var(--accent); }
+.time { font: 500 13px/1 "IBM Plex Mono", monospace; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; }
+.scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+.scenes button { font: 500 12px/1.2 "IBM Plex Sans Thai", sans-serif; padding: 6px 9px; color: var(--muted); }
+.scenes button.on { color: var(--ink); border-color: var(--accent); }
+body.capture .wrap { max-width: none; padding: 0; }
+body.capture .bar, body.capture .scenes { display: none; }
+body.capture .stage { border-radius: 0; }
+.scenes .act { font: 600 11px/1 "IBM Plex Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); width: 100%; margin-top: 6px; }
+</style>
+
+<div class="wrap">
+  <div class="stage"><canvas id="c" width="1920" height="1080" aria-label="Animated explainer of the Thai tokenizer retrofit"></canvas></div>
+  <div class="bar">
+    <button id="play" type="button">Play</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Position">
+    <span class="time" id="time">0:00 / 0:00</span>
+  </div>
+  <div class="scenes" id="scenes"></div>
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+const W = 1920, H = 1080, M = 120;
+const C = { bg: "#0e100e", bg2: "#141714", ink: "#f1f3ef", ink2: "#c3c5bc", muted: "#8d9189", rule: "#2b2e2a", chip: "#232723",
+  blue: "#3987e5", blueSoft: "#1d3a5f", orange: "#e0692f", red: "#e0524f", aqua: "#22b07d", violet: "#8e82e6", yellow: "#e8b339",
+  english: "#4d6a8c", code: "#7a67b3", thai: "#2f8f69", locked: "#3a3d38", freed: "#1a1d1a" };
+const FD = "'Bai Jamjuree', 'IBM Plex Sans Thai', sans-serif", FB = "'IBM Plex Sans Thai', sans-serif", FM = "'IBM Plex Mono', monospace";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+
+/* ---------- helpers ---------- */
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = x => 1 - Math.pow(1 - x, 3);
+const eio = x => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const lerp = (a, b, p) => a + (b - a) * p;
+const fmt = n => n.toLocaleString("en-US");
+const pct = (x, d = 0) => (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(d) + "%";
+function rnd(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function text(s, x, y, o = {}) {
+  ctx.save();
+  ctx.globalAlpha *= o.alpha ?? 1;
+  ctx.font = `${o.weight || 400} ${o.size || 32}px ${o.font || FB}`;
+  ctx.fillStyle = o.color || C.ink;
+  ctx.textAlign = o.align || "left";
+  ctx.textBaseline = o.base || "alphabetic";
+  ctx.fillText(s, x, y);
+  ctx.restore();
+}
+function tw(s, size, font = FB, weight = 400) { ctx.save(); ctx.font = `${weight} ${size}px ${font}`; const w = ctx.measureText(s).width; ctx.restore(); return w; }
+function wrap(s, x, y, maxW, o = {}) {
+  const size = o.size || 32, lh = (o.lh || 1.4) * size;
+  const words = s.split(" "); let line = "", yy = y;
+  for (const w of words) {
+    const t = line ? line + " " + w : w;
+    if (tw(t, size, o.font || FB, o.weight || 400) > maxW && line) { text(line, x, yy, o); line = w; yy += lh; } else line = t;
+  }
+  if (line) text(line, x, yy, o);
+  return yy + lh;
+}
+// Thai has no spaces: break on grapheme clusters instead of words
+const segm = new Intl.Segmenter("th", { granularity: "grapheme" });
+function wrapChars(s, x, y, maxW, o = {}) {
+  const size = o.size || 32, lh = (o.lh || 1.4) * size; let line = "", yy = y;
+  for (const { segment: g } of segm.segment(s)) {
+    if (tw(line + g, size) > maxW && line) { text(line, x, yy, o); line = g.trimStart(); yy += lh; } else line += g;
+  }
+  if (line) text(line, x, yy, o);
+  return yy + lh;
+}
+function rr(x, y, w, h, r, fill, stroke) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+}
+// visible space; a lone combining mark sits on a dotted circle so it can be seen
+const SP = s => s.replace(/^~/, "").replace(/\s/g, "␣").replace(/^\p{M}/u, "◌$&") || "␣";
+function chip(s, x, y, o = {}) {
+  const size = o.size || 30, part = s.startsWith("~"), label = SP(s);
+  const w = Math.max(size * .7, tw(label, size, FB)) + size * .5, h = size * 1.45;
+  ctx.save(); ctx.globalAlpha *= o.alpha ?? 1;
+  rr(x, y, w, h, 6, part ? "#3a2320" : (o.bg || C.chip), o.stroke);
+  text(label, x + w / 2, y + h * .72, { size, align: "center", color: part ? "#f0a39a" : (o.color || C.ink) });
+  ctx.restore();
+  return w;
+}
+function chipsWidth(list, size, gap = 6) { return list.reduce((s, c) => s + Math.max(size * .7, tw(SP(c), size, FB)) + size * .5 + gap, -gap); }
+function flow(list, x, y, maxW, o = {}) {
+  const size = o.size || 30, gap = o.gap ?? 6, h = size * 1.45, lh = h + (o.lgap ?? 10);
+  let cx = x, cy = y; const n = o.count ?? list.length;
+  for (let i = 0; i < Math.min(n, list.length); i++) {
+    const w = Math.max(size * .7, tw(SP(list[i]), size, FB)) + size * .5;
+    if (cx + w > x + maxW) { cx = x; cy += lh; }
+    const a = o.pop ? eo(clamp((o.pop - i) * 1, 0, 1)) : 1;
+    chip(list[i], cx, cy + (1 - a) * 12, { ...o, alpha: (o.alpha ?? 1) * a });
+    cx += w + gap;
+  }
+  return cy + lh;
+}
+function heading(s, t, o = {}) {
+  const a = eo(seg(t, 0, .6));
+  text(s, M, 150 + (1 - a) * 20, { size: o.size || 60, font: FD, weight: 600, alpha: a });
+}
+function eyebrow(s) { text(s.toUpperCase(), M, 78, { size: 22, font: FM, weight: 500, color: C.muted }); }
+function hbar(x, y, w, h, color, p = 1) { if (w * p > 0.5) rr(x, y, Math.max(2, w * p), h, Math.min(6, h / 2), color); }
+function counter(v, x, y, o = {}) { text(fmt(Math.round(v)), x, y, { size: o.size || 96, font: FD, weight: 700, color: o.color || C.ink, align: o.align || "left" }); }
+function arrow(x1, y1, x2, y2, color = C.muted, p = 1, wdt = 4) {
+  const x = lerp(x1, x2, p), y = lerp(y1, y2, p);
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = wdt; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x, y); ctx.stroke();
+  if (p > .95) { const a = Math.atan2(y2 - y1, x2 - x1); ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 18 * Math.cos(a - .45), y2 - 18 * Math.sin(a - .45)); ctx.lineTo(x2 - 18 * Math.cos(a + .45), y2 - 18 * Math.sin(a + .45)); ctx.closePath(); ctx.fill(); }
+  ctx.restore();
+}
+function legend(items, x, y, size = 24) {
+  let cx = x;
+  for (const [label, color] of items) { rr(cx, y - size * .75, size * .8, size * .8, 4, color); text(label, cx + size * 1.1, y, { size, color: C.ink2 }); cx += size * 1.6 + tw(label, size) + 36; }
+}
+
+/* ---------- vocabulary grid (scenes 12-20) ---------- */
+const GRID = { cols: 200, rows: 160, x: M, y: 230, cw: 6.6, ch: 4.3 };
+const CAT = D.vocab.cells;
+const FREED = []; for (let i = 0; i < CAT.length; i++) if (CAT[i] === "4") FREED.push(i);
+function grid(fillFn, reveal = 1) {
+  const n = CAT.length, shown = Math.floor(n * reveal);
+  for (let i = 0; i < shown; i++) {
+    const c = i % GRID.cols, r = Math.floor(i / GRID.cols);
+    ctx.fillStyle = fillFn(i, CAT[i]);
+    ctx.fillRect(GRID.x + c * GRID.cw, GRID.y + r * GRID.ch, GRID.cw - 1.6, GRID.ch - 1.2);
+  }
+}
+const CATCOLOR = { "0": C.english, "1": C.code, "2": C.thai, "3": C.locked, "4": C.freed };
+const GRIDRIGHT = GRID.x + GRID.cols * GRID.cw + 48;
+
+/* ---------- data shortcuts ---------- */
+const S = D.sentence, EV = D.eval;
+const BASE = EV["Mistral-7B (base)"], RET = EV["Mistral-7B +TH2483"], EQ = EV["Mistral-7B +TH3219-enonly"], TY = EV["Typhoon-7B"];
+const DOM = [["wikipedia", "Wikipedia"], ["news", "News"], ["social", "Social"]];
+const bgChars = (() => { const r = rnd(7), cs = "กขคงจฉชซญดตถทนบปผพฟภมยรลวศษสหอฮะาเแโใไ"; return Array.from({ length: 70 }, () => ({ x: r() * W, y: r() * H, c: cs[Math.floor(r() * cs.length)], s: 24 + r() * 60, v: 8 + r() * 20, a: .04 + r() * .08 })); })();
+
+/* ---------- scenes ---------- */
+const ACTS = ["The problem", "Diagnosis", "Building the retrofit", "Results", "Making a model use it"];
+const SC = [];
+const scene = (act, title, dur, cap, draw) => SC.push({ act, title, dur, cap, draw });
+
+scene(0, "Title", 6, "A university project on why Thai text costs so many tokens, and a fix that keeps the vocabulary the same size.", t => {
+  for (const b of bgChars) text(b.c, (b.x + t * b.v) % W, b.y, { size: b.s, alpha: b.a * seg(t, 0, 1), color: C.ink });
+  const a = eo(seg(t, .3, 1.6));
+  text("Thai Token Retrofit", W / 2, 470 + (1 - a) * 30, { size: 124, font: FD, weight: 700, align: "center", alpha: a });
+  text("Making an open-weight tokenizer cheap for Thai, without making it bigger", W / 2, 560, { size: 40, align: "center", color: C.ink2, alpha: eo(seg(t, 1.2, 2.4)) });
+  text("Tanabodhi Mukura · CEDT, Chulalongkorn University", W / 2, 640, { size: 28, align: "center", color: C.muted, alpha: eo(seg(t, 2, 3)) });
+});
+
+scene(0, "What a token is", 9, `A model never sees letters. It sees tokens - pieces of text from a fixed vocabulary. This English sentence costs Mistral-7B ${S.en_pieces.length} tokens, roughly one per word.`, t => {
+  eyebrow("Act 1 · The problem"); heading("Models read tokens, not letters", t);
+  wrap(S.en, M, 320, 1680, { size: 40, alpha: eo(seg(t, .4, 1.4)) });
+  flow(S.en_pieces, M, 470, 1680, { size: 34, pop: seg(t, 2, 6.5) * S.en_pieces.length });
+  const n = Math.round(seg(t, 2, 6.5) * S.en_pieces.length);
+  text("English", M, 780, { size: 30, color: C.muted, alpha: seg(t, 2, 2.5) });
+  counter(n, M, 880, { color: C.ink });
+  text("tokens", M + tw(fmt(n), 96, FD, 700) + 20, 880, { size: 32, color: C.muted, alpha: seg(t, 2, 2.5) });
+});
+
+scene(0, "Thai under Mistral-7B", 12, `The same news sentence in Thai costs ${S.mistral.length} tokens. Mistral-7B has almost no Thai in its vocabulary, so it spells Thai one character at a time - even vowel and tone marks are separate tokens.`, t => {
+  eyebrow("Act 1 · The problem"); heading("The same meaning, in Thai", t);
+  text(S.th, M, 300, { size: 42, alpha: eo(seg(t, .4, 1.4)) });
+  flow(S.mistral, M, 360, 1680, { size: 30, pop: seg(t, 1.6, 8) * S.mistral.length, gap: 5, lgap: 8 });
+  const n = Math.round(seg(t, 1.6, 8) * S.mistral.length);
+  text("English", M, 800, { size: 30, color: C.muted }); counter(S.en_pieces.length, M, 900);
+  text("Thai", M + 360, 800, { size: 30, color: C.muted }); counter(n, M + 360, 900, { color: C.orange });
+  const r = seg(t, 8.5, 9.5);
+  text(`${(S.mistral.length / S.en_pieces.length).toFixed(1)}× the tokens for the same sentence`, M + 760, 880, { size: 44, font: FD, weight: 600, alpha: eo(r) });
+});
+
+scene(0, "The penalty", 12, "Measured on 3,000 Thai-English sentence pairs, Thai costs up to 4.25 times as many tokens as English. The worst cases are open-weight models - the ones people run themselves.", t => {
+  eyebrow("Act 1 · The problem"); heading("The Thai penalty across nine tokenizers", t);
+  const x0 = M + 440, scale = 1000 / 4.5, rows = D.penalty;
+  rows.forEach((r, i) => {
+    const y = 250 + i * 72, p = eo(seg(t, 1 + i * .35, 2.2 + i * .35));
+    const hi = r.name === "Mistral-7B", ty = r.name.startsWith("Typhoon");
+    text(r.name + (ty ? " (SCB 10X)" : ""), x0 - 24, y + 36, { size: 30, align: "right", color: hi ? C.ink : C.ink2, weight: hi ? 600 : 400, alpha: seg(t, .6 + i * .35, 1.2 + i * .35) });
+    hbar(x0, y + 8, r.x * scale, 40, ty ? C.orange : hi ? C.ink2 : "#4a4f4a", p);
+    text(r.x.toFixed(2) + "×", x0 + r.x * scale * p + 16, y + 38, { size: 30, weight: 600, alpha: p });
+  });
+  const lx = x0 + scale; ctx.save(); ctx.globalAlpha = seg(t, 4, 5); ctx.setLineDash([10, 10]); ctx.strokeStyle = C.muted; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(lx, 236); ctx.lineTo(lx, 250 + rows.length * 72); ctx.stroke(); ctx.restore();
+  text("parity", lx, 226, { size: 24, align: "center", color: C.muted, font: FM, alpha: seg(t, 4, 5) });
+});
+
+scene(0, "Why it matters", 10, "Tokens are what a model is billed, limited and timed by. Four times the tokens means four times the cost, a quarter of the text in the same context window, and four times as long to generate.", t => {
+  eyebrow("Act 1 · The problem"); heading("Four times the tokens is four times the cost", t);
+  const cols = [["Cost per request", "×4", "Every token is billed or computed"], ["Context window", "÷4", "A quarter as much Thai fits"], ["Time to answer", "×4", "Text is generated token by token"]];
+  cols.forEach(([h, big, sub], i) => {
+    const x = M + i * 580, a = eo(seg(t, .8 + i * .8, 1.8 + i * .8));
+    rr(x, 280, 520, 500, 18, C.bg2, C.rule);
+    text(h, x + 40, 350, { size: 34, weight: 600, alpha: a });
+    text(big, x + 40, 560, { size: 180, font: FD, weight: 700, color: i === 1 ? C.blue : C.orange, alpha: a });
+    wrap(sub, x + 40, 680, 440, { size: 28, color: C.ink2, alpha: a });
+  });
+});
+
+scene(0, "Who can fix it", 8, "A hosted API's tokenizer is fixed by its provider. Only open-weight models that you run yourself can have their tokenizer changed - on a device, or on your own servers for data-privacy reasons.", t => {
+  eyebrow("Act 1 · The problem"); heading("Only self-hosted models can change their tokenizer", t);
+  const a = eo(seg(t, .6, 1.6)), b = eo(seg(t, 1.8, 2.8));
+  rr(M, 280, 800, 480, 18, C.bg2, C.rule);
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = C.muted; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(M + 400, 450, 60, Math.PI, 0); ctx.stroke(); rr(M + 320, 450, 160, 130, 12, C.muted); ctx.restore();
+  text("Hosted API", M + 400, 660, { size: 40, font: FD, weight: 600, align: "center", alpha: a });
+  text("GPT-4, GPT-4o, Claude: tokenizer locked", M + 400, 715, { size: 28, align: "center", color: C.ink2, alpha: a });
+  rr(M + 880, 280, 800, 480, 18, "#10223a", C.blue);
+  ctx.save(); ctx.globalAlpha = b; ctx.strokeStyle = C.blue; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(M + 1280 - 50, 450, 60, Math.PI, -.2); ctx.stroke(); rr(M + 1200, 450, 160, 130, 12, C.blue); ctx.restore();
+  text("Open-weight, self-hosted", M + 1280, 660, { size: 40, font: FD, weight: 600, align: "center", alpha: b });
+  text("Mistral, Qwen, BLOOM: tokenizer is yours to change", M + 1280, 715, { size: 28, align: "center", color: C.ink2, alpha: b });
+});
+
+scene(1, "Two stages of a tokenizer", 10, "A tokenizer works in two stages. A pattern first cuts the text into pieces; then the vocabulary joins letters inside each piece into tokens. No token can ever cross a cut.", t => {
+  eyebrow("Act 2 · Diagnosis"); heading("Every tokenizer has two stages", t);
+  const boxes = [["Text", "ภาษาไทย ที่ดิน"], ["1 · Pre-tokenizer", "a pattern cuts the text"], ["2 · Vocabulary", "merges join letters"], ["Tokens", "what the model reads"]];
+  boxes.forEach(([h, s], i) => {
+    const x = M + i * 440, a = eo(seg(t, .6 + i * .7, 1.4 + i * .7));
+    rr(x, 380, 380, 220, 18, i === 1 || i === 2 ? "#10223a" : C.bg2, i === 1 || i === 2 ? C.blue : C.rule);
+    text(h, x + 190, 470, { size: 36, font: FD, weight: 600, align: "center", alpha: a });
+    text(s, x + 190, 530, { size: 28, align: "center", color: C.ink2, alpha: a });
+    if (i < 3) arrow(x + 384, 490, x + 436, 490, C.muted, eo(seg(t, 1.2 + i * .7, 1.7 + i * .7)));
+  });
+  const p = seg(t, 4.5, 8.5), dx = M + 190 + p * 1320;
+  ctx.save(); ctx.fillStyle = C.yellow; ctx.globalAlpha = seg(t, 4.5, 5); ctx.beginPath(); ctx.arc(dx, 660, 14, 0, 7); ctx.fill(); ctx.restore();
+  text("A cut made in stage 1 can never be joined in stage 2", W / 2, 780, { size: 38, font: FD, weight: 600, align: "center", alpha: eo(seg(t, 6, 7)) });
+});
+
+scene(1, "The \\p{L} vs \\p{M} cut", 12, "GPT-4's and Qwen2.5's pattern matches letters with \\p{L}. Thai vowel and tone marks are \\p{M} - not letters to the pattern - so every mark is cut off its consonant before the vocabulary sees it. Mistral's pattern never cuts Thai.", t => {
+  eyebrow("Act 2 · Diagnosis"); heading("A pattern that cannot see Thai marks", t);
+  text("ที่ดิน", W / 2, 360, { size: 150, align: "center", alpha: eo(seg(t, .4, 1.2)) });
+  text("\"land\"", W / 2, 420, { size: 28, align: "center", color: C.muted, alpha: eo(seg(t, .4, 1.2)) });
+  const rows = [["GPT-4 (cl100k)", D.cuts["GPT-4 (cl100k_base)"], C.red], ["Qwen2.5", D.cuts["Qwen2.5"], C.red], ["Mistral-7B", D.cuts["Mistral-7B"], C.aqua]];
+  rows.forEach(([name, ps, col], i) => {
+    const y = 520 + i * 120, a = eo(seg(t, 1.6 + i * 1.2, 2.4 + i * 1.2)), gap = 50 * eo(seg(t, 2.2 + i * 1.2, 3.2 + i * 1.2));
+    text(name, M + 360, y + 60, { size: 32, align: "right", color: C.ink2, alpha: a });
+    let x = M + 420;
+    ps.forEach((p, k) => {
+      const w = chip(p, x, y, { size: 52, alpha: a, stroke: col === C.aqua ? C.aqua : undefined });
+      x += w + (ps.length > 1 ? gap : 0);
+      if (k < ps.length - 1 && gap > 5) { ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(x - gap / 2, y - 6); ctx.lineTo(x - gap / 2, y + 84); ctx.stroke(); ctx.restore(); }
+    });
+    text(ps.length > 1 ? `${ps.length} pieces: marks cut off` : "1 piece: kept whole", Math.max(M + 1200, x + 40), y + 60, { size: 30, color: col, weight: 600, alpha: a });
+  });
+});
+
+scene(1, "Where the penalty comes from", 12, "Two separate fixes. Fixing GPT-4's pattern saves nothing - its vocabulary was learned behind the broken pattern. Fixing Qwen's pattern alone takes it from 2.38× to 1.42×. Mistral and BLOOM carry all their damage in the vocabulary, where a retrofit can reach it.", t => {
+  eyebrow("Act 2 · Diagnosis"); heading("Pattern or vocabulary?", t);
+  const rows = D.decomp.filter(r => ["BLOOM", "GPT-4 (cl100k_base)", "Mistral-7B", "Qwen2.5", "GPT-4o (o200k_base)", "Typhoon-7B"].includes(r.name));
+  const x0 = M + 460, sc = 1100 / 4.5;
+  for (let v = 0; v <= 4; v++) { text(v + "×", x0 + v * sc, 270, { size: 22, font: FM, color: C.muted, align: "center" }); }
+  rows.forEach((r, i) => {
+    const y = 330 + i * 92, a = eo(seg(t, .6 + i * .2, 1.2 + i * .2));
+    text(r.name.replace(" (cl100k_base)", " (cl100k)").replace(" (o200k_base)", " (o200k)"), x0 - 30, y + 12, { size: 30, align: "right", color: C.ink2, alpha: a });
+    ctx.fillStyle = C.rule; ctx.fillRect(x0, y, 1100, 2);
+    const p1 = eo(seg(t, 3, 4.5)), p2 = eo(seg(t, 6, 7.5));
+    const dot = (v, col, ring, al) => { ctx.save(); ctx.globalAlpha = al; ctx.beginPath(); ctx.arc(x0 + v * sc, y, 14, 0, 7); if (ring) { ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.stroke(); } else { ctx.fillStyle = col; ctx.fill(); } ctx.restore(); };
+    dot(r.shipped, C.ink, false, a);
+    dot(lerp(r.shipped, r.regex, p1), C.violet, true, p1 * .95);
+    dot(lerp(r.shipped, r.vocab, p2), C.aqua, false, p2 * .95);
+  });
+  legend([["as shipped", C.ink], ["pattern fixed", C.violet], ["best possible vocabulary", C.aqua]], M, 900, 26);
+});
+
+// random but fixed order in which Qwen's Thai entries grey out
+const QRANK = (() => { const r = rnd(3), order = Array.from({ length: D.qwen.thai }, (_, i) => [r(), i]).sort((a, b) => a[0] - b[0]).map(x => x[1]); const rk = []; order.forEach((id, k) => { rk[id] = k; }); return rk; })();
+scene(1, "Qwen's dead words", 10, `A side finding: Qwen2.5 has ${fmt(D.qwen.thai)} Thai words in its vocabulary, but its pattern means ${fmt(D.qwen.dead)} of them can never be produced. They were never trained - every one sits on the same vector as unused padding.`, t => {
+  eyebrow("Act 2 · Diagnosis"); heading("1,578 Thai words Qwen2.5 can never use", t);
+  const cols = 90, cw = 12, n = D.qwen.thai, dead = D.qwen.dead, x0 = M, y0 = 260;
+  const p = seg(t, 2, 6);
+  for (let i = 0; i < Math.floor(n * eo(seg(t, .5, 1.8))); i++) {
+    const isDead = QRANK[i] < dead * p;
+    ctx.fillStyle = isDead ? "#3a3d38" : C.thai;
+    ctx.fillRect(x0 + (i % cols) * cw, y0 + Math.floor(i / cols) * cw, cw - 3, cw - 3);
+  }
+  const a = eo(seg(t, 5.5, 6.5));
+  text("never produced, never trained", M + 1160, 330, { size: 30, color: C.muted, alpha: a });
+  D.qwen.examples.forEach((w, i) => chip(w, M + 1160, 370 + i * 70, { size: 34, alpha: a, bg: "#2a2d29", color: C.muted }));
+  counter(Math.round(dead * p), M, 880, { color: C.muted }); text("unreachable", M + 330, 880, { size: 32, color: C.muted });
+});
+
+scene(1, "The target", 8, "Typhoon (SCB 10X) fixed Mistral-7B by adding 3,219 Thai entries, growing the model. This project keeps Mistral-7B at 32,000 entries and swaps unused ones for Thai - a like-for-like comparison on the same base.", t => {
+  eyebrow("Act 2 · Diagnosis"); heading("Same base model, two approaches", t);
+  const a = eo(seg(t, .4, 1.2)), b = eo(seg(t, 1.6, 2.6));
+  rr(W / 2 - 200, 260, 400, 200, 18, C.bg2, C.rule);
+  text("Mistral-7B", W / 2, 350, { size: 44, font: FD, weight: 600, align: "center", alpha: a }); text("32,000 entries", W / 2, 410, { size: 30, align: "center", color: C.ink2, alpha: a });
+  arrow(W / 2 - 120, 470, M + 380, 580, C.orange, b); arrow(W / 2 + 120, 470, W - M - 380, 580, C.blue, b);
+  rr(M + 100, 590, 620 * (1 + .1 * b), 260, 18, "#3a1f12", C.orange);
+  text("Typhoon-7B · SCB 10X", M + 130, 680, { size: 38, font: FD, weight: 600, alpha: b }); text("adds 3,219 → 35,219 entries", M + 130, 740, { size: 30, color: C.ink2, alpha: b }); text("the model grows", M + 130, 790, { size: 30, color: C.orange, alpha: b });
+  rr(W - M - 720, 590, 620, 260, 18, "#10223a", C.blue);
+  text("This project", W - M - 690, 680, { size: 38, font: FD, weight: 600, alpha: b }); text("swaps unused entries → 32,000", W - M - 690, 740, { size: 30, color: C.ink2, alpha: b }); text("the size stays", W - M - 690, 790, { size: 30, color: C.blue, alpha: b });
+});
+
+scene(2, "32,000 slots", 8, "This is Mistral-7B's whole vocabulary: 32,000 entries, one cell each. Every entry has a row in the model's embedding table, so the number of cells cannot change without changing the model.", t => {
+  eyebrow("Act 3 · Building the retrofit"); heading("Mistral-7B's vocabulary: 32,000 slots", t);
+  grid(() => "#2e332e", eo(seg(t, .5, 3.5)));
+  counter(32000 * eo(seg(t, .5, 3.5)), GRIDRIGHT, 400); text("entries", GRIDRIGHT, 450, { size: 30, color: C.muted });
+});
+
+scene(2, "Who uses what", 12, "Encode 84 million characters of English, 50 million of Python and the Thai training text, and record which entries ever get used. Almost everything is needed by English or code.", t => {
+  eyebrow("Act 3 · Building the retrofit"); heading("Which entries does anyone use?", t);
+  const k = D.vocab.counts, steps = [["0", C.english, "English", k.english], ["1", C.code, "Python code only", k.code], ["2", C.thai, "Thai only", k.thai], ["3", C.locked, "needed to build another entry", k.locked]];
+  const lit = steps.map((s, i) => seg(t, 1 + i * 2, 2.8 + i * 2));
+  grid((i, c) => { const s = steps.findIndex(x => x[0] === c); return s >= 0 && (i / CAT.length) < lit[s] ? steps[s][1] : "#2e332e"; });
+  steps.forEach(([c, col, label, n], i) => {
+    const y = 300 + i * 110, a = seg(t, 1 + i * 2, 1.6 + i * 2);
+    rr(GRIDRIGHT, y - 30, 30, 30, 6, col);
+    text(label, GRIDRIGHT + 48, y - 6, { size: 26, color: C.ink2, alpha: a });
+    text(fmt(Math.round(n * eo(lit[i]))), GRIDRIGHT + 48, y + 38, { size: 40, font: FD, weight: 600, alpha: a });
+  });
+});
+
+scene(2, "Safe to free", 8, `What is left: ${fmt(D.vocab.counts.freed)} entries (7.8%) that English, code and Thai never use, and that no kept entry is built from. Removing them cannot change how anything we protect is tokenized.`, t => {
+  eyebrow("Act 3 · Building the retrofit"); heading(`${fmt(D.vocab.counts.freed)} slots are safe to free`, t);
+  const pulse = .5 + .5 * Math.sin(t * 5);
+  grid((i, c) => c === "4" ? (t > 1 ? `rgba(232,179,57,${.55 + .45 * pulse})` : "#2e332e") : CATCOLOR[c] + "55");
+  counter(D.vocab.counts.freed * eo(seg(t, 1, 3)), GRIDRIGHT, 400, { color: C.yellow }); text("free slots", GRIDRIGHT, 450, { size: 30, color: C.muted }); text("7.8% of the vocabulary", GRIDRIGHT, 500, { size: 30, color: C.ink2, alpha: seg(t, 3, 4) });
+});
+
+scene(2, "What they were", 8, "The freed entries were pieces of other languages and symbols - Cyrillic syllables, Chinese and Japanese characters, Korean syllables, box-drawing marks - that a Thai-and-English deployment never uses.", t => {
+  eyebrow("Act 3 · Building the retrofit"); heading("What the freed slots used to hold", t);
+  const groups = [["Cyrillic", D.freed_examples.cyrillic], ["Chinese / Japanese", D.freed_examples.cjk], ["Korean", D.freed_examples.hangul], ["Symbols", D.freed_examples.other]];
+  groups.forEach(([name, list], g) => {
+    const x = M + g * 430, a = eo(seg(t, .6 + g * .7, 1.4 + g * .7));
+    text(name, x, 300, { size: 34, font: FD, weight: 600, alpha: a });
+    (list || []).slice(0, 8).forEach((s, i) => chip(s, x + (i % 2) * 180, 340 + Math.floor(i / 2) * 110 + (1 - a) * 40, { size: 48, alpha: a, bg: "#3a3222", color: C.yellow }));
+  });
+});
+
+scene(2, "What Thai needs", 10, "Which Thai units would save the most? Rank words by how often they appear times the tokens they cost today. ที่ costs Mistral 3 tokens and appears thousands of times per million characters.", t => {
+  eyebrow("Act 3 · Building the retrofit"); heading("What Thai needs most", t);
+  const cand = D.candidates.slice(0, 10), mx = cand[0].save;
+  cand.forEach((c, i) => {
+    const y = 260 + i * 66, p = eo(seg(t, .8 + i * .25, 2 + i * .25));
+    text(c.u, M + 180, y + 40, { size: 38, align: "right", alpha: p });
+    text(`${c.cost} tokens`, M + 360, y + 40, { size: 26, font: FM, color: C.muted, align: "right", alpha: p });
+    hbar(M + 400, y + 12, 1100 * c.save / mx, 36, C.thai, p);
+    text(fmt(Math.round(c.save)), M + 420 + 1100 * c.save / mx * p, y + 40, { size: 26, font: FM, color: C.ink2, alpha: p });
+  });
+  text("tokens saved per million characters", M + 400, 945, { size: 24, font: FM, color: C.muted });
+});
+
+scene(2, "Missing letters", 8, `First, the letters Mistral cannot spell at all. ${D.atoms.length} Thai characters, including the repetition mark ๆ and the tone marks ๊ ๋, cost 3 raw byte tokens each. They take the first freed slots.`, t => {
+  eyebrow("Act 3 · Building the retrofit"); heading(`${D.atoms.length} Thai letters Mistral could not spell`, t);
+  D.atoms.forEach((a, i) => {
+    const col = i % 13, row = Math.floor(i / 13), p = eo(seg(t, .6 + i * .12, 1.4 + i * .12));
+    const x = M + col * 128, y = 300 + row * 180;
+    rr(x, y + (1 - p) * -60, 104, 130, 12, p > .95 ? C.blueSoft : "#2a2d29", p > .95 ? C.blue : null);
+    text(a, x + 52, y + 88 + (1 - p) * -60, { size: 64, align: "center", alpha: p });
+  });
+  text("each was 3 byte tokens · now 1", M, 760, { size: 34, color: C.ink2, alpha: seg(t, 5, 6) });
+});
+
+scene(2, "Merging", 14, "Then BPE continues on Thai text: at each step the pair of neighbouring pieces that saves the most tokens becomes a new vocabulary entry. This is the real order in which the retrofit builds เมื่อวันที่ (\"on the date of\").", t => {
+  eyebrow("Act 3 · Building the retrofit"); heading("Merging letters into words", t);
+  const st = D.merge, n = st.length - 1, fsz = 64;
+  const k = clamp(Math.floor(seg(t, 1, 12) * n), 0, n - 1), p = eio(clamp(seg(t, 1, 12) * n - k, 0, 1));
+  const layout = s => { const ws = s.map(x => Math.max(fsz * .7, tw(SP(x), fsz)) + fsz * .5), tot = ws.reduce((a, b) => a + b, 0) + 16 * (s.length - 1); let x = W / 2 - tot / 2; const out = []; let c = 0; s.forEach((x2, i) => { out.push({ x, w: ws[i], a: c, b: c + x2.length }); c += x2.length; x += ws[i] + 16; }); return out; };
+  const A = layout(st[k]), B = layout(st[k + 1]);
+  st[k + 1].forEach((s, i) => {
+    const bb = B[i], left = A.find(q => q.a === bb.a), right = A.find(q => q.b === bb.b);
+    const x0 = left.x, w0 = right.x + right.w - left.x;
+    const x = lerp(x0, bb.x, p), w = lerp(w0, bb.w, p), merged = !(left === right);
+    rr(x, 380, w, fsz * 1.5, 10, merged && p < 1 ? C.blueSoft : C.chip, merged ? C.blue : null);
+    text(SP(s), x + w / 2, 380 + fsz * 1.1, { size: fsz, align: "center" });
+  });
+  text(`step ${k + 1} of ${n}`, W / 2, 620, { size: 28, font: FM, color: C.muted, align: "center" });
+  counter(lerp(st[k].length, st[k + 1].length, p), W / 2 - 150, 780, { color: C.blue, align: "right" });
+  text(lerp(st[k].length, st[k + 1].length, p) < 1.5 ? "token" : "tokens", W / 2 - 120, 780, { size: 34, color: C.muted });
+});
+
+scene(2, "Filling the slots", 8, `Each new merge takes one freed slot. ${fmt(D.added.length)} Thai pieces now sit where unused Cyrillic, Chinese, Korean and symbol entries used to be.`, t => {
+  eyebrow("Act 3 · Building the retrofit"); heading("Freed slots filled with Thai", t);
+  const p = eo(seg(t, .5, 5.5)), cut = FREED.length * p, rank = new Map(FREED.map((id, i) => [id, i]));
+  grid((i, c) => c === "4" ? (rank.get(i) < cut ? C.blue : C.yellow) : CATCOLOR[c] + "55");
+  const shown = D.added.slice(0, 2483).filter((_, i) => i % 37 === 0).slice(0, Math.floor(14 * p));
+  shown.forEach((s, i) => chip(s, GRIDRIGHT, 240 + i * 50, { size: 26, bg: C.blueSoft }));
+});
+
+scene(2, "Same size", 6, "The vocabulary is still exactly 32,000 entries. The embedding table keeps its shape; only 2,483 of its rows now stand for different pieces.", t => {
+  eyebrow("Act 3 · Building the retrofit");
+  const a = eo(seg(t, .3, 1.3));
+  text("32,000", W / 2 - 480, 540, { size: 180, font: FD, weight: 700, align: "center", alpha: a });
+  text("before", W / 2 - 480, 610, { size: 34, color: C.muted, align: "center", alpha: a });
+  arrow(W / 2 - 150, 480, W / 2 + 150, 480, C.muted, eo(seg(t, 1.2, 2)));
+  text("32,000", W / 2 + 480, 540, { size: 180, font: FD, weight: 700, align: "center", color: C.blue, alpha: eo(seg(t, 1.8, 2.8)) });
+  text("after", W / 2 + 480, 610, { size: 34, color: C.muted, align: "center", alpha: eo(seg(t, 1.8, 2.8)) });
+  text("2,483 rows swapped · nothing added", W / 2, 760, { size: 40, font: FD, weight: 600, align: "center", alpha: eo(seg(t, 3, 4)) });
+});
+
+scene(3, "One sentence again", 12, `Back to the news sentence. Mistral-7B needed ${S.mistral.length} tokens; the retrofit needs ${S.retrofit.length}. Typhoon, which grew the vocabulary instead, needs ${S.typhoon.length}.`, t => {
+  eyebrow("Act 4 · Results"); heading("The same sentence, after the retrofit", t);
+  const rows = [["Mistral-7B", S.mistral, C.ink2, 20], ["Typhoon-7B (SCB 10X)", S.typhoon, C.orange, 26], ["This project's retrofit", S.retrofit, C.blue, 30]];
+  let y = 250;
+  rows.forEach(([name, list, col, size], i) => {
+    const a = seg(t, .5 + i * 2.5, 1 + i * 2.5);
+    text(name, M, y + 10, { size: 28, color: col, weight: 600, alpha: a });
+    counter(list.length * seg(t, .5 + i * 2.5, 2.5 + i * 2.5), W - M, y + 30, { size: 64, color: col, align: "right" });
+    y = flow(list, M, y + 30, 1480, { size, pop: seg(t, .5 + i * 2.5, 2.5 + i * 2.5) * list.length, gap: 4, lgap: 6, bg: i === 2 ? C.blueSoft : undefined }) + 30;
+  });
+});
+
+scene(3, "Per domain", 10, "On 1,200 held-out documents per domain, Thai tokens fall by 64% on Wikipedia, 67% on news and 61% on social posts. English moves by one hundredth of a percent.", t => {
+  eyebrow("Act 4 · Results"); heading("Two thirds fewer Thai tokens, English unchanged", t);
+  const sc = 5.6;
+  DOM.forEach(([k, n], i) => {
+    const x = M + i * 420, b = BASE[`th_${k}_tok100`], r = RET[`th_${k}_tok100`], p = eo(seg(t, 1 + i * .5, 3 + i * .5));
+    text(n, x + 150, 930, { size: 32, align: "center" });
+    hbar(x + 20, 880 - b * sc, 120, b * sc, "#4a4f4a", 1);
+    const h = lerp(b, r, p) * sc; rr(x + 160, 880 - h, 120, h, 6, C.blue);
+    text(pct(RET[`th_${k}_change`] * p), x + 220, 860 - h, { size: 36, font: FD, weight: 700, align: "center", color: C.blue });
+  });
+  const x = M + 1320, e = BASE.en_wikipedia_tok100 * sc;
+  hbar(x + 20, 880 - e, 120, e, "#4a4f4a"); hbar(x + 160, 880 - e, 120, e, C.blue, 1);
+  text("English", x + 150, 930, { size: 32, align: "center" }); text(pct(RET.en_wikipedia_change, 2), x + 220, 860 - e, { size: 36, font: FD, weight: 700, align: "center", alpha: seg(t, 4, 5) });
+  legend([["Mistral-7B", "#4a4f4a"], ["retrofit, 2,483 slots", C.blue]], M, 250, 26);
+});
+
+scene(3, "More slots, fewer tokens", 10, "More swapped slots, fewer Thai tokens, with diminishing returns. Protecting code as well as English caps Mistral at 2,483 free slots; protecting English only allows up to 4,339.", t => {
+  eyebrow("Act 4 · Results"); heading("How the saving grows with the budget", t);
+  const x0 = M + 80, y0 = 880, w = 1400, h = 560, X = k => x0 + k / 4500 * w, Y = v => y0 - v / .8 * h;
+  ctx.strokeStyle = C.rule; ctx.lineWidth = 2; for (let v = 0; v <= .8; v += .2) { ctx.beginPath(); ctx.moveTo(x0, Y(v)); ctx.lineTo(x0 + w, Y(v)); ctx.stroke(); text(Math.round(v * 100) + "%", x0 - 16, Y(v) + 8, { size: 22, font: FM, color: C.muted, align: "right" }); }
+  [0, 1000, 2000, 3000, 4000].forEach(k => text(k ? (k / 1000) + "k" : "0", X(k), y0 + 40, { size: 22, font: FM, color: C.muted, align: "center" }));
+  text("slots swapped", x0 + w / 2, y0 + 80, { size: 24, color: C.muted, align: "center" });
+  const avg = r => -(r.th_wikipedia_change + r.th_news_change + r.th_social_change) / 3;
+  const pts = [[0, 0], ...[500, 1000, 2000, 2483].map(k => [k, avg(EV[`Mistral-7B +TH${k}`])]), [3219, avg(EQ)], [4339, avg(EV["Mistral-7B +TH4339-enonly"])]];
+  const p = seg(t, 1, 6), n = Math.floor(p * (pts.length - 1));
+  ctx.strokeStyle = C.blue; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(X(0), Y(0));
+  for (let i = 1; i <= n; i++) ctx.lineTo(X(pts[i][0]), Y(pts[i][1]));
+  if (n < pts.length - 1) { const q = p * (pts.length - 1) - n; ctx.lineTo(lerp(X(pts[n][0]), X(pts[n + 1][0]), q), lerp(Y(pts[n][1]), Y(pts[n + 1][1]), q)); }
+  ctx.stroke();
+  pts.slice(1, n + 1).forEach(([k, v]) => { ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(X(k), Y(v), 9, 0, 7); ctx.fill(); });
+  const a = seg(t, 6.5, 7.5), ty = avg(TY);
+  ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.orange; ctx.translate(X(3219), Y(ty)); ctx.rotate(Math.PI / 4); ctx.fillRect(-11, -11, 22, 22); ctx.restore();
+  text("Typhoon (added 3,219)", X(3219) + 24, Y(ty) + 48, { size: 26, color: C.orange, alpha: a });
+  text("2,483: English + code kept", X(2483), Y(avg(RET)) - 30, { size: 24, color: C.ink2, align: "center", alpha: seg(t, 4, 5) });
+});
+
+scene(3, "Against Typhoon", 8, "At Typhoon's own budget of 3,219 entries, the fixed-size retrofit needs 3.7 to 4.2% fewer tokens than Typhoon in every domain - without growing the model's embedding table.", t => {
+  eyebrow("Act 4 · Results"); heading("Same budget as Typhoon, fewer tokens", t);
+  DOM.forEach(([k, n], i) => {
+    const y = 330 + i * 190, a = eo(seg(t, .6 + i * .5, 1.8 + i * .5)), sc = 30;
+    text(n, M, y + 40, { size: 34, weight: 600, alpha: a });
+    hbar(M + 300, y, TY[`th_${k}_tok100`] * sc, 44, C.orange, a); text(TY[`th_${k}_tok100`].toFixed(1), M + 316 + TY[`th_${k}_tok100`] * sc * a, y + 34, { size: 28, alpha: a });
+    hbar(M + 300, y + 60, EQ[`th_${k}_tok100`] * sc, 44, C.blue, a); text(EQ[`th_${k}_tok100`].toFixed(1), M + 316 + EQ[`th_${k}_tok100`] * sc * a, y + 94, { size: 28, alpha: a });
+    const bt = D.bootstrap[`retrofit 3219 (English-only) | ${k}`];
+    if (bt) text(pct(bt[0], 1), W - M, y + 70, { size: 56, font: FD, weight: 700, color: C.blue, align: "right", alpha: seg(t, 3, 4) });
+  });
+  legend([["Typhoon-7B, 35,219 entries (SCB 10X)", C.orange], ["retrofit, 3,219 swapped, 32,000 entries", C.blue]], M, 950, 24);
+});
+
+scene(3, "Fairness", 10, "Informal Thai gains a little less than formal Thai, the same gap as Typhoon. Training the new vocabulary on formal text only would nearly double that gap - so all three registers were weighted equally.", t => {
+  eyebrow("Act 4 · Results"); heading("Informal Thai: who gets left behind?", t);
+  const reg = Object.fromEntries(D.register.map(r => [r.tokenizer, r.spread - 1]));
+  const rows = [["Mistral-7B, character by character", reg["Mistral-7B (base)"], "#6f746d"], ["Retrofit, equal domain weights", reg["Mistral-7B +TH2483"], C.blue], ["Typhoon-7B (SCB 10X)", reg["Typhoon-7B"], C.orange], ["Retrofit, formal text only", reg["Mistral-7B +TH2483-wikipedia+news"], C.red]];
+  const x0 = M + 700, sc = 3000;
+  rows.forEach(([n, v, col], i) => {
+    const y = 330 + i * 130, p = eo(seg(t, .8 + i * .8, 2 + i * .8));
+    text(n, x0 - 30, y + 40, { size: 32, align: "right", color: C.ink2, alpha: p });
+    hbar(x0, y + 8, Math.max(0, v) * sc, 44, col, p);
+    text(pct(v * p, 1), x0 + Math.max(0, v) * sc * p + 20, y + 42, { size: 34, font: FD, weight: 700, alpha: p });
+  });
+  text("extra cost of social-media Thai over formal Thai", x0, 900, { size: 24, font: FM, color: C.muted });
+});
+
+scene(3, "Who pays", 10, "The freed slots belonged to other languages, so those get more expensive. For a Thai-and-English deployment the price is zero; a multilingual one would have to protect those languages too.", t => {
+  eyebrow("Act 4 · Results"); heading("The freed slots belonged to other languages", t);
+  const rows = Object.entries(D.collateral).map(([k, v]) => [k, v.retrofit]).sort((a, b) => b[1] - a[1]);
+  const x0 = M + 360, sc = 2400;
+  rows.forEach(([n, v], i) => {
+    const y = 300 + i * 120, p = eo(seg(t, .8 + i * .6, 2 + i * .6));
+    text(n, x0 - 30, y + 40, { size: 34, align: "right", color: C.ink2, alpha: p });
+    hbar(x0, y + 8, Math.max(4, v * sc), 44, "#6f746d", p);
+    text(pct(v * p, 1), x0 + Math.max(4, v * sc) * p + 20, y + 42, { size: 34, font: FD, weight: 700, alpha: p });
+  });
+});
+
+scene(4, "The rows problem", 10, "Each swapped row still holds its old token's meaning: the slot that now holds เมื่อวันที่ used to be the Korean syllable 벤. The fix: start each row at the average of the word's old pieces, then train a little.", t => {
+  eyebrow("Act 5 · Making a model use it"); heading("The swapped rows still mean the old tokens", t);
+  const a = eo(seg(t, .5, 1.5)), b = eo(seg(t, 4, 5.5));
+  chip(" เมื่อวันที่", M, 360, { size: 56, bg: C.blueSoft, alpha: a });
+  arrow(M + 420, 400, M + 700, 400, C.muted, a);
+  rr(M + 720, 330, 520, 140, 14, b > .5 ? C.blueSoft : "#3a3222", b > .5 ? C.blue : C.yellow);
+  text(b > .5 ? "mean of its 12 old pieces" : "row still means 벤 (Korean)", M + 980, 415, { size: 40, align: "center" });
+  text("embedding row", M + 980, 510, { size: 26, color: C.muted, align: "center" });
+  text(b > .5 ? "A sensible start - then a little training" : "Unrelated meaning", M + 720, 620, { size: 40, font: FD, weight: 600, color: b > .5 ? C.blue : C.yellow });
+});
+
+scene(4, "Four ways to set the rows", 12, "Tested on BLOOM-560m with 5,000 swapped rows. Leaving rows alone nearly doubles Thai bits per character; random restart is far worse. The mean of the old pieces recovers most of it for free, and 200 steps training only those rows ends better than the original.", t => {
+  eyebrow("Act 5 · Making a model use it"); heading("Four ways to set the swapped rows", t);
+  const B = D.bloom, rows = [["original tokenizer", B.base.wikipedia_bpc, "#6f746d"], ["rows left as they were", B.stale.wikipedia_bpc, C.yellow], ["random restart", B.random.wikipedia_bpc, C.red], ["mean of old pieces", B.mean.wikipedia_bpc, C.aqua], ["mean + 200 row-only steps", B["mean+tune"].wikipedia_bpc, C.blue]];
+  const x0 = M + 520, sc = 1000 / 14;
+  rows.forEach(([n, v, col], i) => {
+    const y = 290 + i * 110, p = eo(seg(t, .6 + i * 1, 1.8 + i * 1));
+    text(n, x0 - 30, y + 40, { size: 32, align: "right", color: C.ink2, alpha: p });
+    hbar(x0, y + 8, v * sc, 44, col, p);
+    text(v.toFixed(2), x0 + v * sc * p + 20, y + 42, { size: 34, font: FD, weight: 700, alpha: p });
+  });
+  text("Thai bits per character, Wikipedia (lower is better)", x0, 900, { size: 24, font: FM, color: C.muted });
+});
+
+// the longest Mistral GPU run on file (tagged runs like "retrofit_s1000" beat the untagged 400-step one)
+const MG = (() => {
+  const g = D.mistral_gpu, pick = arm => Object.keys(g).filter(k => k.startsWith(arm)).sort((a, b) => g[b].meta.steps - g[a].meta.steps)[0];
+  const C0 = g[pick("control")], R0 = g[pick("retrofit")];
+  const gap = DOM.map(([k]) => R0.results.trained[`${k}_bpc`] / C0.results.trained[`${k}_bpc`] - 1);
+  const say = gap.map((v, i) => `${Math.abs(v) < .02 ? "level" : Math.round(Math.abs(v) * 100) + "% " + (v > 0 ? "behind" : "ahead")} on ${DOM[i][1] === "Wikipedia" ? "Wikipedia" : DOM[i][1].toLowerCase()}`);
+  return { C: C0.results, R: R0.results, steps: R0.meta.steps, say: `${say[0]}, ${say[1]} and ${say[2]}` };
+})();
+scene(4, "Mistral-7B on a laptop GPU", 12, `Two copies of Mistral-7B got identical training on a laptop GPU, one per tokenizer. The retrofit is ${MG.say} - while reading Thai in a third of the tokens.`, t => {
+  eyebrow("Act 5 · Making a model use it"); heading("Mistral-7B, identical training, two tokenizers", t);
+  const Cc = MG.C, Rr = MG.R, sc = 150;
+  DOM.forEach(([k, n], i) => {
+    const x = M + 80 + i * 560, vals = [[Cc.original[`${k}_bpc`], "#6f746d", "original"], [Cc.trained[`${k}_bpc`], "#9a9e96", "control"], [Rr.trained[`${k}_bpc`], C.blue, "retrofit"]];
+    vals.forEach(([v, col, lab], j) => {
+      const p = eo(seg(t, 1 + i * .6 + j * .3, 2.5 + i * .6 + j * .3)), h = v * sc;
+      rr(x + j * 150, 860 - h * p, 120, h * p, 6, col);
+      text(v.toFixed(2), x + j * 150 + 60, 840 - h * p, { size: 28, align: "center", alpha: p });
+      text(lab, x + j * 150 + 60, 900, { size: 22, font: FM, color: C.muted, align: "center" });
+    });
+    text(n, x + 210, 960, { size: 32, align: "center" });
+  });
+  text(`bits per character, ${fmt(MG.steps)} steps, 4-bit`, W - M, 250, { size: 24, font: FM, color: C.muted, align: "right" });
+});
+
+scene(4, "Twice the Thai per token", 10, "In generated answers the retrofitted model writes about twice as much Thai per token, so Thai text comes out about twice as fast. (A 0.5B model's answers are rough either way - this shows speed, not quality.)", t => {
+  eyebrow("Act 5 · Making a model use it"); heading("Twice the Thai per token", t);
+  const A = D.stream.answers, cols = [["Qwen2.5-0.5B · original tokenizer", A.control, "#9a9e96"], ["Qwen2.5-0.5B · retrofit", A.retrofit, C.blue]];
+  cols.forEach(([name, a, col], i) => {
+    const x = M + i * 860, sec = seg(t, .8, 9.5) * 25, chars = Math.min(a.text.length, Math.floor(sec * a.chars_per_s));
+    rr(x, 240, 820, 600, 16, C.bg2, col === C.blue ? C.blue : C.rule);
+    text(name, x + 30, 290, { size: 28, weight: 600, color: col });
+    wrapChars(a.text.slice(0, chars).replace(/\n+/g, " "), x + 30, 350, 760, { size: 26, lh: 1.5, color: C.ink2 });
+    text(`${Math.round(a.chars_per_s)} characters / second` + (i ? "" : "  ·  replayed 3× faster"), x + 30, 900, { size: 30, font: FD, weight: 600, color: col });
+  });
+});
+
+scene(4, "What checking changed", 10, "Four early claims did not survive checking: a flawed diagnostic, a backwards recommendation, a novelty claim that prior work (Csaki et al., 2023) already covered, and an overstated \"no retraining\".", t => {
+  eyebrow("Act 5 · Making a model use it"); heading("What checking changed", t);
+  const items = [["\"Mark-split rate\" measures the pre-tokenizer", "It missed byte fragments - replaced"], ["Retrofit GPT-4's tokenizer", "Backwards - its regex cuts every mark"], ["Untested on Thai", "Csaki et al. (2023) did it - claim narrowed"], ["No retraining needed", "Swapped rows must be re-set and trained"]];
+  items.forEach(([a, b], i) => {
+    const x = M + (i % 2) * 850, y = 280 + Math.floor(i / 2) * 300, p = eo(seg(t, .6 + i * 1.2, 1.4 + i * 1.2)), q = eo(seg(t, 1.6 + i * 1.2, 2.4 + i * 1.2));
+    rr(x, y, 810, 250, 16, C.bg2, q > .5 ? C.aqua : C.rule);
+    text(a, x + 30, y + 80, { size: 32, color: C.ink2, alpha: p });
+    if (q > .1) { ctx.save(); ctx.strokeStyle = C.red; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x + 30, y + 70); ctx.lineTo(x + 30 + tw(a, 32) * q, y + 70); ctx.stroke(); ctx.restore(); }
+    text(b, x + 30, y + 170, { size: 32, weight: 600, color: C.aqua, alpha: q });
+  });
+});
+
+scene(4, "Try it", 8, "Paste any Thai into the live Thai Token Meter to see seven tokenizers split it. The dashboard and the full report have every number, method detail and reference.", t => {
+  for (const b of bgChars) text(b.c, (b.x + t * b.v) % W, b.y, { size: b.s, alpha: b.a, color: C.ink });
+  const a = eo(seg(t, .3, 1.3));
+  text("Same vocabulary size.", W / 2, 420, { size: 96, font: FD, weight: 700, align: "center", alpha: a });
+  text("A third of the Thai tokens.", W / 2, 540, { size: 96, font: FD, weight: 700, align: "center", color: C.blue, alpha: eo(seg(t, 1, 2)) });
+  text("Thai Token Meter · Results dashboard · Full report", W / 2, 680, { size: 36, align: "center", color: C.ink2, alpha: eo(seg(t, 2.2, 3.2)) });
+});
+
+/* ---------- timeline ---------- */
+let acc = 0; for (const s of SC) { s.start = acc; acc += s.dur; }
+const TOTAL = acc;
+function render(T) {
+  T = clamp(T, 0, TOTAL - 1e-3);
+  const s = SC.find(x => T >= x.start && T < x.start + x.dur) || SC[SC.length - 1], t = T - s.start;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  const fadeIn = seg(t, 0, .35), fadeOut = 1 - seg(t, s.dur - .35, s.dur);
+  ctx.globalAlpha = Math.min(fadeIn, fadeOut);
+  s.draw(t);
+  ctx.globalAlpha = 1;
+  if (s.cap) {
+    ctx.fillStyle = "rgba(11,13,11,.88)"; ctx.fillRect(0, 978, W, 102);
+    const capA = seg(t, .2, .8) * (1 - seg(t, s.dur - .3, s.dur));
+    wrapCap(s.cap, capA);
+  }
+  ctx.fillStyle = C.rule; ctx.fillRect(0, H - 6, W, 6); ctx.fillStyle = C.blue; ctx.fillRect(0, H - 6, W * T / TOTAL, 6);
+  return s;
+}
+function wrapCap(s, a) {
+  const size = 28, maxW = W - 2 * M; const words = s.split(" "); const lines = []; let line = "";
+  for (const w of words) { const t = line ? line + " " + w : w; if (tw(t, size) > maxW && line) { lines.push(line); line = w; } else line = t; }
+  if (line) lines.push(line);
+  const ls = lines.slice(0, 2), y0 = ls.length === 1 ? 1038 : 1018;
+  ls.forEach((l, i) => text(l, W / 2, y0 + i * 40, { size, align: "center", color: C.ink2, alpha: a }));
+}
+window.__TOTAL = TOTAL; window.__render = render; window.__scenes = SC.map(s => ({ title: s.title, start: s.start, dur: s.dur }));
+
+/* ---------- player ---------- */
+const playBtn = document.getElementById("play"), scrub = document.getElementById("scrub"), time = document.getElementById("time");
+const mmss = x => `${Math.floor(x / 60)}:${String(Math.floor(x % 60)).padStart(2, "0")}`;
+let T = 0, playing = false, last = 0;
+const box = document.getElementById("scenes");
+let curAct = -1;
+SC.forEach((s, i) => {
+  if (s.act !== curAct) { curAct = s.act; const d = document.createElement("div"); d.className = "act"; d.textContent = `Act ${s.act + 1} · ${ACTS[s.act]}`; box.append(d); }
+  const b = document.createElement("button"); b.type = "button"; b.textContent = `${i + 1}. ${s.title}`; b.onclick = () => { T = s.start + .01; draw(); }; s.btn = b; box.append(b);
+});
+function draw() {
+  const s = render(T);
+  scrub.value = String(Math.round(T / TOTAL * 1000)); time.textContent = `${mmss(T)} / ${mmss(TOTAL)}`;
+  SC.forEach(x => x.btn.classList.toggle("on", x === s));
+}
+function loop(now) { if (!playing) return; T += (now - last) / 1000; last = now; if (T >= TOTAL) { T = TOTAL - .01; playing = false; playBtn.textContent = "Replay"; } draw(); if (playing) requestAnimationFrame(loop); }
+playBtn.onclick = () => { if (playing) { playing = false; playBtn.textContent = "Play"; return; } if (T >= TOTAL - .05) T = 0; playing = true; playBtn.textContent = "Pause"; last = performance.now(); requestAnimationFrame(loop); };
+scrub.oninput = () => { T = +scrub.value / 1000 * TOTAL; draw(); };
+document.addEventListener("keydown", e => { if (e.key === " " && e.target === document.body) { e.preventDefault(); playBtn.click(); } });
+const fontsReady = Promise.all([`600 60px ${FD}`, `400 32px ${FB}`, `500 22px ${FM}`, `700 96px ${FD}`, `400 40px ${FB}`].map(f => document.fonts.load(f, "ภาษา Aa"))).catch(() => {});
+window.__ready = fontsReady.then(() => { T = 1.8; draw(); T = 0; });
+</script>
