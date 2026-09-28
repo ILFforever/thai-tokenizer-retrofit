@@ -131,7 +131,7 @@ def snip(v):
 def fall(v):
     t = _t(3.6)
     f = 700 * (200 / 700) ** (t / t[-1])
-    return .07 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / t[-1]) * (1 + .3 * np.sin(2 * np.pi * 6 * t))
+    return .07 * np.sin(2 * np.pi * np.cumsum(f) / SR) * np.sin(np.pi * t / t[-1])
 
 
 def fall2(v):
@@ -158,26 +158,8 @@ SOUNDS = {"tick": tick, "pop": pop, "bar": bar, "ding": ding, "chime": chime, "c
           "click": click, "type": type_}
 
 
-def pad(total: float, acts: list[tuple[float, int]]) -> np.ndarray:
-    """A very quiet drone under everything; its root moves with each act."""
-    roots = [110.0, 98.0, 123.47, 110.0, 130.81]
-    t = _t(total)
-    # glide over 1.5 s into each new act's root instead of jumping
-    xs, ys = [0.0], [roots[acts[0][1]]]
-    for start, act in acts[1:]:
-        if roots[act] != ys[-1]:
-            xs += [start, start + 1.5]
-            ys += [ys[-1], roots[act]]
-    root = np.interp(t, xs, ys)
-    phase = 2 * np.pi * np.cumsum(root) / SR
-    lfo = 1 + .25 * np.sin(2 * np.pi * t / 9)
-    x = (np.sin(phase) + .6 * np.sin(1.5 * phase) + .35 * np.sin(2 * phase + 1)) * lfo
-    fade = np.minimum(1, t / 2) * np.minimum(1, (total - t) / 2)
-    return .022 * x * fade
-
-
 def synth(cues: list, acts: list, total: float) -> np.ndarray:
-    out = pad(total + 1, acts)
+    out = np.zeros(int((total + 1) * SR))
     for time, kind, variant in cues:
         s = SOUNDS[kind](variant)
         i = int(max(0, time) * SR)

@@ -670,14 +670,27 @@ function draw() {
 // soundtrack: follows the animation clock; the page still plays silently if it cannot load
 const snd = document.getElementById("snd"), muteBtn = document.getElementById("mute");
 const sndOk = () => snd.readyState >= 1 && !snd.error;
+// Only seek on user actions; while playing, the audio is the clock (see loop)
 function sndSync(force) {
   if (!sndOk()) return;
   if (!playing) { snd.pause(); return; }
-  if (force || Math.abs(snd.currentTime - T) > .12) snd.currentTime = T;
+  if (force) { snd.currentTime = T; following = false; }
   if (snd.paused) snd.play().catch(() => {});
 }
+let following = false;  // true once the audio is running from where the animation was
+const sndClock = () => sndOk() && !snd.paused && !snd.seeking && snd.readyState >= 3;
 muteBtn.onclick = () => { snd.muted = !snd.muted; muteBtn.textContent = snd.muted ? "Sound off" : "Sound on"; muteBtn.setAttribute("aria-pressed", String(snd.muted)); };
-function loop(now) { if (!playing) return; T += (now - last) / 1000; last = now; if (T >= TOTAL) { T = TOTAL - .01; playing = false; playBtn.textContent = "Replay"; } sndSync(false); draw(); if (playing) requestAnimationFrame(loop); }
+function loop(now) {
+  if (!playing) return;
+  if (sndClock()) {
+    // audio started late: bring it to the animation once, then follow it
+    if (!following) { following = true; if (Math.abs(snd.currentTime - T) > .25) snd.currentTime = T; }
+    else T = snd.currentTime;
+  } else T += (now - last) / 1000;
+  last = now;
+  if (T >= TOTAL) { T = TOTAL - .01; playing = false; playBtn.textContent = "Replay"; sndSync(); }
+  draw(); if (playing) requestAnimationFrame(loop);
+}
 playBtn.onclick = () => { if (playing) { playing = false; playBtn.textContent = "Play"; sndSync(); return; } if (T >= TOTAL - .05) T = 0; playing = true; playBtn.textContent = "Pause"; last = performance.now(); sndSync(true); requestAnimationFrame(loop); };
 scrub.oninput = () => { T = +scrub.value / 1000 * TOTAL; draw(); sndSync(true); };
 // full screen: the stage (canvas) only; click it to play/pause, F or double-click to toggle
