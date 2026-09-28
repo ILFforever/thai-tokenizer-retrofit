@@ -64,14 +64,14 @@ def instruction_texts(tok, n: int, split: str = "train") -> list[str]:
 
 
 @torch.no_grad()
-def bpc(model, tok, texts: list[str], prefix: int) -> tuple[float, float]:
+def bpc(model, tok, texts: list[str], prefix: int, dev=torch.device("cpu")) -> tuple[float, float]:
     bits, chars, ntok = 0.0, 0, 0
     model.eval()
     for t in texts:
         ids = tok.encode(t, add_special_tokens=False)
-        x = torch.tensor([[prefix] + ids])
+        x = torch.tensor([[prefix] + ids], device=dev)
         lp = torch.log_softmax(model(x).logits[0, :-1].float(), -1)
-        bits += -lp[torch.arange(len(ids)), torch.tensor(ids)].sum().item() / math.log(2)
+        bits += -lp[torch.arange(len(ids), device=dev), torch.tensor(ids, device=dev)].sum().item() / math.log(2)
         chars += len(t)
         ntok += len(ids)
     return bits / chars, ntok / chars * 100
@@ -121,8 +121,11 @@ def main() -> None:
     ap.add_argument("--n-eval", type=int, default=50)
     ap.add_argument("--size", type=int, default=600)
     ap.add_argument("--threads", type=int, default=16)
+    ap.add_argument("--device", default="cpu", help="cpu (default, the reproducible path) or cuda")
+    ap.add_argument("--tag", default="", help="suffix for a variant run (keeps earlier results)")
     args = ap.parse_args()
     torch.set_num_threads(args.threads)
+    dev = torch.device(args.device)
     torch.manual_seed(0)
     t0 = time.time()
 
@@ -132,7 +135,7 @@ def main() -> None:
     shipped = AutoTokenizer.from_pretrained(BASE)
     tok = shipped if args.arm == "control" else AutoTokenizer.from_pretrained(str(ROOT / args.tokenizer))
     prefix = shipped.convert_tokens_to_ids("<|endoftext|>")
-    tag = args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}"
+    tag = (args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}") + args.tag
 
     # --- data ---------------------------------------------------------------
     ev = {d: passages(load_thai_domain(d, n_docs=1200).texts, args.n_eval, args.size) for d in DOMAINS}
@@ -164,14 +167,14 @@ def main() -> None:
           f"({time.time() - t0:.0f}s)", flush=True)
 
     # --- model --------------------------------------------------------------
-    model = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float32)
+    model = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float32).to(dev)
     emb = model.get_input_embeddings().weight
     tied = emb.data_ptr() == model.get_output_embeddings().weight.data_ptr()
 
     def evaluate(label: str) -> dict:
         r = {}
         for k, texts in ev.items():
-            b, tpc = bpc(model, tok, texts, prefix)
+            b, tpc = bpc(model, tok, texts, prefix, dev)
             r[f"{k}_bpc"], r[f"{k}_tok100"] = round(b, 4), round(tpc, 2)
         print(f"  {label}: " + ", ".join(f"{k} {r[f'{k}_bpc']:.3f}" for k in ev), flush=True)
         return r
@@ -194,7 +197,7 @@ def main() -> None:
     if rows:
         e = model.get_input_embeddings().weight
         e.requires_grad_(True)
-        mask = torch.zeros(e.shape[0], 1)
+        mask = torch.zeros(e.shape[0], 1, device=dev)
         mask[rows] = 1.0
         e.register_hook(lambda g: g * mask)
         groups.append({"params": [e], "lr": args.lr_rows})
@@ -212,7 +215,7 @@ def main() -> None:
         opt.zero_grad()
         total = 0.0
         for i in range(0, len(wins), args.micro):
-            x = torch.tensor(wins[i:i + args.micro])
+            x = torch.tensor(wins[i:i + args.micro], device=dev)
             loss = model(input_ids=x, labels=x).loss * len(x) / len(wins)
             loss.backward()
             total += loss.item()
@@ -228,7 +231,7 @@ def main() -> None:
     if rows:
         base_emb = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float32).get_input_embeddings().weight
         with torch.no_grad():
-            moved = (model.get_input_embeddings().weight != base_emb).any(1).nonzero().flatten().tolist()
+            moved = (model.get_input_embeddings().weight.cpu() != base_emb).any(1).nonzero().flatten().tolist()
         results["trained"]["rows_changed"] = len(moved)
         results["trained"]["rows_changed_outside_learned"] = len(set(moved) - set(rows))
 
@@ -236,7 +239,7 @@ def main() -> None:
     out = MODELS / f"qwen2.5-0.5b-instruct-{tag}"
     model.to(torch.bfloat16).save_pretrained(str(out))
     tok.save_pretrained(str(out))
-    meta = {"base": BASE, "arm": args.arm, "tokenizer": args.tokenizer or BASE, "tied_embeddings": tied,
+    meta = {"base": BASE, "arm": args.arm, "device": args.device, "tag": args.tag, "tokenizer": args.tokenizer or BASE, "tied_embeddings": tied,
             "steps": args.steps, "batch": args.batch, "seq": args.seq, "mix_thai_english_instr": args.mix,
             "train_tokens_seen": args.steps * args.batch * args.seq, "lora_rank": args.rank,
             "lr_lora": args.lr_lora, "lr_rows": args.lr_rows, "rows_learned": len(rows),

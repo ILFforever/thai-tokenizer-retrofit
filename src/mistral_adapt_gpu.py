@@ -74,6 +74,7 @@ def main() -> None:
     ap.add_argument("--english-windows", type=int, default=2)
     ap.add_argument("--n-eval", type=int, default=40)
     ap.add_argument("--size", type=int, default=400)
+    ap.add_argument("--tag", default="", help="suffix for a variant run (keeps earlier results)")
     args = ap.parse_args()
     torch.manual_seed(0)
     t0 = time.time()
@@ -85,7 +86,7 @@ def main() -> None:
     shipped = AutoTokenizer.from_pretrained(BASE)
     tok = shipped if args.arm == "control" else AutoTokenizer.from_pretrained(str(ROOT / args.tokenizer))
     bos = shipped.bos_token_id
-    tag = args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}"
+    tag = (args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}") + args.tag
 
     ev = {d: passages(load_thai_domain(d, n_docs=1200).texts, args.n_eval, args.size) for d in DOMAINS}
     ev["english"] = passages(load_thai_domain("english_raw", n_docs=100, skip=8000).texts, args.n_eval // 2, args.size) + \
