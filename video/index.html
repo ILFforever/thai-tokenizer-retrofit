@@ -23,6 +23,8 @@ input[type=range] { flex: 1 1 240px; accent-color: var(--accent); }
 body.capture .wrap { max-width: none; padding: 0; }
 body.capture .bar, body.capture .scenes { display: none; }
 body.capture .stage { border-radius: 0; }
+.stage:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; background: #000; }
+.stage:fullscreen canvas { object-fit: contain; cursor: pointer; }
 .scenes .act { font: 600 11px/1 "IBM Plex Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); width: 100%; margin-top: 6px; }
 </style>
 
@@ -32,6 +34,9 @@ body.capture .stage { border-radius: 0; }
     <button id="play" type="button">Play</button>
     <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Position">
     <span class="time" id="time">0:00 / 0:00</span>
+    <button id="mute" type="button" aria-pressed="false">Sound on</button>
+    <button id="full" type="button" title="Full screen (F)">Full screen</button>
+    <audio id="snd" src="soundtrack.mp3" preload="auto"></audio>
   </div>
   <div class="scenes" id="scenes"></div>
 </div>
@@ -574,6 +579,54 @@ scene(4, "Try it", 8, "Paste any Thai into the live Thai Token Meter to see seve
 /* ---------- timeline ---------- */
 let acc = 0; for (const s of SC) { s.start = acc; acc += s.dur; }
 const TOTAL = acc;
+
+/* ---------- sound cues ----------
+   [seconds into the scene, sound, variant], timed to the animations above.
+   src/build_video.py synthesises them into the soundtrack. */
+const spread = (a, b, n, max = 20) => { const k = Math.min(n, Math.round((b - a) * max)); return Array.from({ length: k }, (_, i) => a + (b - a) * i / k); };
+const inv3 = p => 1 - Math.cbrt(1 - p);  // time fraction at which eo() reaches p
+const range = n => Array.from({ length: n }, (_, i) => i);
+const CUE = {
+  "Title": () => [[.2, "swell"], [.7, "chord", 0]],
+  "What a token is": () => spread(2, 6.5, S.en_pieces.length).map(t => [t, "tick", 0]),
+  "Thai under Mistral-7B": () => [...spread(1.6, 8, S.mistral.length).map(t => [t, "tick", 1]), [8.5, "thud"]],
+  "The penalty": () => D.penalty.map((_, i) => [1 + i * .35, "bar", i]),
+  "Why it matters": () => range(3).map(i => [.8 + i * .8, "pop", i]),
+  "Who can fix it": () => [[.6, "clunk"], [1.8, "chime", 0]],
+  "Two stages of a tokenizer": () => [...range(4).map(i => [.6 + i * .7, "pop", i]), [4.5, "whoosh"], [6, "ding", 0]],
+  "The \\p{L} vs \\p{M} cut": () => [[.4, "pop", 2], ...range(3).map(i => [1.6 + i * 1.2, "pop", i]),
+    ...[0, 1].flatMap(i => range(3).map(k => [2.3 + i * 1.2 + k * .12, "snip"])), [4.4, "chime", 1]],
+  "Where the penalty comes from": () => [...range(6).map(i => [.6 + i * .2, "tick", 2]), [3, "whoosh"], [6, "whoosh"], [7.5, "chime", 0]],
+  "Qwen's dead words": () => [[.5, "swell"], [2, "fall"], ...range(5).map(i => [5.5 + i * .08, "tick", 3])],
+  "The target": () => [[.4, "pop", 0], [1.6, "whoosh"], [1.9, "pop", 2], [2.1, "pop", 4]],
+  "32,000 slots": () => [[.5, "swell"]],
+  "Who uses what": () => range(4).map(i => [1 + i * 2, "pop", i]),
+  "Safe to free": () => [[1, "ding", 2]],
+  "What they were": () => range(4).map(g => [.6 + g * .7, "pop", g]),
+  "What Thai needs": () => range(10).map(i => [.8 + i * .25, "bar", 9 - i]),
+  "Missing letters": () => [...D.atoms.map((_, i) => [.9 + i * .12, "tick", 4]), [5, "chime", 1]],
+  "Merging": () => { const n = D.merge.length - 1; return [...range(n).map(k => [1 + 11 * (k + .5) / n, "click", k]), [12, "ding", 1]]; },
+  "Filling the slots": () => [[.5, "swell"], ...range(14).map(j => [.5 + 5 * inv3((j + 1) / 14), "tick", 5])],
+  "Same size": () => [[.3, "thud"], [1.2, "whoosh"], [1.8, "chord", 1], [3, "pop", 3]],
+  "One sentence again": () => [...[S.mistral, S.typhoon, S.retrofit].flatMap((l, i) => spread(.5 + i * 2.5, 2.5 + i * 2.5, l.length).map(t => [t, "tick", i])), [7.6, "ding", 1]],
+  "Per domain": () => [...range(3).map(i => [1 + i * .5, "fall2"]), [4, "ding", 0]],
+  "More slots, fewer tokens": () => [...range(6).map(i => [1 + 5 * (i + 1) / 6, "pop", i]), [6.5, "clunk"]],
+  "Against Typhoon": () => [...range(3).map(i => [.6 + i * .5, "bar", i + 2]), [3, "ding", 1]],
+  "Fairness": () => range(4).map(i => [.8 + i * .8, "bar", i + 1]),
+  "Who pays": () => range(5).map(i => [.8 + i * .6, "bar", 6 - i]),
+  "The rows problem": () => [[.5, "pop", 1], [.9, "whoosh"], [4.3, "chime", 0]],
+  "Four ways to set the rows": () => range(5).map(i => [.6 + i, "bar", [3, 5, 7, 2, 1][i]]),
+  "Mistral-7B on a laptop GPU": () => range(3).flatMap(i => range(3).map(j => [1 + i * .6 + j * .3, "bar", j + i])),
+  "Twice the Thai per token": () => [D.stream.answers.control, D.stream.answers.retrofit].flatMap((a, c) => {
+    const rate = a.tokens / a.seconds, out = [];
+    for (let m = 0; m < a.tokens && m / rate <= 25; m++) out.push([.8 + (m / rate) / 25 * 8.7, "type", c]);
+    return out; }),
+  "What checking changed": () => range(4).flatMap(i => [[.6 + i * 1.2, "pop", i], [1.7 + i * 1.2, "chime", 0]]),
+  "Try it": () => [[.2, "swell"], [1, "chord", 2]],
+};
+window.__cues = SC.flatMap((s, i) => [...(i ? [[s.start - .12, "whoosh", 1]] : []),
+  ...(CUE[s.title] ? CUE[s.title]() : []).map(([t, k, v]) => [s.start + t, k, v ?? 0])]);
+window.__acts = SC.map(s => [s.start, s.act]);
 function render(T) {
   T = clamp(T, 0, TOTAL - 1e-3);
   const s = SC.find(x => T >= x.start && T < x.start + x.dur) || SC[SC.length - 1], t = T - s.start;
@@ -607,17 +660,39 @@ const box = document.getElementById("scenes");
 let curAct = -1;
 SC.forEach((s, i) => {
   if (s.act !== curAct) { curAct = s.act; const d = document.createElement("div"); d.className = "act"; d.textContent = `Act ${s.act + 1} · ${ACTS[s.act]}`; box.append(d); }
-  const b = document.createElement("button"); b.type = "button"; b.textContent = `${i + 1}. ${s.title}`; b.onclick = () => { T = s.start + .01; draw(); }; s.btn = b; box.append(b);
+  const b = document.createElement("button"); b.type = "button"; b.textContent = `${i + 1}. ${s.title}`; b.onclick = () => { T = s.start + .01; draw(); sndSync(true); }; s.btn = b; box.append(b);
 });
 function draw() {
   const s = render(T);
   scrub.value = String(Math.round(T / TOTAL * 1000)); time.textContent = `${mmss(T)} / ${mmss(TOTAL)}`;
   SC.forEach(x => x.btn.classList.toggle("on", x === s));
 }
-function loop(now) { if (!playing) return; T += (now - last) / 1000; last = now; if (T >= TOTAL) { T = TOTAL - .01; playing = false; playBtn.textContent = "Replay"; } draw(); if (playing) requestAnimationFrame(loop); }
-playBtn.onclick = () => { if (playing) { playing = false; playBtn.textContent = "Play"; return; } if (T >= TOTAL - .05) T = 0; playing = true; playBtn.textContent = "Pause"; last = performance.now(); requestAnimationFrame(loop); };
-scrub.oninput = () => { T = +scrub.value / 1000 * TOTAL; draw(); };
-document.addEventListener("keydown", e => { if (e.key === " " && e.target === document.body) { e.preventDefault(); playBtn.click(); } });
+// soundtrack: follows the animation clock; the page still plays silently if it cannot load
+const snd = document.getElementById("snd"), muteBtn = document.getElementById("mute");
+const sndOk = () => snd.readyState >= 1 && !snd.error;
+function sndSync(force) {
+  if (!sndOk()) return;
+  if (!playing) { snd.pause(); return; }
+  if (force || Math.abs(snd.currentTime - T) > .12) snd.currentTime = T;
+  if (snd.paused) snd.play().catch(() => {});
+}
+muteBtn.onclick = () => { snd.muted = !snd.muted; muteBtn.textContent = snd.muted ? "Sound off" : "Sound on"; muteBtn.setAttribute("aria-pressed", String(snd.muted)); };
+function loop(now) { if (!playing) return; T += (now - last) / 1000; last = now; if (T >= TOTAL) { T = TOTAL - .01; playing = false; playBtn.textContent = "Replay"; } sndSync(false); draw(); if (playing) requestAnimationFrame(loop); }
+playBtn.onclick = () => { if (playing) { playing = false; playBtn.textContent = "Play"; sndSync(); return; } if (T >= TOTAL - .05) T = 0; playing = true; playBtn.textContent = "Pause"; last = performance.now(); sndSync(true); requestAnimationFrame(loop); };
+scrub.oninput = () => { T = +scrub.value / 1000 * TOTAL; draw(); sndSync(true); };
+// full screen: the stage (canvas) only; click it to play/pause, F or double-click to toggle
+const stage = document.querySelector(".stage"), fullBtn = document.getElementById("full");
+const toggleFull = () => { if (document.fullscreenElement) document.exitFullscreen(); else stage.requestFullscreen?.().catch(() => {}); };
+fullBtn.onclick = toggleFull;
+if (!document.fullscreenEnabled) fullBtn.hidden = true;
+cv.addEventListener("click", () => { if (document.fullscreenElement) playBtn.click(); });
+cv.addEventListener("dblclick", toggleFull);
+document.addEventListener("fullscreenchange", () => { fullBtn.textContent = document.fullscreenElement ? "Exit full screen" : "Full screen"; });
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" && e.target.type !== "range") return;
+  if (e.key === " " && (e.target === document.body || document.fullscreenElement)) { e.preventDefault(); playBtn.click(); }
+  else if (e.key === "f" || e.key === "F") toggleFull();
+});
 const fontsReady = Promise.all([`600 60px ${FD}`, `400 32px ${FB}`, `500 22px ${FM}`, `700 96px ${FD}`, `400 40px ${FB}`].map(f => document.fonts.load(f, "ภาษา Aa"))).catch(() => {});
 window.__ready = fontsReady.then(() => { T = 1.8; draw(); T = 0; });
 </script>

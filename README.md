@@ -31,6 +31,7 @@ python src/run_baseline.py --docs 120 --pairs 250    # smoke test (~80s)
 | Qwen side study | `python src/qwen_unreachable.py`; `python src/qwen_repair.py` | `results/QWEN_UNREACHABLE.md` |
 | Dashboard | `python src/dashboard_data.py && python src/build_dashboard.py` | `results/dashboard.html` |
 | Report page | `python src/build_report_page.py` | `results/report.html` (from `REPORT.md`) |
+| Explainer video | `python src/video_data.py && python src/build_video.py --render` | `video/index.html` (playable), `video/thai_token_retrofit.mp4` (gitignored) |
 | Tests | `python -m pytest tests` | - |
 
 ## Showcase: Thai Token Meter and a retrofitted model

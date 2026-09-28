@@ -885,14 +885,17 @@ function legend(host, items) {
       h("tbody", {}, ...rows.map(([n, r, me]) => h("tr", { class: me ? "me" : "" }, h("td", {}, n), ...keys.map(([k]) => h("td", { class: "r" }, r[`${k}_bpc`].toFixed(3)))))));
     box.append(h("div", { class: "card", style: { marginTop: "16px" } }, h("h3", {}, title), h("div", { class: "tablewrap" }, t), h("p", { class: "caption" }, caption)));
   };
+  // retrofit vs control after identical training, per Thai domain
+  const gaps = A => [["wikipedia", "Wikipedia"], ["news", "news"], ["social", "social"]].map(([k, n]) => [n, A.retrofit.results.trained[`${k}_bpc`] / A.control.results.trained[`${k}_bpc`] - 1]);
+  const gapText = A => gaps(A).map(([n, g]) => Math.abs(g) < 0.02 ? `level on ${n}` : `${Math.round(Math.abs(g) * 100)}% ${g > 0 ? "behind" : "ahead"} on ${n}`).join(", ");
   const MA = DATA.mistral_adapt;
   if (MA && MA.control) armTable(`Mistral-7B with a real training budget: ${MA.control.meta.steps} QLoRA steps on a laptop GPU (bits per character)`, MA,
     [["wikipedia", "Wikipedia"], ["news", "News"], ["social", "Social"], ["english", "English"]],
-    `Optional GPU extra (${MA.control.meta.gpu}, 4-bit NF4, ${int(MA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${MA.control.meta.lora_rank} + the ${int(MA.retrofit.meta.rows_learned)} swapped rows). The retrofitted model matches the equally trained control on news and is about 9% behind on Wikipedia and social, while reading Thai in about a third of the tokens.`);
+    `Optional GPU extra (${MA.control.meta.gpu}, 4-bit NF4, ${int(MA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${MA.control.meta.lora_rank} + the ${int(MA.retrofit.meta.rows_learned)} swapped rows). Against the equally trained control the retrofitted model is ${gapText(MA)}, while reading Thai in about a third of the tokens.`);
   const QA = DATA.qwen_adapt;
-  if (QA && QA.control) armTable(`Qwen2.5-0.5B-Instruct, regex fix + 3,000 Thai slots: ${QA.control.meta.steps} steps on the CPU (bits per character)`, QA,
+  if (QA && QA.control) armTable(`Qwen2.5-0.5B-Instruct, regex fix + 3,000 Thai slots: ${QA.control.meta.steps} steps (bits per character)`, QA,
     [["wikipedia", "Wikipedia"], ["news", "News"], ["social", "Social"], ["instructions", "Thai chat"], ["english", "English"]],
-    `CPU run, ${int(QA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${QA.control.meta.lora_rank} + ${int(QA.retrofit.meta.rows_learned)} rows (3,000 new + 1,578 never trained). After this budget the retrofit is still 8-14% behind the control on Thai, at about half the Thai tokens; English is unchanged.`);
+    `${QA.control.meta.device === "cuda" ? "Laptop GPU" : "CPU"} run, ${int(QA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${QA.control.meta.lora_rank} + ${int(QA.retrofit.meta.rows_learned)} rows (3,000 new + 1,578 never trained). After this budget the retrofit is ${gapText(QA)} against the control, at about half the Thai tokens; English is unchanged.`);
 })();
 
 /* ---------- 10. qwen ---------- */

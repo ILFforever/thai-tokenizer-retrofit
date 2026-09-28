@@ -14,3 +14,4 @@ showcase/tok/
 # rendered video and frame checks
 video/*.mp4
 video/_check/
+video/soundtrack.wav

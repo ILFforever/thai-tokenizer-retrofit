@@ -4,6 +4,7 @@
     python src/build_video.py                # video/index.html (playable page)
     python src/build_video.py --render       # + video/thai_token_retrofit.mp4
     python src/build_video.py --check        # screenshot one frame per scene
+    python src/build_video.py --audio        # soundtrack (src/video_audio.py), muxed into the MP4
 
 The page draws every frame from a time value (`__render(t)`), so rendering is
 exact: step t at the frame rate, screenshot, pipe to ffmpeg. Needs playwright
@@ -93,10 +94,37 @@ def render(path: Path, fps: int, width: int, height: int, ffmpeg: str) -> None:
     print(f"wrote {path} ({path.stat().st_size / 1e6:.1f} MB); errors: {errors or 'none'}")
 
 
+def audio(ffmpeg: str, mp4: Path) -> None:
+    """Soundtrack from the page's cue list -> video/soundtrack.mp3 (for the
+    page) and, if the MP4 exists, a copy of it with sound."""
+    from playwright.sync_api import sync_playwright
+
+    from video_audio import synth, write_wav
+
+    with sync_playwright() as p:
+        browser, page, errors = _page(p, 1280, 720)
+        cues, acts, total = page.evaluate("[window.__cues, window.__acts, window.__TOTAL]")
+        browser.close()
+    t0 = time.time()
+    x = synth(cues, acts, total)
+    wav = VID / "soundtrack.wav"
+    write_wav(x, wav)
+    subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(wav), "-c:a", "libmp3lame", "-b:a", "128k",
+                    str(VID / "soundtrack.mp3")], check=True)
+    print(f"soundtrack: {len(cues)} cues, {total:.0f} s, synthesised in {time.time() - t0:.0f}s")
+    if mp4.exists():
+        out = mp4.with_name(mp4.stem + "_sound.mp4")
+        subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(mp4), "-i", str(wav), "-map", "0:v", "-map", "1:a",
+                        "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(out)],
+                       check=True)
+        print(f"wrote {out.relative_to(ROOT)} ({out.stat().st_size / 1e6:.1f} MB)")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--render", action="store_true")
+    ap.add_argument("--audio", action="store_true", help="soundtrack; muxed into the MP4 if it exists")
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--size", default="1920x1080")
     ap.add_argument("--out", default=str(VID / "thai_token_retrofit.mp4"))
@@ -108,6 +136,8 @@ def main() -> None:
         check(VID / "_check")
     if a.render:
         render(Path(a.out), a.fps, w, h, a.ffmpeg)
+    if a.audio:
+        audio(a.ffmpeg, Path(a.out))
 
 
 if __name__ == "__main__":
