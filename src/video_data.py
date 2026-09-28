@@ -246,7 +246,9 @@ def _v2(D: dict) -> dict:
     return {"bpe": bpe_demo(), "tree": merge_tree(D["vocab"]["cells"]), "ranks": rank_traces(),
             "embed": embed_map(), "qr": qr(METER_URL), "meter_url": METER_URL, "words": WORDS,
             "cuts": {k: [w[a:b] for a, b in pretoken_spans(t, w)] for k, t in toks.items()},
-            "merge": merge_trace(ROOT / "tokenizers" / "mistral-7b-th2483", " " + WORDS["merge"]), "payoff": payoff}
+            "merge": merge_trace(ROOT / "tokenizers" / "mistral-7b-th2483", " " + WORDS["merge"]), "payoff": payoff,
+            "added_ids": [int(r["id"]) for r in csv.DictReader(
+                (RESULTS / "added_tokens_mistral-7b-th2483.csv").open(encoding="utf-8", newline=""))]}
 
 
 def vocab_map() -> dict:
