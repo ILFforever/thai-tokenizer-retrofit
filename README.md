@@ -33,6 +33,20 @@ python src/run_baseline.py --docs 120 --pairs 250    # smoke test (~80s)
 | Report page | `python src/build_report_page.py` | `results/report.html` (from `REPORT.md`) |
 | Tests | `python -m pytest tests` | - |
 
+## Showcase: Thai Token Meter and a retrofitted model
+
+| Step | Command | Output |
+| --- | --- | --- |
+| Qwen2.5 retrofit (regex fix + Thai slots) | `python src/retrofit.py --target Qwen2.5-Instruct --hf-repo Qwen/Qwen2.5-0.5B-Instruct --mark-aware --k 1000 3000 5000 8000` | `tokenizers/qwen2-5-instruct-ma-th*` |
+| Train both arms (same data, same LoRA) | `python src/qwen_adapt.py --arm control`; `python src/qwen_adapt.py --arm retrofit --tokenizer tokenizers/qwen2-5-instruct-ma-th3000` | `models/`, `results/qwen_adapt_*.json` |
+| Side-by-side answers | `python src/qwen_showcase.py --retrofit models/qwen2.5-0.5b-instruct-retrofit-qwen2-5-instruct-ma-th3000` | `showcase/data.json` |
+| Browser tokenizers | `python src/export_web_tokenizers.py` then `node tests/web_bpe.test.mjs` (must print all identical) | `showcase/tok/` |
+
+`showcase/index.html` is the Token Meter page: `bpe.js` runs all seven
+tokenizers in the browser (checked id-for-id against the originals), and the
+model section appears when `showcase/data.json` exists. Serve the folder over
+HTTP to try it locally (`python -m http.server --directory showcase`).
+
 Corpora stream from Hugging Face on first use and are cached in
 `~/.cache/thaitok` (override with `THAITOK_CACHE`). Evaluation always uses
 the first 1,200 documents per domain; anything that learns from text uses
