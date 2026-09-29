@@ -6728,6 +6728,36 @@
     }
    },
    "seconds": 10984.4
+  },
+  "qwen_retrofit": {
+   "name": "qwen_retrofit",
+   "kind": "qwen",
+   "model": "models/qwen2.5-0.5b-instruct-retrofit-qwen2-5-instruct-ma-th3000",
+   "adapter": null,
+   "device": "cpu",
+   "langs": {
+    "tha_Thai": {
+     "n": 900,
+     "correct": 287,
+     "accuracy": 0.3188888888888889,
+     "ci95": [
+      0.2892653613070949,
+      0.35005197040235503
+     ],
+     "passage_tok100": 26.252160146950416
+    },
+    "eng_Latn": {
+     "n": 900,
+     "correct": 364,
+     "accuracy": 0.40444444444444444,
+     "ci95": [
+      0.3728516534682692,
+      0.4368495154091092
+     ],
+     "passage_tok100": 20.802471571588068
+    }
+   },
+   "seconds": 6381.3
   }
  },
  "mistral_rows": {

@@ -1182,9 +1182,10 @@ behind the control on Thai and 14% on Thai chat</strong>, while reading Thai in 
 half as many tokens and leaving English unchanged. The retrofit arm had 4,578
 rows to learn from scratch and the control none, so equal training is not
 equal starting line; its loss was still falling at the end. In generated
-answers to held-out instructions the retrofitted model produces about twice
-as much Thai text per token (20-30 characters per second on this CPU against
-10-17), but a 0.5B model's answers are rough in every arm and the retrofit's
+answers to held-out instructions the retrofitted model produces about 1.8
+times as much Thai text per token (3.7 characters per token against 2.0;
+17-29 characters per second on this CPU against 4-16), but a 0.5B model's
+answers are rough in every arm and the retrofit's
 are sometimes off-topic: the showcase demonstrates cheaper Thai, not better
 answers.</p>
 <p><strong>The target model with a real training budget (optional GPU extra).</strong> The
@@ -1303,12 +1304,53 @@ deployment should re-check English after any longer tuning.</p>
 <p><strong>Reading comprehension (Belebele, Thai and English, 900 questions each).</strong>
 Scored by per-character log-likelihood of the four answers
 (<code>src/belebele_eval.py</code>, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small
-for this task (chance is 25%): original Thai 36.2% [33.1, 39.4], English
-39.6% [36.4, 42.8]; after the 400-step control training Thai 34.7%
-[31.6, 37.8], English 40.2% [37.1, 43.5], so no measurable change. The
-retrofit arm's run was not completed, so the benchmark does not yet say
-whether the retrofit changes comprehension; at this model size it could only
-detect differences of about 4 points or more.</p>
+for this task (chance is 25%):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Qwen2.5-0.5B-Instruct</th>
+<th style="text-align: right;">Thai</th>
+<th style="text-align: right;">English</th>
+<th style="text-align: right;">Thai passage tokens / 100 chars</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>original</td>
+<td style="text-align: right;">36.2% [33.1, 39.4]</td>
+<td style="text-align: right;">39.6% [36.4, 42.8]</td>
+<td style="text-align: right;">55.7</td>
+</tr>
+<tr>
+<td>control: 400 steps</td>
+<td style="text-align: right;">34.7% [31.6, 37.8]</td>
+<td style="text-align: right;">40.2% [37.1, 43.5]</td>
+<td style="text-align: right;">55.7</td>
+</tr>
+<tr>
+<td><strong>retrofit: 400 steps</strong></td>
+<td style="text-align: right;"><strong>31.9% [28.9, 35.0]</strong></td>
+<td style="text-align: right;"><strong>40.4% [37.3, 43.7]</strong></td>
+<td style="text-align: right;"><strong>26.3</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>The retrofitted model reads the Thai passages in 53% fewer tokens. Its Thai
+accuracy is 2.8 points below the equally trained control, a difference the
+intervals do not separate (two-proportion z = 1.25, p = 0.21); English is
+unchanged. So at this model size the benchmark shows <strong>no measurable loss of
+reading comprehension</strong>, but it can only detect differences of about 4 points
+or more, and the point estimate leans against the retrofit.</p>
+<p><em>A bug caught while running this (fixed):</em> <code>transformers.AutoTokenizer</code>, given
+the saved Qwen <em>model</em> folder, rebuilds a <code>Qwen2Tokenizer</code> with Qwen's default
+<code>\p{L}+</code> pattern and ignores the mark-aware pattern stored in tokenizer.json
+(40 ids instead of 23 on a Thai probe). Training loaded the tokenizer from
+<code>tokenizers/</code> and was unaffected, but the first retrofit Belebele run and the
+showcase answers had loaded it from the model folder, so their prompts were
+split the old way (that run's Thai passages cost 51.7 tokens per 100
+characters instead of 26.3). Both were redone with <code>src/hf_tok.py</code>, which
+loads the saved pipeline and checks it against the <code>tokenizers</code> library;
+every Mistral folder was checked and is unaffected.</p>
 <p>The <strong>Thai Token Meter</strong> page runs all seven tokenizers in the browser with a
 250-line JavaScript BPE that reproduces the originals exactly (identical ids
 on all 2,114 held-out test texts for every tokenizer), so anyone can paste

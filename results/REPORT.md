@@ -708,9 +708,10 @@ behind the control on Thai and 14% on Thai chat**, while reading Thai in about
 half as many tokens and leaving English unchanged. The retrofit arm had 4,578
 rows to learn from scratch and the control none, so equal training is not
 equal starting line; its loss was still falling at the end. In generated
-answers to held-out instructions the retrofitted model produces about twice
-as much Thai text per token (20-30 characters per second on this CPU against
-10-17), but a 0.5B model's answers are rough in every arm and the retrofit's
+answers to held-out instructions the retrofitted model produces about 1.8
+times as much Thai text per token (3.7 characters per token against 2.0;
+17-29 characters per second on this CPU against 4-16), but a 0.5B model's
+answers are rough in every arm and the retrofit's
 are sometimes off-topic: the showcase demonstrates cheaper Thai, not better
 answers.
 
@@ -767,12 +768,31 @@ deployment should re-check English after any longer tuning.
 **Reading comprehension (Belebele, Thai and English, 900 questions each).**
 Scored by per-character log-likelihood of the four answers
 (`src/belebele_eval.py`, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small
-for this task (chance is 25%): original Thai 36.2% [33.1, 39.4], English
-39.6% [36.4, 42.8]; after the 400-step control training Thai 34.7%
-[31.6, 37.8], English 40.2% [37.1, 43.5], so no measurable change. The
-retrofit arm's run was not completed, so the benchmark does not yet say
-whether the retrofit changes comprehension; at this model size it could only
-detect differences of about 4 points or more.
+for this task (chance is 25%):
+
+| Qwen2.5-0.5B-Instruct | Thai | English | Thai passage tokens / 100 chars |
+| --- | ---: | ---: | ---: |
+| original | 36.2% [33.1, 39.4] | 39.6% [36.4, 42.8] | 55.7 |
+| control: 400 steps | 34.7% [31.6, 37.8] | 40.2% [37.1, 43.5] | 55.7 |
+| **retrofit: 400 steps** | **31.9% [28.9, 35.0]** | **40.4% [37.3, 43.7]** | **26.3** |
+
+The retrofitted model reads the Thai passages in 53% fewer tokens. Its Thai
+accuracy is 2.8 points below the equally trained control, a difference the
+intervals do not separate (two-proportion z = 1.25, p = 0.21); English is
+unchanged. So at this model size the benchmark shows **no measurable loss of
+reading comprehension**, but it can only detect differences of about 4 points
+or more, and the point estimate leans against the retrofit.
+
+*A bug caught while running this (fixed):* `transformers.AutoTokenizer`, given
+the saved Qwen *model* folder, rebuilds a `Qwen2Tokenizer` with Qwen's default
+`\p{L}+` pattern and ignores the mark-aware pattern stored in tokenizer.json
+(40 ids instead of 23 on a Thai probe). Training loaded the tokenizer from
+`tokenizers/` and was unaffected, but the first retrofit Belebele run and the
+showcase answers had loaded it from the model folder, so their prompts were
+split the old way (that run's Thai passages cost 51.7 tokens per 100
+characters instead of 26.3). Both were redone with `src/hf_tok.py`, which
+loads the saved pipeline and checks it against the `tokenizers` library;
+every Mistral folder was checked and is unaffected.
 
 The **Thai Token Meter** page runs all seven tokenizers in the browser with a
 250-line JavaScript BPE that reproduces the originals exactly (identical ids

@@ -85,7 +85,10 @@ venv `~/.venvs/thaitok-gpu`): retrofit within 1-10% of control at ~1/3 of the
 Thai tokens. An unpaired 1,000-step retrofit run beats the untrained original
 on all Thai registers but English bits/char rose 13% (0.723 -> 0.818); its
 1,000-step control was never run, so the drift is not yet attributed. Belebele
-(Qwen2.5-0.5B, near chance): original vs control no change; retrofit arm not run. Live page: Thai Token Meter (`showcase/`, JS BPE verified
+(Qwen2.5-0.5B, near chance): original 36.2 / control 34.7 / retrofit 31.9% Thai,
+not separable (p = 0.21), English unchanged; showcase: retrofit ~1.8x Thai
+chars/s. Load retrofitted Qwen tokenizers with `src/hf_tok.py` - AutoTokenizer
+on a Qwen model folder silently restores the default `\p{L}+` regex. Live page: Thai Token Meter (`showcase/`, JS BPE verified
 id-for-id against 7 real tokenizers by `node tests/web_bpe.test.mjs`).
 Typhoon-7B is SCB 10X's model (vocabulary expanded), only used for comparison.
 

@@ -730,10 +730,10 @@ scene({ act: 8, title: "The catch", dur: 9, trans: "push",
   } });
 
 scene({ act: 8, title: "Faster Thai answers", dur: 10, trans: "slide",
-  cap: "Fewer tokens per word means Thai streams out faster. The retrofitted Qwen2.5-0.5B writes about twice as much Thai per second (a small model - this shows speed, not quality).",
+  cap: `Fewer tokens per word means Thai streams out faster. The retrofitted Qwen2.5-0.5B writes about ${D.stream.ratio.toFixed(1)}× as much Thai per second (a small model - this shows speed, not quality).`,
   cam: [[0, W / 2, 540, 1.05], [10, W / 2, 540, 1.0]], light: [[0, 1350, 540, 900, "blue"]],
   draw: t => {
-    heading("Twice the Thai per token", t);
+    heading(`${D.stream.ratio.toFixed(1)}× the Thai per second`, t);
     const A = D.stream.answers;
     [["Qwen2.5-0.5B · original tokenizer", A.control, "#9a9e96"], ["Qwen2.5-0.5B · retrofit", A.retrofit, C.blue]].forEach(([name, a, col], i) => {
       const x = M + i * 860, sec = seg(t, .8, 9.5) * 25, chars = Math.min(a.text.length, Math.floor(sec * a.chars_per_s));

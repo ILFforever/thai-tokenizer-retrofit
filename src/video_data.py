@@ -222,6 +222,23 @@ def embed_map() -> dict:
             **{k: near(v) for k, v in rows.items()}}
 
 
+def stream_data() -> dict:
+    """One showcase prompt to replay, plus the speed ratio over all Thai prompts."""
+    show = json.loads((RESULTS / "qwen_showcase.json").read_text(encoding="utf-8"))
+    tot: dict[str, list[float]] = {}
+    for p in show["prompts"]:
+        if p.get("label") == "English":
+            continue
+        for a in p["answers"]:
+            t = tot.setdefault(a["model"], [0.0, 0.0])
+            t[0] += a["chars"]
+            t[1] += a["seconds"]
+    rate = {k: c / s for k, (c, s) in tot.items()}
+    return {"prompt": show["prompts"][2]["prompt"], "ratio": rate["retrofit"] / rate["control"],
+            "answers": {a["model"]: {k: a[k] for k in ("text", "tokens", "chars", "seconds", "chars_per_s")}
+                        for a in show["prompts"][2]["answers"]}}
+
+
 def qr(url: str) -> list[str]:
     import segno
 
@@ -247,6 +264,7 @@ def _v2(D: dict) -> dict:
             "embed": embed_map(), "qr": qr(METER_URL), "meter_url": METER_URL, "words": WORDS,
             "cuts": {k: [w[a:b] for a, b in pretoken_spans(t, w)] for k, t in toks.items()},
             "merge": merge_trace(ROOT / "tokenizers" / "mistral-7b-th2483", " " + WORDS["merge"]), "payoff": payoff,
+            "stream": stream_data(),
             "added_ids": [int(r["id"]) for r in csv.DictReader(
                 (RESULTS / "added_tokens_mistral-7b-th2483.csv").open(encoding="utf-8", newline=""))]}
 
@@ -359,10 +377,6 @@ def main() -> None:
         d = json.loads(p.read_text(encoding="utf-8"))
         D["mistral_gpu"][p.stem.replace("mistral_adapt_", "")] = {"meta": {k: d["meta"][k] for k in ("steps", "train_tokens_seen")},
                                                                  "results": d["results"]}
-    show = json.loads((RESULTS / "qwen_showcase.json").read_text(encoding="utf-8"))
-    D["stream"] = {"prompt": show["prompts"][2]["prompt"],
-                   "answers": {a["model"]: {k: a[k] for k in ("text", "tokens", "chars", "seconds", "chars_per_s")}
-                               for a in show["prompts"][2]["answers"]}}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(D, ensure_ascii=False), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)} ({OUT.stat().st_size // 1024} KB); vocab counts {D['vocab']['counts']}; "
