@@ -72,8 +72,15 @@ def bpc(model, tok, texts: list[str], prefix: int, dev=torch.device("cpu")) -> t
     for t in texts:
         ids = tok.encode(t, add_special_tokens=False)
         x = torch.tensor([[prefix] + ids], device=dev)
-        lp = torch.log_softmax(model(x).logits[0, :-1].float(), -1)
-        bits += -lp[torch.arange(len(ids), device=dev), torch.tensor(ids, device=dev)].sum().item() / math.log(2)
+        tgt = torch.tensor(ids, device=dev)
+        # project to the 152k vocabulary in slices of 256 positions: full-passage
+        # logits alone are ~2 GB in float32, more than an 8 GB laptop GPU has free
+        hidden = model.get_decoder()(input_ids=x).last_hidden_state[0, :-1]
+        head = model.get_output_embeddings()
+        for i in range(0, len(ids), 256):
+            lp = torch.log_softmax(head(hidden[i:i + 256]).float(), -1)
+            bits += -lp.gather(1, tgt[i:i + 256, None]).sum().item() / math.log(2)
+        del hidden
         chars += len(t)
         ntok += len(ids)
     return bits / chars, ntok / chars * 100
@@ -174,10 +181,20 @@ def main() -> None:
     tied = emb.data_ptr() == model.get_output_embeddings().weight.data_ptr()
 
     def evaluate(label: str) -> dict:
+        # On a GPU run, evaluate on the CPU: the longest evaluation texts need
+        # more attention memory in float32 than an 8 GB laptop GPU has, and the
+        # CPU gives numbers directly comparable with the CPU-only runs.
+        # Module.to() keeps the same Parameter objects, so the optimizer is unaffected.
+        cpu = torch.device("cpu")
+        if dev.type == "cuda":
+            model.to(cpu)
+            torch.cuda.empty_cache()
         r = {}
         for k, texts in ev.items():
-            b, tpc = bpc(model, tok, texts, prefix, dev)
+            b, tpc = bpc(model, tok, texts, prefix, cpu)
             r[f"{k}_bpc"], r[f"{k}_tok100"] = round(b, 4), round(tpc, 2)
+        if dev.type == "cuda":
+            model.to(dev)
         print(f"  {label}: " + ", ".join(f"{k} {r[f'{k}_bpc']:.3f}" for k in ev), flush=True)
         return r
 

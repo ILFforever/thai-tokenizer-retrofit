@@ -1,0 +1,30 @@
+{
+  "name": "qwen_control_gpu2000",
+  "kind": "qwen",
+  "model": "models/qwen2.5-0.5b-instruct-control_gpu2000",
+  "adapter": null,
+  "device": "cuda",
+  "langs": {
+    "tha_Thai": {
+      "n": 900,
+      "correct": 304,
+      "accuracy": 0.3377777777777778,
+      "ci95": [
+        0.3076257440035225,
+        0.36930879850923626
+      ],
+      "passage_tok100": 55.71789387182927
+    },
+    "eng_Latn": {
+      "n": 900,
+      "correct": 339,
+      "accuracy": 0.37666666666666665,
+      "ci95": [
+        0.34559659049589,
+        0.40878515072956356
+      ],
+      "passage_tok100": 20.802471571588068
+    }
+  },
+  "seconds": 293.4
+}

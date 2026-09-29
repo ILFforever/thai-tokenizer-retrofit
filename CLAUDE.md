@@ -78,8 +78,11 @@ recovers 82-87% with English unchanged (lr 2e-3 leaked into English); Thai
 still 14-37% worse than shipped.
 
 Showcase (report §8.5): Qwen2.5-0.5B-Instruct with regex fix + 3,000 Thai
-slots (Thai tokens -46..-51%), two-arm LoRA training on CPU: retrofit still
-8-14% behind control on Thai after 400 steps, English unchanged. Mistral-7B
+slots (Thai tokens -46..-51%), two-arm LoRA training: retrofit 8-14% behind
+control after 400 CPU steps; after 2,000 GPU steps +0.3% / -0.2% / +3.1%
+(wiki/news/social), chat +1.6%, English +0.4% - effectively level at half the
+Thai tokens (GPU runs evaluate on the CPU in fp32, so they compare with the
+CPU runs). Mistral-7B
 two-arm QLoRA on the laptop GPU (optional extra, `src/mistral_adapt_gpu.py`,
 venv `~/.venvs/thaitok-gpu`): retrofit within 1-10% of control at ~1/3 of the
 Thai tokens (400 steps). Paired 1,000 steps: retrofit vs control +7.5% / -3.8% /

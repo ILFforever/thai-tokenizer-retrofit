@@ -720,6 +720,29 @@ answers are rough in every arm and the retrofit's
 are sometimes off-topic: the showcase demonstrates cheaper Thai, not better
 answers.
 
+**With 5× the training the gap closes (GPU).** The same two-arm design was
+rerun for 2,000 steps on the laptop GPU (evaluation still on the CPU in
+float32, so the numbers are directly comparable with the CPU runs;
+`qwen_adapt_*_gpu2000.json`):
+
+| Qwen2.5-0.5B-Instruct | Wikipedia | News | Social | Thai chat | English | Thai tokens |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| original (no training) | 1.470 | 1.858 | 2.072 | 1.095 | 0.993 | 100% |
+| control: 2,000 steps | 1.394 | 1.705 | 1.880 | 0.994 | 1.000 | 100% |
+| **retrofit: 2,000 steps** | **1.398** | **1.702** | **1.939** | **1.010** | **1.004** | **~50%** |
+| retrofit vs control, 400 steps (CPU) | +14% | +14% | +8% | +14% | −0.2% | |
+| **retrofit vs control, 2,000 steps** | **+0.3%** | **−0.2%** | **+3.1%** | **+1.6%** | **+0.4%** | |
+
+After 2,000 steps the retrofitted Qwen2.5-0.5B is **level with the equally
+trained control on Wikipedia and news**, 3% behind on social posts and 1.6%
+on Thai chat, while reading Thai in about half the tokens; English is
+unchanged. Unlike Mistral-7B it shows no extra English drift - consistent with
+the output-head explanation there, since Qwen2.5-0.5B ties its output head to
+the input embedding and has no separate head rows to retrain. On Belebele
+(run on the GPU in bfloat16, so compare within the pair only) the 2,000-step
+arms are again not separable: Thai 31.9% retrofit vs 33.8% control (p = 0.39),
+English 39.6% vs 37.7% (p = 0.41).
+
 **The target model with a real training budget (optional GPU extra).** The
 CPU could give Mistral-7B's swapped rows only 160 steps (§7.6). With the
 author's approval, the same two-arm design was run on a laptop GPU (RTX 4070,
