@@ -1260,9 +1260,9 @@ float32, so the numbers are directly comparable with the CPU runs;
 <p>After 2,000 steps the retrofitted Qwen2.5-0.5B is <strong>level with the equally
 trained control on Wikipedia and news</strong>, 3% behind on social posts and 1.6%
 on Thai chat, while reading Thai in about half the tokens; English is
-unchanged. Unlike Mistral-7B it shows no extra English drift - consistent with
-the output-head explanation there, since Qwen2.5-0.5B ties its output head to
-the input embedding and has no separate head rows to retrain. On Belebele
+unchanged. Unlike Mistral-7B it shows no extra English drift (why the two
+differ is open: model size, learning rate and the tied output head of
+Qwen2.5-0.5B all differ). On Belebele
 (run on the GPU in bfloat16, so compare within the pair only) the 2,000-step
 arms are again not separable: Thai 31.9% retrofit vs 33.8% control (p = 0.39),
 English 39.6% vs 37.7% (p = 0.41).</p>
@@ -1390,11 +1390,19 @@ model the control's English bits/char rise 5.8% and the retrofit's 13.1%,
 despite the extra English windows. The tokenizer cannot cause this (English
 text is tokenized identically in both arms), so it comes from training: about
 half is what a Thai fine-tune of this size does to any Mistral-7B, and the
-retrofit adds about 7% on top. The likely extra source is the 2,483 retrained
-output-head rows, which raise the probability of the new Thai tokens in every
-context, English included; freezing the head rows after a short warm-up, or
-mixing in more English, are the obvious next tests. A deployment should
-re-check English after any longer tuning.</p>
+retrofit adds about 7% on top.</p>
+<p><em>Where the extra 7% is not</em> (<code>src/drift_probe.py</code>,
+<code>drift_probe_mistral-7b.json</code>). The first suspect was the 2,483 retrained
+output-head rows, which could raise the new Thai tokens' probability in
+English contexts. On the same 40 English passages the retrofit does put 1.26%
+of its probability on the swapped ids (the control 0.006%), but setting their
+logits to −inf only moves English from 0.8183 to 0.8125 bits/char, <strong>about 11%
+of the gap</strong> to the control's 0.7654. The other ~89% is in the weights both arms
+train, the LoRA adapters. The leading explanation is now the training mix: both
+arms see the same number of <em>tokens</em> per step, but retrofit tokens carry about
+three times as much Thai text, so the retrofit arm gets a much heavier dose of
+Thai relative to English. Balancing the mix by characters instead of tokens is
+the next test. A deployment should re-check English after any longer tuning.</p>
 <p><strong>Reading comprehension (Belebele, Thai and English, 900 questions each).</strong>
 Scored by per-character log-likelihood of the four answers
 (<code>src/belebele_eval.py</code>, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small

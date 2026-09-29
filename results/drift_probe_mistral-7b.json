@@ -1,0 +1,18 @@
+{
+  "n_passages": 40,
+  "n_swapped_ids": 2483,
+  "arms": {
+    "control_s1000": {
+      "plain_bpc": 0.7654,
+      "masked_bpc": 0.7654,
+      "mean_mass_on_swapped": 6e-05,
+      "positions": 3283
+    },
+    "retrofit_s1000": {
+      "plain_bpc": 0.8183,
+      "masked_bpc": 0.8125,
+      "mean_mass_on_swapped": 0.01257,
+      "positions": 3283
+    }
+  }
+}
