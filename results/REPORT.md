@@ -34,9 +34,12 @@ draft generated 28 September 2026 from the numbers in `results/`
   but QLoRA on a laptop GPU closes most of the gap: after 1,000 steps the
   retrofitted Mistral-7B beats an equally trained control on news (−4%) and
   is 7-8% behind on Wikipedia and social, at a third of the Thai tokens -
-  though its English bits/char drift 7% more than the control's (§8.5). "No retraining" is narrowed
-  to: no expansion and no pretraining from scratch, but the swapped rows must
-  be re-set and trained.
+  though its English bits/char drift 7% more than the control's (§8.5). On a
+  reading-comprehension benchmark (Belebele, Thai and English) neither
+  Mistral-7B nor Qwen2.5-0.5B shows a measurable loss against its control
+  (Thai −2.4 and −2.8 points, p ≥ 0.2; English unchanged). "No retraining" is
+  narrowed to: no expansion and no pretraining from scratch, but the swapped
+  rows must be re-set and trained.
 - **Several earlier claims did not survive checking** and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
   costs more on social text", and the novelty of fixed-size replacement for
@@ -786,9 +789,28 @@ for this task (chance is 25%):
 The retrofitted model reads the Thai passages in 53% fewer tokens. Its Thai
 accuracy is 2.8 points below the equally trained control, a difference the
 intervals do not separate (two-proportion z = 1.25, p = 0.21); English is
-unchanged. So at this model size the benchmark shows **no measurable loss of
-reading comprehension**, but it can only detect differences of about 4 points
-or more, and the point estimate leans against the retrofit.
+unchanged.
+
+The same test on the target model, after the paired 1,000-step runs (4-bit,
+on the GPU):
+
+| Mistral-7B, 4-bit | Thai | English | Thai passage tokens / 100 chars |
+| --- | ---: | ---: | ---: |
+| original | 36.8% [33.7, 40.0] | 54.4% [51.2, 57.7] | 99.3 |
+| control: 1,000 steps | 36.3% [33.3, 39.5] | 53.3% [50.1, 56.6] | 99.3 |
+| **retrofit: 1,000 steps** | **33.9% [30.9, 37.0]** | **52.8% [49.5, 56.0]** | **31.6** |
+
+The retrofit reads the Thai passages in **68% fewer tokens**; against the
+control its Thai accuracy is 2.4 points lower (p = 0.28) and its English 0.6
+points lower (p = 0.81). The +7% English bits/char drift of §8.5 does not show
+up as lost English comprehension.
+
+**Both models tell the same story:** no measurable loss of reading
+comprehension in either language, at half (Qwen) to a third (Mistral) of the
+Thai tokens. Both Thai point estimates lean slightly against the retrofit
+(−2.4 and −2.8 points), and 900 questions can only detect differences of about
+4 points, so a small real cost cannot be ruled out; a larger model or a
+longer benchmark would be needed to settle it.
 
 *A bug caught while running this (fixed):* `transformers.AutoTokenizer`, given
 the saved Qwen *model* folder, rebuilds a `Qwen2Tokenizer` with Qwen's default

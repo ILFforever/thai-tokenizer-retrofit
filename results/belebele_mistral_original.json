@@ -1,0 +1,30 @@
+{
+  "name": "mistral_original",
+  "kind": "mistral",
+  "model": null,
+  "adapter": null,
+  "device": "cuda",
+  "langs": {
+    "tha_Thai": {
+      "n": 900,
+      "correct": 331,
+      "accuracy": 0.36777777777777776,
+      "ci95": [
+        0.3368979975244123,
+        0.3997815268524253
+      ],
+      "passage_tok100": 99.29836010102842
+    },
+    "eng_Latn": {
+      "n": 900,
+      "correct": 490,
+      "accuracy": 0.5444444444444444,
+      "ci95": [
+        0.5117868557971748,
+        0.5767242284459049
+      ],
+      "passage_tok100": 22.683307839255
+    }
+  },
+  "seconds": 2326.1
+}

@@ -1,0 +1,30 @@
+{
+  "name": "mistral_retrofit_s1000",
+  "kind": "mistral",
+  "model": null,
+  "adapter": "models/mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000",
+  "device": "cuda",
+  "langs": {
+    "tha_Thai": {
+      "n": 900,
+      "correct": 305,
+      "accuracy": 0.3388888888888889,
+      "ci95": [
+        0.30870749267307324,
+        0.37043982694576255
+      ],
+      "passage_tok100": 31.61270831067445
+    },
+    "eng_Latn": {
+      "n": 900,
+      "correct": 475,
+      "accuracy": 0.5277777777777778,
+      "ci95": [
+        0.4951126716989458,
+        0.5602067559529791
+      ],
+      "passage_tok100": 22.683307839255
+    }
+  },
+  "seconds": 1502.0
+}
