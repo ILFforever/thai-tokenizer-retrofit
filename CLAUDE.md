@@ -82,9 +82,10 @@ slots (Thai tokens -46..-51%), two-arm LoRA training on CPU: retrofit still
 8-14% behind control on Thai after 400 steps, English unchanged. Mistral-7B
 two-arm QLoRA on the laptop GPU (optional extra, `src/mistral_adapt_gpu.py`,
 venv `~/.venvs/thaitok-gpu`): retrofit within 1-10% of control at ~1/3 of the
-Thai tokens. An unpaired 1,000-step retrofit run beats the untrained original
-on all Thai registers but English bits/char rose 13% (0.723 -> 0.818); its
-1,000-step control was never run, so the drift is not yet attributed. Belebele
+Thai tokens (400 steps). Paired 1,000 steps: retrofit vs control +7.5% / -3.8% /
++6.6% (wiki/news/social); English drifts +5.8% (control) vs +13.1% (retrofit)
+against the untrained model - half general fine-tune drift, ~7% retrofit extra
+(likely the retrained output-head rows). Belebele
 (Qwen2.5-0.5B, near chance): original 36.2 / control 34.7 / retrofit 31.9% Thai,
 not separable (p = 0.21), English unchanged; showcase: retrofit ~1.8x Thai
 chars/s. Load retrofitted Qwen tokenizers with `src/hf_tok.py` - AutoTokenizer

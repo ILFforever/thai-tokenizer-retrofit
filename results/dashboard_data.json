@@ -5373,6 +5373,296 @@
     }
    }
   },
+  "control_s1000": {
+   "meta": {
+    "base": "mistralai/Mistral-7B-v0.1",
+    "quantization": "4-bit NF4, double quant, bf16 compute",
+    "arm": "control",
+    "tokenizer": "mistralai/Mistral-7B-v0.1",
+    "steps": 1000,
+    "batch": 8,
+    "seq": 512,
+    "english_windows_per_batch": 3,
+    "train_tokens_seen": 4096000,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0002,
+    "rows_learned": 0,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "log": [
+     {
+      "step": 1,
+      "loss": 1.4798,
+      "seconds": 187.7,
+      "gpu_gb": 4.99
+     },
+     {
+      "step": 25,
+      "loss": 1.6395,
+      "seconds": 527.9,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 50,
+      "loss": 1.2863,
+      "seconds": 897.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 75,
+      "loss": 1.6458,
+      "seconds": 1286.0,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 100,
+      "loss": 1.4104,
+      "seconds": 1673.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 125,
+      "loss": 1.5492,
+      "seconds": 2063.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 150,
+      "loss": 1.3067,
+      "seconds": 2458.0,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 175,
+      "loss": 1.5372,
+      "seconds": 2849.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 200,
+      "loss": 1.3772,
+      "seconds": 3242.6,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 225,
+      "loss": 1.4462,
+      "seconds": 3629.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 250,
+      "loss": 1.3037,
+      "seconds": 4037.5,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 275,
+      "loss": 1.6549,
+      "seconds": 4455.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 300,
+      "loss": 1.594,
+      "seconds": 4911.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 325,
+      "loss": 1.6804,
+      "seconds": 5372.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 350,
+      "loss": 1.6321,
+      "seconds": 5831.0,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 375,
+      "loss": 1.5095,
+      "seconds": 6299.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 400,
+      "loss": 1.5381,
+      "seconds": 6749.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 425,
+      "loss": 1.407,
+      "seconds": 7194.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 450,
+      "loss": 1.5452,
+      "seconds": 7478.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 475,
+      "loss": 1.6204,
+      "seconds": 7920.9,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 500,
+      "loss": 1.3871,
+      "seconds": 8369.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 525,
+      "loss": 1.3674,
+      "seconds": 8832.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 550,
+      "loss": 1.4711,
+      "seconds": 9303.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 575,
+      "loss": 2.309,
+      "seconds": 9780.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 600,
+      "loss": 1.3373,
+      "seconds": 10246.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 625,
+      "loss": 1.5285,
+      "seconds": 10720.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 650,
+      "loss": 1.2065,
+      "seconds": 11210.5,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 675,
+      "loss": 1.3099,
+      "seconds": 11701.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 700,
+      "loss": 1.4715,
+      "seconds": 12197.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 725,
+      "loss": 1.2417,
+      "seconds": 12703.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 750,
+      "loss": 1.505,
+      "seconds": 13206.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 775,
+      "loss": 1.2776,
+      "seconds": 13707.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 800,
+      "loss": 1.2982,
+      "seconds": 14100.1,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 825,
+      "loss": 1.297,
+      "seconds": 14433.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 850,
+      "loss": 1.537,
+      "seconds": 14727.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 875,
+      "loss": 1.5673,
+      "seconds": 15027.0,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 900,
+      "loss": 1.3979,
+      "seconds": 15364.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 925,
+      "loss": 1.435,
+      "seconds": 15648.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 950,
+      "loss": 1.1447,
+      "seconds": 15932.9,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 975,
+      "loss": 1.1826,
+      "seconds": 16217.1,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 1000,
+      "loss": 1.2837,
+      "seconds": 16501.8,
+      "gpu_gb": 5.29
+     }
+    ],
+    "saved_to": "models\\mistral-7b-qlora-control_s1000",
+    "seconds": 16550.2
+   },
+   "results": {
+    "original": {
+     "wikipedia_bpc": 1.5556,
+     "wikipedia_tok100": 97.48,
+     "news_bpc": 2.3331,
+     "news_tok100": 100.3,
+     "social_bpc": 2.3112,
+     "social_tok100": 96.27,
+     "english_bpc": 0.7226,
+     "english_tok100": 25.1
+    },
+    "trained": {
+     "wikipedia_bpc": 1.3813,
+     "wikipedia_tok100": 97.48,
+     "news_bpc": 1.9044,
+     "news_tok100": 100.3,
+     "social_bpc": 1.9961,
+     "social_tok100": 96.27,
+     "english_bpc": 0.7654,
+     "english_tok100": 25.1
+    }
+   }
+  },
   "retrofit-mistral-7b-th2483": {
    "meta": {
     "base": "mistralai/Mistral-7B-v0.1",
@@ -5817,11 +6107,11 @@
     "quantization": "4-bit NF4, double quant, bf16 compute",
     "arm": "control",
     "tokenizer": "mistralai/Mistral-7B-v0.1",
-    "steps": 400,
+    "steps": 1000,
     "batch": 8,
     "seq": 512,
-    "english_windows_per_batch": 2,
-    "train_tokens_seen": 1638400,
+    "english_windows_per_batch": 3,
+    "train_tokens_seen": 4096000,
     "lora_rank": 16,
     "lr_lora": 0.0002,
     "lr_rows": 0.0002,
@@ -5830,109 +6120,253 @@
     "log": [
      {
       "step": 1,
-      "loss": 1.6522,
-      "seconds": 183.3,
+      "loss": 1.4798,
+      "seconds": 187.7,
       "gpu_gb": 4.99
      },
      {
       "step": 25,
-      "loss": 1.4218,
-      "seconds": 681.3,
+      "loss": 1.6395,
+      "seconds": 527.9,
       "gpu_gb": 5.29
      },
      {
       "step": 50,
-      "loss": 1.498,
-      "seconds": 1233.6,
+      "loss": 1.2863,
+      "seconds": 897.2,
       "gpu_gb": 5.29
      },
      {
       "step": 75,
-      "loss": 1.512,
-      "seconds": 1737.2,
+      "loss": 1.6458,
+      "seconds": 1286.0,
       "gpu_gb": 5.29
      },
      {
       "step": 100,
-      "loss": 1.516,
-      "seconds": 2161.4,
+      "loss": 1.4104,
+      "seconds": 1673.2,
       "gpu_gb": 5.29
      },
      {
       "step": 125,
-      "loss": 1.5489,
-      "seconds": 2545.2,
+      "loss": 1.5492,
+      "seconds": 2063.8,
       "gpu_gb": 5.29
      },
      {
       "step": 150,
-      "loss": 1.3349,
-      "seconds": 2855.2,
+      "loss": 1.3067,
+      "seconds": 2458.0,
       "gpu_gb": 5.29
      },
      {
       "step": 175,
-      "loss": 1.4679,
-      "seconds": 3166.0,
+      "loss": 1.5372,
+      "seconds": 2849.7,
       "gpu_gb": 5.29
      },
      {
       "step": 200,
-      "loss": 1.4519,
-      "seconds": 3565.0,
+      "loss": 1.3772,
+      "seconds": 3242.6,
       "gpu_gb": 5.29
      },
      {
       "step": 225,
-      "loss": 1.4879,
-      "seconds": 3909.5,
+      "loss": 1.4462,
+      "seconds": 3629.8,
       "gpu_gb": 5.29
      },
      {
       "step": 250,
-      "loss": 1.28,
-      "seconds": 4232.7,
+      "loss": 1.3037,
+      "seconds": 4037.5,
       "gpu_gb": 5.29
      },
      {
       "step": 275,
-      "loss": 1.4065,
-      "seconds": 4557.7,
+      "loss": 1.6549,
+      "seconds": 4455.8,
       "gpu_gb": 5.29
      },
      {
       "step": 300,
-      "loss": 1.37,
-      "seconds": 4875.7,
+      "loss": 1.594,
+      "seconds": 4911.2,
       "gpu_gb": 5.29
      },
      {
       "step": 325,
-      "loss": 1.5634,
-      "seconds": 5194.6,
+      "loss": 1.6804,
+      "seconds": 5372.4,
       "gpu_gb": 5.29
      },
      {
       "step": 350,
-      "loss": 1.5882,
-      "seconds": 5513.2,
+      "loss": 1.6321,
+      "seconds": 5831.0,
       "gpu_gb": 5.29
      },
      {
       "step": 375,
-      "loss": 1.6067,
-      "seconds": 5831.7,
+      "loss": 1.5095,
+      "seconds": 6299.3,
       "gpu_gb": 5.29
      },
      {
       "step": 400,
-      "loss": 1.3889,
-      "seconds": 6150.5,
+      "loss": 1.5381,
+      "seconds": 6749.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 425,
+      "loss": 1.407,
+      "seconds": 7194.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 450,
+      "loss": 1.5452,
+      "seconds": 7478.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 475,
+      "loss": 1.6204,
+      "seconds": 7920.9,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 500,
+      "loss": 1.3871,
+      "seconds": 8369.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 525,
+      "loss": 1.3674,
+      "seconds": 8832.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 550,
+      "loss": 1.4711,
+      "seconds": 9303.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 575,
+      "loss": 2.309,
+      "seconds": 9780.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 600,
+      "loss": 1.3373,
+      "seconds": 10246.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 625,
+      "loss": 1.5285,
+      "seconds": 10720.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 650,
+      "loss": 1.2065,
+      "seconds": 11210.5,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 675,
+      "loss": 1.3099,
+      "seconds": 11701.2,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 700,
+      "loss": 1.4715,
+      "seconds": 12197.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 725,
+      "loss": 1.2417,
+      "seconds": 12703.4,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 750,
+      "loss": 1.505,
+      "seconds": 13206.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 775,
+      "loss": 1.2776,
+      "seconds": 13707.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 800,
+      "loss": 1.2982,
+      "seconds": 14100.1,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 825,
+      "loss": 1.297,
+      "seconds": 14433.7,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 850,
+      "loss": 1.537,
+      "seconds": 14727.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 875,
+      "loss": 1.5673,
+      "seconds": 15027.0,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 900,
+      "loss": 1.3979,
+      "seconds": 15364.3,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 925,
+      "loss": 1.435,
+      "seconds": 15648.8,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 950,
+      "loss": 1.1447,
+      "seconds": 15932.9,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 975,
+      "loss": 1.1826,
+      "seconds": 16217.1,
+      "gpu_gb": 5.29
+     },
+     {
+      "step": 1000,
+      "loss": 1.2837,
+      "seconds": 16501.8,
       "gpu_gb": 5.29
      }
     ],
-    "saved_to": "models\\mistral-7b-qlora-control",
-    "seconds": 6205.2
+    "saved_to": "models\\mistral-7b-qlora-control_s1000",
+    "seconds": 16550.2
    },
    "results": {
     "original": {
@@ -5946,13 +6380,13 @@
      "english_tok100": 25.1
     },
     "trained": {
-     "wikipedia_bpc": 1.4555,
+     "wikipedia_bpc": 1.3813,
      "wikipedia_tok100": 97.48,
-     "news_bpc": 2.0128,
+     "news_bpc": 1.9044,
      "news_tok100": 100.3,
-     "social_bpc": 2.0471,
+     "social_bpc": 1.9961,
      "social_tok100": 96.27,
-     "english_bpc": 0.7327,
+     "english_bpc": 0.7654,
      "english_tok100": 25.1
     }
    }
@@ -5963,11 +6397,11 @@
     "quantization": "4-bit NF4, double quant, bf16 compute",
     "arm": "retrofit",
     "tokenizer": "tokenizers/mistral-7b-th2483",
-    "steps": 400,
+    "steps": 1000,
     "batch": 8,
     "seq": 512,
-    "english_windows_per_batch": 2,
-    "train_tokens_seen": 1638400,
+    "english_windows_per_batch": 3,
+    "train_tokens_seen": 4096000,
     "lora_rank": 16,
     "lr_lora": 0.0002,
     "lr_rows": 0.0002,
@@ -5976,109 +6410,253 @@
     "log": [
      {
       "step": 1,
-      "loss": 6.2172,
-      "seconds": 175.6,
+      "loss": 5.2048,
+      "seconds": 148.3,
       "gpu_gb": 5.56
      },
      {
       "step": 25,
-      "loss": 4.7351,
-      "seconds": 658.9,
+      "loss": 4.5026,
+      "seconds": 601.2,
       "gpu_gb": 6.06
      },
      {
       "step": 50,
-      "loss": 4.1862,
-      "seconds": 1180.9,
+      "loss": 3.7758,
+      "seconds": 1112.9,
       "gpu_gb": 6.06
      },
      {
       "step": 75,
-      "loss": 4.2756,
-      "seconds": 1709.5,
+      "loss": 3.9676,
+      "seconds": 1657.8,
       "gpu_gb": 6.06
      },
      {
       "step": 100,
-      "loss": 3.6865,
-      "seconds": 2243.9,
+      "loss": 3.7005,
+      "seconds": 2204.6,
       "gpu_gb": 6.06
      },
      {
       "step": 125,
-      "loss": 3.6389,
-      "seconds": 2771.6,
+      "loss": 3.6872,
+      "seconds": 2757.4,
       "gpu_gb": 6.06
      },
      {
       "step": 150,
-      "loss": 3.3879,
-      "seconds": 3286.1,
+      "loss": 3.0886,
+      "seconds": 3316.9,
       "gpu_gb": 6.06
      },
      {
       "step": 175,
-      "loss": 3.9333,
-      "seconds": 3804.9,
+      "loss": 3.0817,
+      "seconds": 3879.7,
       "gpu_gb": 6.06
      },
      {
       "step": 200,
-      "loss": 3.6148,
-      "seconds": 4321.5,
+      "loss": 3.1872,
+      "seconds": 4443.2,
       "gpu_gb": 6.06
      },
      {
       "step": 225,
-      "loss": 3.472,
-      "seconds": 4839.1,
+      "loss": 3.5011,
+      "seconds": 4998.3,
       "gpu_gb": 6.06
      },
      {
       "step": 250,
-      "loss": 3.0971,
-      "seconds": 5345.6,
+      "loss": 2.7624,
+      "seconds": 5554.2,
       "gpu_gb": 6.06
      },
      {
       "step": 275,
-      "loss": 3.1536,
-      "seconds": 5856.3,
+      "loss": 3.2346,
+      "seconds": 6097.6,
       "gpu_gb": 6.06
      },
      {
       "step": 300,
-      "loss": 3.0579,
-      "seconds": 6373.6,
+      "loss": 2.8817,
+      "seconds": 6652.4,
       "gpu_gb": 6.06
      },
      {
       "step": 325,
-      "loss": 3.5209,
-      "seconds": 6899.0,
+      "loss": 2.7075,
+      "seconds": 7225.9,
       "gpu_gb": 6.06
      },
      {
       "step": 350,
-      "loss": 3.1843,
-      "seconds": 7422.4,
+      "loss": 3.2732,
+      "seconds": 7843.2,
       "gpu_gb": 6.06
      },
      {
       "step": 375,
-      "loss": 3.3299,
-      "seconds": 7937.8,
+      "loss": 3.2328,
+      "seconds": 8455.9,
       "gpu_gb": 6.06
      },
      {
       "step": 400,
-      "loss": 2.9484,
-      "seconds": 8465.3,
+      "loss": 2.8176,
+      "seconds": 9065.5,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 425,
+      "loss": 3.078,
+      "seconds": 9689.0,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 450,
+      "loss": 3.1497,
+      "seconds": 10305.6,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 475,
+      "loss": 2.8649,
+      "seconds": 10912.2,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 500,
+      "loss": 2.778,
+      "seconds": 11450.3,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 525,
+      "loss": 2.6389,
+      "seconds": 11990.9,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 550,
+      "loss": 2.9495,
+      "seconds": 12532.1,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 575,
+      "loss": 2.4881,
+      "seconds": 13074.2,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 600,
+      "loss": 2.191,
+      "seconds": 13619.1,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 625,
+      "loss": 2.6979,
+      "seconds": 14168.0,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 650,
+      "loss": 2.5208,
+      "seconds": 14706.3,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 675,
+      "loss": 2.7727,
+      "seconds": 15253.0,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 700,
+      "loss": 2.7294,
+      "seconds": 15792.6,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 725,
+      "loss": 2.6265,
+      "seconds": 16281.1,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 750,
+      "loss": 2.425,
+      "seconds": 16742.9,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 775,
+      "loss": 2.2338,
+      "seconds": 17177.1,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 800,
+      "loss": 2.4434,
+      "seconds": 17705.7,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 825,
+      "loss": 2.3842,
+      "seconds": 18143.6,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 850,
+      "loss": 2.5165,
+      "seconds": 18585.8,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 875,
+      "loss": 2.4359,
+      "seconds": 19030.7,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 900,
+      "loss": 2.2676,
+      "seconds": 19468.7,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 925,
+      "loss": 2.8401,
+      "seconds": 19895.1,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 950,
+      "loss": 2.1995,
+      "seconds": 20165.0,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 975,
+      "loss": 2.4937,
+      "seconds": 20434.8,
+      "gpu_gb": 6.06
+     },
+     {
+      "step": 1000,
+      "loss": 2.7716,
+      "seconds": 20704.1,
       "gpu_gb": 6.06
      }
     ],
-    "saved_to": "models\\mistral-7b-qlora-retrofit-mistral-7b-th2483",
-    "seconds": 8540.9
+    "saved_to": "models\\mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000",
+    "seconds": 20730.3
    },
    "results": {
     "mean_init": {
@@ -6092,13 +6670,13 @@
      "english_tok100": 25.1
     },
     "trained": {
-     "wikipedia_bpc": 1.5962,
+     "wikipedia_bpc": 1.4848,
      "wikipedia_tok100": 32.11,
-     "news_bpc": 2.0279,
+     "news_bpc": 1.8312,
      "news_tok100": 37.01,
-     "social_bpc": 2.2232,
+     "social_bpc": 2.1276,
      "social_tok100": 37.26,
-     "english_bpc": 0.7512,
+     "english_bpc": 0.8183,
      "english_tok100": 25.1
     }
    }

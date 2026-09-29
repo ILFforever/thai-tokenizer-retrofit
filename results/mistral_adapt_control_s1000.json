@@ -1,0 +1,290 @@
+{
+  "meta": {
+    "base": "mistralai/Mistral-7B-v0.1",
+    "quantization": "4-bit NF4, double quant, bf16 compute",
+    "arm": "control",
+    "tokenizer": "mistralai/Mistral-7B-v0.1",
+    "steps": 1000,
+    "batch": 8,
+    "seq": 512,
+    "english_windows_per_batch": 3,
+    "train_tokens_seen": 4096000,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0002,
+    "rows_learned": 0,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "log": [
+      {
+        "step": 1,
+        "loss": 1.4798,
+        "seconds": 187.7,
+        "gpu_gb": 4.99
+      },
+      {
+        "step": 25,
+        "loss": 1.6395,
+        "seconds": 527.9,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 50,
+        "loss": 1.2863,
+        "seconds": 897.2,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 75,
+        "loss": 1.6458,
+        "seconds": 1286.0,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 100,
+        "loss": 1.4104,
+        "seconds": 1673.2,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 125,
+        "loss": 1.5492,
+        "seconds": 2063.8,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 150,
+        "loss": 1.3067,
+        "seconds": 2458.0,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 175,
+        "loss": 1.5372,
+        "seconds": 2849.7,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 200,
+        "loss": 1.3772,
+        "seconds": 3242.6,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 225,
+        "loss": 1.4462,
+        "seconds": 3629.8,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 250,
+        "loss": 1.3037,
+        "seconds": 4037.5,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 275,
+        "loss": 1.6549,
+        "seconds": 4455.8,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 300,
+        "loss": 1.594,
+        "seconds": 4911.2,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 325,
+        "loss": 1.6804,
+        "seconds": 5372.4,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 350,
+        "loss": 1.6321,
+        "seconds": 5831.0,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 375,
+        "loss": 1.5095,
+        "seconds": 6299.3,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 400,
+        "loss": 1.5381,
+        "seconds": 6749.2,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 425,
+        "loss": 1.407,
+        "seconds": 7194.4,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 450,
+        "loss": 1.5452,
+        "seconds": 7478.2,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 475,
+        "loss": 1.6204,
+        "seconds": 7920.9,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 500,
+        "loss": 1.3871,
+        "seconds": 8369.3,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 525,
+        "loss": 1.3674,
+        "seconds": 8832.7,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 550,
+        "loss": 1.4711,
+        "seconds": 9303.4,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 575,
+        "loss": 2.309,
+        "seconds": 9780.4,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 600,
+        "loss": 1.3373,
+        "seconds": 10246.3,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 625,
+        "loss": 1.5285,
+        "seconds": 10720.2,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 650,
+        "loss": 1.2065,
+        "seconds": 11210.5,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 675,
+        "loss": 1.3099,
+        "seconds": 11701.2,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 700,
+        "loss": 1.4715,
+        "seconds": 12197.8,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 725,
+        "loss": 1.2417,
+        "seconds": 12703.4,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 750,
+        "loss": 1.505,
+        "seconds": 13206.3,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 775,
+        "loss": 1.2776,
+        "seconds": 13707.8,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 800,
+        "loss": 1.2982,
+        "seconds": 14100.1,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 825,
+        "loss": 1.297,
+        "seconds": 14433.7,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 850,
+        "loss": 1.537,
+        "seconds": 14727.8,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 875,
+        "loss": 1.5673,
+        "seconds": 15027.0,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 900,
+        "loss": 1.3979,
+        "seconds": 15364.3,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 925,
+        "loss": 1.435,
+        "seconds": 15648.8,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 950,
+        "loss": 1.1447,
+        "seconds": 15932.9,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 975,
+        "loss": 1.1826,
+        "seconds": 16217.1,
+        "gpu_gb": 5.29
+      },
+      {
+        "step": 1000,
+        "loss": 1.2837,
+        "seconds": 16501.8,
+        "gpu_gb": 5.29
+      }
+    ],
+    "saved_to": "models\\mistral-7b-qlora-control_s1000",
+    "seconds": 16550.2
+  },
+  "results": {
+    "original": {
+      "wikipedia_bpc": 1.5556,
+      "wikipedia_tok100": 97.48,
+      "news_bpc": 2.3331,
+      "news_tok100": 100.3,
+      "social_bpc": 2.3112,
+      "social_tok100": 96.27,
+      "english_bpc": 0.7226,
+      "english_tok100": 25.1
+    },
+    "trained": {
+      "wikipedia_bpc": 1.3813,
+      "wikipedia_tok100": 97.48,
+      "news_bpc": 1.9044,
+      "news_tok100": 100.3,
+      "social_bpc": 1.9961,
+      "social_tok100": 96.27,
+      "english_bpc": 0.7654,
+      "english_tok100": 25.1
+    }
+  }
+}

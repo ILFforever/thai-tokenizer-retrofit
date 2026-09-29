@@ -891,7 +891,7 @@ function legend(host, items) {
   const MA = DATA.mistral_adapt;
   if (MA && MA.control) armTable(`Mistral-7B with a real training budget: ${MA.control.meta.steps} QLoRA steps on a laptop GPU (bits per character)`, MA,
     [["wikipedia", "Wikipedia"], ["news", "News"], ["social", "Social"], ["english", "English"]],
-    `Optional GPU extra (${MA.control.meta.gpu}, 4-bit NF4, ${int(MA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${MA.control.meta.lora_rank} + the ${int(MA.retrofit.meta.rows_learned)} swapped rows). Against the equally trained control the retrofitted model is ${gapText(MA)}, while reading Thai in about a third of the tokens.`);
+    `Optional GPU extra (${MA.control.meta.gpu}, 4-bit NF4, ${int(MA.control.meta.train_tokens_seen)} training tokens per arm, LoRA rank ${MA.control.meta.lora_rank} + the ${int(MA.retrofit.meta.rows_learned)} swapped rows). Against the equally trained control the retrofitted model is ${gapText(MA)}, while reading Thai in about a third of the tokens. English bits per character drift in both arms (untrained ${MA.control.results.original.english_bpc.toFixed(3)} → control ${MA.control.results.trained.english_bpc.toFixed(3)}, retrofit ${MA.retrofit.results.trained.english_bpc.toFixed(3)}): the tokenizer does not touch English, so this comes from training, and the retrofit's extra drift is a known cost (report §8.5).`);
   const QA = DATA.qwen_adapt;
   if (QA && QA.control) armTable(`Qwen2.5-0.5B-Instruct, regex fix + 3,000 Thai slots: ${QA.control.meta.steps} steps (bits per character)`, QA,
     [["wikipedia", "Wikipedia"], ["news", "News"], ["social", "Social"], ["instructions", "Thai chat"], ["english", "English"]],

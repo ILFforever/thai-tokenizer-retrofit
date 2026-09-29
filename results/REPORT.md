@@ -31,9 +31,10 @@ draft generated 28 September 2026 from the numbers in `results/`
   original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
   at a third of the tokens, with English unchanged. **On the target model,
   Mistral-7B, a CPU-sized pass is not enough** - it already reads Thai well -
-  but 400 QLoRA steps on a laptop GPU bring the retrofitted Mistral-7B level
-  with an equally trained control on news and within ~9% on Wikipedia and
-  social, at a third of the Thai tokens (§8.5). "No retraining" is narrowed
+  but QLoRA on a laptop GPU closes most of the gap: after 1,000 steps the
+  retrofitted Mistral-7B beats an equally trained control on news (−4%) and
+  is 7-8% behind on Wikipedia and social, at a third of the Thai tokens -
+  though its English bits/char drift 7% more than the control's (§8.5). "No retraining" is narrowed
   to: no expansion and no pretraining from scratch, but the swapped rows must
   be re-set and trained.
 - **Several earlier claims did not survive checking** and are corrected here:
@@ -584,16 +585,17 @@ A short row-only tuning pass (81,920 tokens, about an hour on the CPU) recovers
 45-55% of the damage and was still improving when it stopped (quick-check
 Wikipedia 3.54 → 3.18 over 160 steps), with English unchanged. It is nowhere
 near the original. At 7B scale the swapped rows need a real training budget:
-with LoRA plus the rows on a laptop GPU (1.6M tokens) the gap to an equally
-trained control falls to 1-10% (§8.5).
+with LoRA plus the rows on a laptop GPU the gap to an equally trained control
+falls to 1-10% after 1.6M tokens and to −4..+8% after 4.1M (§8.5).
 
 **So the honest version of the "no retraining" claim is:** no vocabulary
 expansion and no pretraining from scratch, but the swapped rows must be
 re-set (the mean of the old pieces is the right start) and trained. For a
 model that reads Thai poorly (BLOOM-560m) a few hundred row-only steps on a
 CPU are enough; for one that already reads Thai well (Mistral-7B) a CPU-sized
-pass recovers about half, and 1.6M tokens of QLoRA on a laptop GPU get within
-1-10% of an equally trained control (§8.5) - a budget far below Typhoon's
+pass recovers about half, and 4.1M tokens of QLoRA on a laptop GPU get within
+−4..+8% of an equally trained control (§8.5), at some extra English drift - a
+budget far below Typhoon's
 continued pretraining, though the two were not compared on equal terms.
 
 ## 8. Robustness, fairness and cost
@@ -742,28 +744,33 @@ text is three-quarters Thai). Compared with the CPU run's 160 steps (Wikipedia
 open: at 7B scale the swapped rows can be trained back, and a single laptop
 GPU is enough to get most of the way. The loss was still falling at 400 steps.
 
-**A longer retrofit run (unpaired).** The retrofit arm was also trained for
-1,000 steps with more English in each batch (6 Thai + 3 English windows;
-`mistral_adapt_retrofit-mistral-7b-th2483_s1000.json`). Its matching
-1,000-step control was not run (the laptop was needed back), so this is **not**
-a controlled comparison: it shows only how the retrofit arm moves with more
-training.
+**A longer paired run: 1,000 steps.** Both arms were trained again for 1,000
+steps with more English in each batch (6 Thai + 3 English windows, 4.1M
+tokens; `mistral_adapt_*_s1000.json`), same design otherwise.
 
 | Mistral-7B, 4-bit | Wikipedia | News | Social | English |
 | --- | ---: | ---: | ---: | ---: |
 | original (no training) | 1.556 | 2.333 | 2.311 | 0.723 |
-| retrofit: 400 steps | 1.596 | 2.028 | 2.223 | 0.751 |
-| retrofit: 1,000 steps, more English | 1.485 | 1.831 | 2.128 | 0.818 |
+| control: 1,000 steps | 1.381 | 1.904 | 1.996 | 0.765 |
+| **retrofit: 1,000 steps** | **1.485** | **1.831** | **2.128** | **0.818** |
+| retrofit vs control, 400 steps | +9.6% | +0.7% | +8.6% | +2.5% |
+| **retrofit vs control, 1,000 steps** | **+7.5%** | **−3.8%** | **+6.6%** | **+6.9%** |
 
-With 2.5× the training the retrofitted model is **better than the untrained
-original on all three Thai registers** (−5% / −22% / −8%) at a third of the
-Thai tokens. But **English got worse: 0.818 against 0.723 (+13%)**, despite
-the extra English windows. The tokenizer cannot cause this (English text is
-tokenized identically), so it comes from the training: the LoRA update, the
-retrained output-head rows, or both. Without a 1,000-step control it is not
-possible to say how much of the drift any Thai fine-tune of this size would
-show; that control is the first thing to run with more GPU time, and a
-deployment should re-check English after any longer tuning.
+With 2.5× the training **the Thai gap keeps closing**: the retrofit now
+**beats the equally trained control on news** and is 7-8% behind on Wikipedia
+and social, at a third of the Thai tokens, and it is better than the untrained
+original on every register (−5% / −22% / −8%).
+
+**English drifts in both arms, more in the retrofit.** Against the untrained
+model the control's English bits/char rise 5.8% and the retrofit's 13.1%,
+despite the extra English windows. The tokenizer cannot cause this (English
+text is tokenized identically in both arms), so it comes from training: about
+half is what a Thai fine-tune of this size does to any Mistral-7B, and the
+retrofit adds about 7% on top. The likely extra source is the 2,483 retrained
+output-head rows, which raise the probability of the new Thai tokens in every
+context, English included; freezing the head rows after a short warm-up, or
+mixing in more English, are the obvious next tests. A deployment should
+re-check English after any longer tuning.
 
 **Reading comprehension (Belebele, Thai and English, 900 questions each).**
 Scored by per-character log-likelihood of the four answers
@@ -891,8 +898,9 @@ vocabulary's training data.
    the damage after 160 steps and Qwen2.5's dead rows 82-87% after 200, both
    with English unchanged at learning rate 1e-4. Row-only repair is enough for
    a weak-Thai model; for a strong one the rows need a real training budget -
-   and 1.6M tokens of QLoRA on a laptop GPU brought Mistral-7B within 1-10% of
-   an equally trained control at a third of the Thai tokens (§8.5).
+   and 4.1M tokens of QLoRA on a laptop GPU brought Mistral-7B within
+   −4..+8% of an equally trained control at a third of the Thai tokens, with
+   English drifting 7% more than the control's (§8.5).
 
 **What to do next.**
 

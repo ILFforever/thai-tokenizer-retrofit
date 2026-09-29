@@ -94,9 +94,10 @@ draft generated 28 September 2026 from the numbers in <code>results/</code></p>
   original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
   at a third of the tokens, with English unchanged. <strong>On the target model,
   Mistral-7B, a CPU-sized pass is not enough</strong> - it already reads Thai well -
-  but 400 QLoRA steps on a laptop GPU bring the retrofitted Mistral-7B level
-  with an equally trained control on news and within ~9% on Wikipedia and
-  social, at a third of the Thai tokens (§8.5). "No retraining" is narrowed
+  but QLoRA on a laptop GPU closes most of the gap: after 1,000 steps the
+  retrofitted Mistral-7B beats an equally trained control on news (−4%) and
+  is 7-8% behind on Wikipedia and social, at a third of the Thai tokens -
+  though its English bits/char drift 7% more than the control's (§8.5). "No retraining" is narrowed
   to: no expansion and no pretraining from scratch, but the swapped rows must
   be re-set and trained.</li>
 <li><strong>Several earlier claims did not survive checking</strong> and are corrected here:
@@ -925,15 +926,16 @@ the swapped rows need training, not just a good starting point.</strong></p>
 45-55% of the damage and was still improving when it stopped (quick-check
 Wikipedia 3.54 → 3.18 over 160 steps), with English unchanged. It is nowhere
 near the original. At 7B scale the swapped rows need a real training budget:
-with LoRA plus the rows on a laptop GPU (1.6M tokens) the gap to an equally
-trained control falls to 1-10% (§8.5).</p>
+with LoRA plus the rows on a laptop GPU the gap to an equally trained control
+falls to 1-10% after 1.6M tokens and to −4..+8% after 4.1M (§8.5).</p>
 <p><strong>So the honest version of the "no retraining" claim is:</strong> no vocabulary
 expansion and no pretraining from scratch, but the swapped rows must be
 re-set (the mean of the old pieces is the right start) and trained. For a
 model that reads Thai poorly (BLOOM-560m) a few hundred row-only steps on a
 CPU are enough; for one that already reads Thai well (Mistral-7B) a CPU-sized
-pass recovers about half, and 1.6M tokens of QLoRA on a laptop GPU get within
-1-10% of an equally trained control (§8.5) - a budget far below Typhoon's
+pass recovers about half, and 4.1M tokens of QLoRA on a laptop GPU get within
+−4..+8% of an equally trained control (§8.5), at some extra English drift - a
+budget far below Typhoon's
 continued pretraining, though the two were not compared on equal terms.</p>
 <h2 id="8-robustness-fairness-and-cost">8. Robustness, fairness and cost</h2>
 <p>All numbers in this section are from <code>ROBUSTNESS.md</code>.</p>
@@ -1252,12 +1254,9 @@ text is three-quarters Thai). Compared with the CPU run's 160 steps (Wikipedia
 3.10), the gap closes from ~100% to ~9%, which answers the question §7.6 left
 open: at 7B scale the swapped rows can be trained back, and a single laptop
 GPU is enough to get most of the way. The loss was still falling at 400 steps.</p>
-<p><strong>A longer retrofit run (unpaired).</strong> The retrofit arm was also trained for
-1,000 steps with more English in each batch (6 Thai + 3 English windows;
-<code>mistral_adapt_retrofit-mistral-7b-th2483_s1000.json</code>). Its matching
-1,000-step control was not run (the laptop was needed back), so this is <strong>not</strong>
-a controlled comparison: it shows only how the retrofit arm moves with more
-training.</p>
+<p><strong>A longer paired run: 1,000 steps.</strong> Both arms were trained again for 1,000
+steps with more English in each batch (6 Thai + 3 English windows, 4.1M
+tokens; <code>mistral_adapt_*_s1000.json</code>), same design otherwise.</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -1277,30 +1276,49 @@ training.</p>
 <td style="text-align: right;">0.723</td>
 </tr>
 <tr>
-<td>retrofit: 400 steps</td>
-<td style="text-align: right;">1.596</td>
-<td style="text-align: right;">2.028</td>
-<td style="text-align: right;">2.223</td>
-<td style="text-align: right;">0.751</td>
+<td>control: 1,000 steps</td>
+<td style="text-align: right;">1.381</td>
+<td style="text-align: right;">1.904</td>
+<td style="text-align: right;">1.996</td>
+<td style="text-align: right;">0.765</td>
 </tr>
 <tr>
-<td>retrofit: 1,000 steps, more English</td>
-<td style="text-align: right;">1.485</td>
-<td style="text-align: right;">1.831</td>
-<td style="text-align: right;">2.128</td>
-<td style="text-align: right;">0.818</td>
+<td><strong>retrofit: 1,000 steps</strong></td>
+<td style="text-align: right;"><strong>1.485</strong></td>
+<td style="text-align: right;"><strong>1.831</strong></td>
+<td style="text-align: right;"><strong>2.128</strong></td>
+<td style="text-align: right;"><strong>0.818</strong></td>
+</tr>
+<tr>
+<td>retrofit vs control, 400 steps</td>
+<td style="text-align: right;">+9.6%</td>
+<td style="text-align: right;">+0.7%</td>
+<td style="text-align: right;">+8.6%</td>
+<td style="text-align: right;">+2.5%</td>
+</tr>
+<tr>
+<td><strong>retrofit vs control, 1,000 steps</strong></td>
+<td style="text-align: right;"><strong>+7.5%</strong></td>
+<td style="text-align: right;"><strong>−3.8%</strong></td>
+<td style="text-align: right;"><strong>+6.6%</strong></td>
+<td style="text-align: right;"><strong>+6.9%</strong></td>
 </tr>
 </tbody>
 </table></div>
-<p>With 2.5× the training the retrofitted model is <strong>better than the untrained
-original on all three Thai registers</strong> (−5% / −22% / −8%) at a third of the
-Thai tokens. But <strong>English got worse: 0.818 against 0.723 (+13%)</strong>, despite
-the extra English windows. The tokenizer cannot cause this (English text is
-tokenized identically), so it comes from the training: the LoRA update, the
-retrained output-head rows, or both. Without a 1,000-step control it is not
-possible to say how much of the drift any Thai fine-tune of this size would
-show; that control is the first thing to run with more GPU time, and a
-deployment should re-check English after any longer tuning.</p>
+<p>With 2.5× the training <strong>the Thai gap keeps closing</strong>: the retrofit now
+<strong>beats the equally trained control on news</strong> and is 7-8% behind on Wikipedia
+and social, at a third of the Thai tokens, and it is better than the untrained
+original on every register (−5% / −22% / −8%).</p>
+<p><strong>English drifts in both arms, more in the retrofit.</strong> Against the untrained
+model the control's English bits/char rise 5.8% and the retrofit's 13.1%,
+despite the extra English windows. The tokenizer cannot cause this (English
+text is tokenized identically in both arms), so it comes from training: about
+half is what a Thai fine-tune of this size does to any Mistral-7B, and the
+retrofit adds about 7% on top. The likely extra source is the 2,483 retrained
+output-head rows, which raise the probability of the new Thai tokens in every
+context, English included; freezing the head rows after a short warm-up, or
+mixing in more English, are the obvious next tests. A deployment should
+re-check English after any longer tuning.</p>
 <p><strong>Reading comprehension (Belebele, Thai and English, 900 questions each).</strong>
 Scored by per-character log-likelihood of the four answers
 (<code>src/belebele_eval.py</code>, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small
@@ -1438,8 +1456,9 @@ vocabulary's training data.</p>
    the damage after 160 steps and Qwen2.5's dead rows 82-87% after 200, both
    with English unchanged at learning rate 1e-4. Row-only repair is enough for
    a weak-Thai model; for a strong one the rows need a real training budget -
-   and 1.6M tokens of QLoRA on a laptop GPU brought Mistral-7B within 1-10% of
-   an equally trained control at a third of the Thai tokens (§8.5).</li>
+   and 4.1M tokens of QLoRA on a laptop GPU brought Mistral-7B within
+   −4..+8% of an equally trained control at a third of the Thai tokens, with
+   English drifting 7% more than the control's (§8.5).</li>
 </ol>
 <p><strong>What to do next.</strong></p>
 <ul>
