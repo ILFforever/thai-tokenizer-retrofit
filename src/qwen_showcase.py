@@ -22,6 +22,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from hf_tok import load_tokenizer  # noqa: E402
+
 ROOT = Path(__file__).parent.parent
 RESULTS = ROOT / "results"
 BASE = "Qwen/Qwen2.5-0.5B-Instruct"
@@ -99,7 +101,7 @@ def main() -> None:
     ps.append({"label": "English", "prompt": "In two sentences, why do some languages cost more tokens than English?",
                "domain": "control check"})
     for arm, mpath, tpath, me in arms:
-        tok = AutoTokenizer.from_pretrained(tpath)
+        tok = load_tokenizer(tpath)  # AutoTokenizer would drop a retrofit's saved regex
         model = AutoModelForCausalLM.from_pretrained(mpath, dtype=torch.float32)
         model.eval()
         for p in ps:

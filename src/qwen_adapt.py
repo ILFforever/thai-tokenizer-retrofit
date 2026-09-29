@@ -36,6 +36,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from hf_tok import load_tokenizer  # noqa: E402
+
 from corpora import load_parallel, load_thai_domain  # noqa: E402
 from embed_adapt import passages  # noqa: E402
 
@@ -133,7 +135,7 @@ def main() -> None:
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     shipped = AutoTokenizer.from_pretrained(BASE)
-    tok = shipped if args.arm == "control" else AutoTokenizer.from_pretrained(str(ROOT / args.tokenizer))
+    tok = shipped if args.arm == "control" else load_tokenizer(ROOT / args.tokenizer)
     prefix = shipped.convert_tokens_to_ids("<|endoftext|>")
     tag = (args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}") + args.tag
 

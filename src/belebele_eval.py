@@ -77,7 +77,9 @@ def load(kind: str, model_path: str | None, adapter: str | None, dev):
         bos = tok.bos_token_id
     else:
         path = str(ROOT / model_path) if model_path else QWEN
-        tok = AutoTokenizer.from_pretrained(path)
+        from hf_tok import load_tokenizer  # AutoTokenizer would drop a retrofit's saved regex
+
+        tok = load_tokenizer(path)
         model = AutoModelForCausalLM.from_pretrained(path, dtype=torch.bfloat16 if dev.type == "cuda" else torch.float32)
         model.to(dev)
         bos = tok.convert_tokens_to_ids("<|endoftext|>")
