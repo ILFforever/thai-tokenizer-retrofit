@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Thai Token Meter</title>
 <meta name="description" content="Type Thai and watch how many tokens seven tokenizers spend on it, including this project's retrofits of Mistral-7B and Qwen2.5.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,6 +92,22 @@ textarea { width: 100%; min-height: 250px; resize: vertical; font: 400 19px/1.65
 .tk.me .num { color: var(--accent); }
 .tk.ty .bar i { background: var(--typhoon); }
 .tk.hosted .bar i { background: var(--hosted); }
+/* breakdown panel inside the selected card */
+.tk .detail { grid-column: 1 / -1; display: none; gap: 12px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--rule); cursor: auto; }
+.tk[aria-expanded="true"] .detail { display: grid; }
+.tk .hint { grid-column: 1 / -1; font: 500 11.5px/1.3 var(--mono); color: var(--muted); }
+.tk[aria-expanded="true"] .hint { display: none; }
+.detail .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px 12px; }
+.detail .stat b { display: block; font: 700 18px/1.15 var(--display); font-variant-numeric: tabular-nums; }
+.detail .stat span { font: 500 11.5px/1.3 var(--mono); color: var(--muted); }
+.detail .comp { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--sunk); }
+.detail .comp i { display: block; height: 100%; }
+.detail .lg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); }
+.detail .lg span { display: inline-flex; align-items: center; gap: 6px; }
+.detail .lg i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.detail .top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font: 500 11.5px/1.3 var(--mono); color: var(--muted); }
+.detail .top .chip { color: var(--ink); font-size: 15px; }
+.detail .chips { max-height: 220px; }
 .tag { font: 600 10.5px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; padding: 4px 6px; border-radius: 4px; background: var(--sunk); color: var(--ink-2); }
 .tag.me { background: var(--accent-soft); color: var(--accent); }
 .tag.ty { background: var(--typhoon-soft); color: var(--typhoon); }
@@ -271,19 +288,79 @@ function buildBoard() {
   for (const r of ROWS) {
     if (r.fam !== fam) { fam = r.fam; famBox = h("div", { class: "family" }, h("div", { class: "fam" }, fam)); board.append(famBox); }
     const cls = "tk" + (r.tag && r.tag[0] === "me" ? " me" : "") + (r.tag && r.tag[0] === "ty" ? " ty" : "") + (r.hosted ? " hosted" : "");
-    const el = h("div", { class: cls, id: "tk-" + r.key, role: "button", tabindex: "0", "aria-pressed": String(r.key === left) },
+    const el = h("div", { class: cls, id: "tk-" + r.key, role: "button", tabindex: "0", "aria-pressed": String(r.key === left), "aria-expanded": "false" },
       h("div", { class: "name" }, h("b", {}, r.name), r.tag ? h("span", { class: "tag " + r.tag[0] }, r.tag[1]) : null),
       h("div", { class: "num" }, "…"),
       h("div", { class: "sub" }, r.note),
       h("div", { class: "delta" }, ""),
-      h("div", { class: "bar" }, h("i", { style: "width:0%" })));
-    const pick = () => { left = r.key; if (right === left) right = r.base || (left === "mistral" ? "mistral_th" : "mistral"); syncSelects(); updateChips(); markPicked(); };
-    el.addEventListener("click", pick);
-    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      h("div", { class: "bar" }, h("i", { style: "width:0%" })),
+      h("div", { class: "hint" }, "Tap for a breakdown"),
+      h("div", { class: "detail" }));
+    // selecting a card opens its breakdown (tap again to close) and sets the comparison below
+    const pick = () => {
+      left = r.key; if (right === left) right = r.base || (left === "mistral" ? "mistral_th" : "mistral");
+      open = open === r.key ? null : r.key;
+      syncSelects(); updateChips(); markPicked(); renderDetail();
+    };
+    el.addEventListener("click", e => { if (!e.target.closest(".detail")) pick(); });
+    el.addEventListener("keydown", e => { if (e.target === el && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pick(); } });
     famBox.append(el);
   }
 }
-function markPicked() { for (const r of ROWS) $("#tk-" + r.key)?.setAttribute("aria-pressed", String(r.key === left)); }
+let open = null;
+function markPicked() {
+  for (const r of ROWS) {
+    const el = $("#tk-" + r.key); if (!el) continue;
+    el.setAttribute("aria-pressed", String(r.key === left));
+    el.setAttribute("aria-expanded", String(r.key === open));
+  }
+}
+
+/* ---- breakdown of the open card ---- */
+const KIND = [
+  ["thai", "whole Thai pieces", "var(--accent)"],
+  ["mark", "vowel or tone mark cut off its letter", "var(--typhoon)"],
+  ["frag", "byte fragments of a character", "var(--crit)"],
+  ["other", "spaces, Latin, digits, punctuation", "var(--muted)"],
+];
+function renderDetail() {
+  if (!open) return;
+  const tok = toks[open], ids = lastIds[open], box = $("#tk-" + open)?.querySelector(".detail");
+  if (!box) return;
+  box.innerHTML = "";
+  if (!tok || !ids) { box.append(h("div", { class: "loading" }, "Still loading this tokenizer…")); return; }
+  const ps = pieces(tok, ids);
+  const n = { thai: 0, mark: 0, frag: 0, other: 0 };
+  let thaiChars = 0;
+  const longest = new Map();
+  for (const p of ps) {
+    if (p.part) n.frag++;
+    else if (MARK.test(p.t)) n.mark++;
+    else if (/[฀-๿]/.test(p.t)) { n.thai++; const c = (p.t.match(THAI) || []).length; thaiChars += c; longest.set(p.t.trim(), c); }
+    else n.other++;
+  }
+  const total = ids.length || 1, chars = [...input.value].length;
+  const stat = (v, label) => h("div", { class: "stat" }, h("b", {}, v), h("span", {}, label));
+  box.append(h("div", { class: "stats" },
+    stat(fmt(ids.length), "tokens"),
+    stat(ids.length ? (chars / ids.length).toFixed(2) : "0", "characters per token"),
+    stat(Math.round(n.thai / total * 100) + "%", "whole Thai pieces"),
+    stat(n.thai ? (thaiChars / n.thai).toFixed(1) : "0", "Thai letters per Thai token")));
+  box.append(h("div", { class: "comp", role: "img", "aria-label": KIND.map(([k, l]) => `${n[k]} ${l}`).join(", ") },
+    ...KIND.filter(([k]) => n[k]).map(([k, l, c]) => h("i", { style: `width:${n[k] / total * 100}%;background:${c}`, title: `${fmt(n[k])} ${l}` }))));
+  box.append(h("div", { class: "lg" }, ...KIND.map(([k, l, c]) => h("span", {}, h("i", { style: `background:${c}` }), `${l}: ${fmt(n[k])}`))));
+  const top = [...longest.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  if (top.length) box.append(h("div", { class: "top" }, "Longest Thai tokens:", ...top.map(([t]) => h("span", { class: "chip" }, t))));
+  const chips = h("div", { class: "chips" });
+  ps.slice(0, 800).forEach((p, i) => {
+    const sp = /^\s+$/.test(p.t), mk = !p.part && MARK.test(p.t);
+    let txt = sp ? "␣" : p.t.replace(/^ /, "␣").replace(/\n/g, "↵");
+    if (mk) txt = "◌" + txt;
+    chips.append(h("span", { class: "chip" + (i % 2 ? " alt" : "") + (p.part ? " part" : "") + (sp ? " sp" : "") + (mk ? " mk" : ""), title: p.part ? `part of the bytes of "${p.t}"` : `token ${ids[i]}` }, txt));
+  });
+  if (ps.length > 800) chips.append(h("span", { class: "muted" }, ` … ${fmt(ps.length - 800)} more`));
+  box.append(chips);
+}
 
 /* ---- chips ---- */
 function chipCol(host, key, onChange) {
@@ -386,6 +463,7 @@ function run() {
     } else d.textContent = "";
   }
   updateChips();
+  renderDetail();
   updateCalc();
 }
 input.addEventListener("input", () => { document.querySelectorAll("#samples .btn").forEach(x => x.setAttribute("aria-pressed", "false")); update(); });
