@@ -1,0 +1,6 @@
+# Optional: the explainer video (src/video_data.py, src/build_video.py).
+# Rendering also needs Google Chrome installed (Playwright drives it) and
+# ffmpeg on PATH.
+#   pip install -r requirements.txt -r requirements-video.txt
+segno>=1.6                 # QR code on the end card
+playwright>=1.63

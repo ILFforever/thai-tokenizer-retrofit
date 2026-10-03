@@ -1,0 +1,7 @@
+# Optional GPU extra: src/mistral_adapt_gpu.py, Belebele on Mistral-7B,
+# src/drift_probe.py, qwen_adapt.py --device cuda. Tested on an RTX 4070
+# Laptop GPU (8 GB) with CUDA 12.8. Use a separate venv:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+#   pip install -r requirements.txt -r requirements-gpu.txt
+bitsandbytes>=0.50         # 4-bit NF4 (QLoRA)
+accelerate>=1.15           # device_map loading

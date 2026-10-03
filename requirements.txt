@@ -1,15 +1,25 @@
-tiktoken>=0.7
-transformers>=4.40
-tokenizers>=0.19
-datasets>=2.20
+# Core: everything in src/ that runs on a CPU (Weeks 1-6, the Qwen study,
+# Belebele on Qwen, dashboard, report page, tests). Minimums are the versions
+# this project was run and tested with (Python 3.13).
+#
+# CPU-only torch is enough and much smaller:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r requirements.txt
+tiktoken>=0.14
+transformers>=5.17,<6      # src/hf_tok.py needs TokenizersBackend (transformers 5)
+tokenizers>=0.23
+huggingface_hub>=1.33
+safetensors>=0.8
+datasets>=5.0
 sentencepiece>=0.2
 protobuf>=4.25
-pythainlp>=5.0
+pythainlp>=5.3
 regex>=2023.0
 numpy>=1.26
-# Week 6 embedding experiments (CPU build is enough):
-#   pip install torch --index-url https://download.pytorch.org/whl/cpu
-torch>=2.2
-# report page and tests
-markdown>=3.5
+torch>=2.11
+peft>=0.21                 # LoRA: qwen_adapt.py, belebele_eval.py
+markdown>=3.5              # report page
 pytest>=8.0
+# Optional extras:
+#   requirements-gpu.txt    Mistral-7B QLoRA on an NVIDIA GPU (the one optional GPU extra)
+#   requirements-video.txt  the explainer video (also needs Google Chrome and ffmpeg)
