@@ -1,6 +1,6 @@
 """Week 4 acceptance checks for a retrofitted tokenizer.
 
-    python src/verify_retrofit.py tokenizers/mistral-7b-th3219 --base Mistral-7B
+    python src/verify_retrofit.py tokenizers/mistral-7b-th2483 --base Mistral-7B
 
 Checks, each reported pass/fail in results/RETROFIT_CHECKS.md:
 

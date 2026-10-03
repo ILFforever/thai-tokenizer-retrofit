@@ -771,7 +771,7 @@ open: at 7B scale the swapped rows can be trained back, and a single laptop
 GPU is enough to get most of the way. The loss was still falling at 400 steps.
 
 **A longer paired run: 1,000 steps.** Both arms were trained again for 1,000
-steps with more English in each batch (6 Thai + 3 English windows, 4.1M
+steps with more English in each batch (5 Thai + 3 English windows, 4.1M
 tokens; `mistral_adapt_*_s1000.json`), same design otherwise.
 
 | Mistral-7B, 4-bit | Wikipedia | News | Social | English |

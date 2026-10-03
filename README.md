@@ -24,7 +24,7 @@ python src/run_baseline.py --docs 120 --pairs 250    # smoke test (~80s)
 | Week 2 decomposition | `python src/run_decomposition.py` | `results/DECOMPOSITION.md` |
 | Week 3 candidates | `python src/candidates.py --target Mistral-7B` | `results/CANDIDATES.md`, `candidates.csv` |
 | Week 4 retrofit | `python src/retrofit.py --target Mistral-7B --k 500 1000 2000 3219 5000` | `tokenizers/mistral-7b-th*`, prune/add lists |
-| Week 4 checks | `python src/verify_retrofit.py tokenizers/mistral-7b-th3219` | `results/RETROFIT_CHECKS.md` |
+| Week 4 checks | `python src/verify_retrofit.py tokenizers/mistral-7b-th2483` | `results/RETROFIT_CHECKS.md` |
 | Week 5 evaluation | `python src/evaluate.py`; `python src/run_baseline.py --retrofits --out BASELINE_after` | `results/EVALUATION.md`, `BASELINE_after.md` |
 | Week 6 robustness | `python src/robustness.py` | `results/ROBUSTNESS.md` |
 | Week 6 embeddings | `python src/embed_adapt.py --tokenizer tokenizers/bloom-th5000` | `results/EMBED_ADAPT_*.md` |

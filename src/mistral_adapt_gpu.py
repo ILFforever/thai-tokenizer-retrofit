@@ -72,6 +72,8 @@ def main() -> None:
     ap.add_argument("--lr-rows", type=float, default=2e-4)
     ap.add_argument("--rank", type=int, default=16)
     ap.add_argument("--english-windows", type=int, default=2)
+    ap.add_argument("--thai-windows", type=int, default=None,
+                    help="Thai windows per step (default: batch - english); fewer gives a retrofit the same Thai *text* per step as the control")
     ap.add_argument("--n-eval", type=int, default=40)
     ap.add_argument("--size", type=int, default=400)
     ap.add_argument("--tag", default="", help="suffix for a variant run (keeps earlier results)")
@@ -95,7 +97,9 @@ def main() -> None:
     from candidates import train_texts
 
     need = args.steps * args.batch * args.seq * 2
-    n_th = args.batch - args.english_windows
+    # Thai windows per step. The loss is always divided by --batch, so with fewer
+    # Thai windows each window keeps the same weight as in the control run.
+    n_th = args.thai_windows if args.thai_windows is not None else args.batch - args.english_windows
 
     def stream(texts, cap):
         out = []
@@ -174,7 +178,7 @@ def main() -> None:
         total = 0.0
         for w in wins:  # one window per pass keeps memory low
             x = torch.tensor([w], device=dev)
-            loss = model(input_ids=x, labels=x).loss / len(wins)
+            loss = model(input_ids=x, labels=x).loss / args.batch
             loss.backward()
             total += loss.item()
         for m, p in zip(masters, mats):
@@ -204,7 +208,7 @@ def main() -> None:
     meta = {"base": BASE, "quantization": "4-bit NF4, double quant, bf16 compute", "arm": args.arm,
             "tokenizer": args.tokenizer if rows else BASE, "steps": args.steps, "batch": args.batch,
             "seq": args.seq, "english_windows_per_batch": args.english_windows,
-            "train_tokens_seen": args.steps * args.batch * args.seq, "lora_rank": args.rank,
+            "thai_windows_per_step": n_th, "train_tokens_seen": args.steps * (n_th + args.english_windows) * args.seq, "lora_rank": args.rank,
             "lr_lora": args.lr_lora, "lr_rows": args.lr_rows, "rows_learned": len(rows),
             "gpu": torch.cuda.get_device_name(0), "log": log, "saved_to": str(out.relative_to(ROOT)),
             "seconds": round(time.time() - t0, 1)}

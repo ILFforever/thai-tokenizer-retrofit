@@ -41,6 +41,7 @@ from embed_adapt import passages  # noqa: E402
 ROOT = Path(__file__).parent.parent
 RESULTS = ROOT / "results"
 ARMS = {"control_s1000": "models/mistral-7b-qlora-control_s1000",
+        "retrofit_s1000_charbal": "models/mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000_charbal",
         "retrofit_s1000": "models/mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000"}
 
 
