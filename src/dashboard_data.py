@@ -154,18 +154,20 @@ def main() -> None:
             continue
         data.setdefault("embed_adapt", {})[p.stem.replace("embed_adapt_", "")] = run
     # two-arm training runs: several budgets per arm (tagged files). The page
-    # compares arms only at a step count both have (the largest such), and
-    # keeps every run in "<key>_runs"
+    # shows the matched pair (same run tag in both arms, e.g. "_s1000") with
+    # the most steps; one-arm variants such as "_s1000_charbal" are never
+    # paired. Every run is kept in "<key>_runs".
     for key in ("mistral_adapt", "qwen_adapt"):
-        by_steps: dict[int, dict] = {}
+        by_tag: dict[str, dict] = {}
         for p in sorted(RESULTS.glob(f"{key}_*.json")):
             d = json.loads(p.read_text(encoding="utf-8"))
             arm = "retrofit" if d["meta"]["arm"].startswith("retrofit") else "control"
-            data.setdefault(f"{key}_runs", {})[p.stem.replace(f"{key}_", "")] = d
-            by_steps.setdefault(d["meta"]["steps"], {})[arm] = d
-        paired = [s for s, arms in by_steps.items() if len(arms) == 2]
+            run = p.stem.replace(f"{key}_", "")  # control_s1000, retrofit-<tokenizer>_s1000
+            data.setdefault(f"{key}_runs", {})[run] = d
+            by_tag.setdefault(run.split("_", 1)[1] if "_" in run else "", {})[arm] = d
+        paired = [arms for arms in by_tag.values() if len(arms) == 2]
         if paired:
-            data[key] = by_steps[max(paired)]
+            data[key] = max(paired, key=lambda a: a["control"]["meta"]["steps"])
     for p in sorted(RESULTS.glob("belebele_*.json")):
         data.setdefault("belebele", {})[p.stem.replace("belebele_", "")] = json.loads(p.read_text(encoding="utf-8"))
     for p in sorted(RESULTS.glob("mistral_rows_*.json")):

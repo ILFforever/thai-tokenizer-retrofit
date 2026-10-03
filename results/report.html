@@ -1331,7 +1331,7 @@ text is three-quarters Thai). Compared with the CPU run's 160 steps (Wikipedia
 open: at 7B scale the swapped rows can be trained back, and a single laptop
 GPU is enough to get most of the way. The loss was still falling at 400 steps.</p>
 <p><strong>A longer paired run: 1,000 steps.</strong> Both arms were trained again for 1,000
-steps with more English in each batch (6 Thai + 3 English windows, 4.1M
+steps with more English in each batch (5 Thai + 3 English windows, 4.1M
 tokens; <code>mistral_adapt_*_s1000.json</code>), same design otherwise.</p>
 <div class="tablewrap"><table>
 <thead>
@@ -1398,11 +1398,69 @@ English contexts. On the same 40 English passages the retrofit does put 1.26%
 of its probability on the swapped ids (the control 0.006%), but setting their
 logits to −inf only moves English from 0.8183 to 0.8125 bits/char, <strong>about 11%
 of the gap</strong> to the control's 0.7654. The other ~89% is in the weights both arms
-train, the LoRA adapters. The leading explanation is now the training mix: both
-arms see the same number of <em>tokens</em> per step, but retrofit tokens carry about
-three times as much Thai text, so the retrofit arm gets a much heavier dose of
-Thai relative to English. Balancing the mix by characters instead of tokens is
-the next test. A deployment should re-check English after any longer tuning.</p>
+train, the LoRA adapters.</p>
+<p><em>Nor mainly the amount of Thai text.</em> Both arms see the same number of
+<em>tokens</em> per step, but retrofit tokens carry about three times as much Thai
+text, so the retrofit gets a heavier dose of Thai relative to English. A third
+retrofit run balanced the mix by characters instead (2 Thai windows instead of
+5, so the same Thai text per step as the control; same 3 English windows and
+per-window loss weight; <code>--thai-windows 2</code>,
+<code>mistral_adapt_retrofit-mistral-7b-th2483_s1000_charbal.json</code>):</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Mistral-7B, 1,000 steps</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">English</th>
+<th style="text-align: right;">Belebele Thai</th>
+<th style="text-align: right;">Belebele English</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>control</td>
+<td style="text-align: right;">1.381</td>
+<td style="text-align: right;">1.904</td>
+<td style="text-align: right;">1.996</td>
+<td style="text-align: right;">0.765</td>
+<td style="text-align: right;">36.3%</td>
+<td style="text-align: right;">53.3%</td>
+</tr>
+<tr>
+<td>retrofit, token-balanced mix</td>
+<td style="text-align: right;">1.485</td>
+<td style="text-align: right;">1.831</td>
+<td style="text-align: right;">2.128</td>
+<td style="text-align: right;">0.818</td>
+<td style="text-align: right;">33.9%</td>
+<td style="text-align: right;">52.8%</td>
+</tr>
+<tr>
+<td>retrofit, character-balanced mix</td>
+<td style="text-align: right;">1.744</td>
+<td style="text-align: right;">2.214</td>
+<td style="text-align: right;">2.359</td>
+<td style="text-align: right;">0.806</td>
+<td style="text-align: right;">29.9%</td>
+<td style="text-align: right;">54.2%</td>
+</tr>
+</tbody>
+</table></div>
+<p>Balancing by characters closes only <strong>24% of the English gap</strong> (0.818 → 0.806)
+and costs a great deal of Thai: 11-21% worse bits/char than the token-balanced
+retrofit, worse than the untrained model on Wikipedia, and a real drop on
+Belebele Thai (29.9% vs the control's 36.3%, p = 0.004), because the 2,483 new
+rows get 2.5 times fewer Thai updates. It is not a fix. Between them the two
+tests account for roughly a third of the extra English drift (output rows ~11%,
+Thai dose ~24%); the rest most plausibly reflects the cost of re-learning
+2,483 token representations through the shared weights, which no training-mix
+change removes. The token-balanced mix stays the recommended recipe; ways to
+protect English directly (a KL penalty to the original model on English text,
+or LoRA on fewer layers) are untested. Note that none of the English
+bits/char drift shows up as lost English reading comprehension on Belebele.
+A deployment should re-check English after any longer tuning.</p>
 <p><strong>Reading comprehension (Belebele, Thai and English, 900 questions each).</strong>
 Scored by per-character log-likelihood of the four answers
 (<code>src/belebele_eval.py</code>, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small

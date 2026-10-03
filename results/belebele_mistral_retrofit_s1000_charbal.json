@@ -1,0 +1,30 @@
+{
+  "name": "mistral_retrofit_s1000_charbal",
+  "kind": "mistral",
+  "model": null,
+  "adapter": "models/mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000_charbal",
+  "device": "cuda",
+  "langs": {
+    "tha_Thai": {
+      "n": 900,
+      "correct": 269,
+      "accuracy": 0.29888888888888887,
+      "ci95": [
+        0.26988735164444105,
+        0.3295999921556229
+      ],
+      "passage_tok100": 31.61270831067445
+    },
+    "eng_Latn": {
+      "n": 900,
+      "correct": 488,
+      "accuracy": 0.5422222222222223,
+      "ci95": [
+        0.5095615290604679,
+        0.5745240009704579
+      ],
+      "passage_tok100": 22.683307839255
+    }
+  },
+  "seconds": 1611.0
+}

@@ -801,11 +801,35 @@ English contexts. On the same 40 English passages the retrofit does put 1.26%
 of its probability on the swapped ids (the control 0.006%), but setting their
 logits to −inf only moves English from 0.8183 to 0.8125 bits/char, **about 11%
 of the gap** to the control's 0.7654. The other ~89% is in the weights both arms
-train, the LoRA adapters. The leading explanation is now the training mix: both
-arms see the same number of *tokens* per step, but retrofit tokens carry about
-three times as much Thai text, so the retrofit arm gets a much heavier dose of
-Thai relative to English. Balancing the mix by characters instead of tokens is
-the next test. A deployment should re-check English after any longer tuning.
+train, the LoRA adapters.
+
+*Nor mainly the amount of Thai text.* Both arms see the same number of
+*tokens* per step, but retrofit tokens carry about three times as much Thai
+text, so the retrofit gets a heavier dose of Thai relative to English. A third
+retrofit run balanced the mix by characters instead (2 Thai windows instead of
+5, so the same Thai text per step as the control; same 3 English windows and
+per-window loss weight; `--thai-windows 2`,
+`mistral_adapt_retrofit-mistral-7b-th2483_s1000_charbal.json`):
+
+| Mistral-7B, 1,000 steps | Wikipedia | News | Social | English | Belebele Thai | Belebele English |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| control | 1.381 | 1.904 | 1.996 | 0.765 | 36.3% | 53.3% |
+| retrofit, token-balanced mix | 1.485 | 1.831 | 2.128 | 0.818 | 33.9% | 52.8% |
+| retrofit, character-balanced mix | 1.744 | 2.214 | 2.359 | 0.806 | 29.9% | 54.2% |
+
+Balancing by characters closes only **24% of the English gap** (0.818 → 0.806)
+and costs a great deal of Thai: 11-21% worse bits/char than the token-balanced
+retrofit, worse than the untrained model on Wikipedia, and a real drop on
+Belebele Thai (29.9% vs the control's 36.3%, p = 0.004), because the 2,483 new
+rows get 2.5 times fewer Thai updates. It is not a fix. Between them the two
+tests account for roughly a third of the extra English drift (output rows ~11%,
+Thai dose ~24%); the rest most plausibly reflects the cost of re-learning
+2,483 token representations through the shared weights, which no training-mix
+change removes. The token-balanced mix stays the recommended recipe; ways to
+protect English directly (a KL penalty to the original model on English text,
+or LoRA on fewer layers) are untested. Note that none of the English
+bits/char drift shows up as lost English reading comprehension on Belebele.
+A deployment should re-check English after any longer tuning.
 
 **Reading comprehension (Belebele, Thai and English, 900 questions each).**
 Scored by per-character log-likelihood of the four answers

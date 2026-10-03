@@ -13,6 +13,12 @@
       "masked_bpc": 0.8125,
       "mean_mass_on_swapped": 0.01257,
       "positions": 3283
+    },
+    "retrofit_s1000_charbal": {
+      "plain_bpc": 0.8057,
+      "masked_bpc": 0.799,
+      "mean_mass_on_swapped": 0.01186,
+      "positions": 3283
     }
   }
 }
