@@ -8,6 +8,7 @@ data/
 # large retrofitted tokenizers (rebuild with src/retrofit.py)
 tokenizers/bloom-*
 tokenizers/qwen*
+!tokenizers/qwen2-5-instruct-ma-th3000/
 models/
 showcase/tok/
 
@@ -15,3 +16,7 @@ showcase/tok/
 video/*.mp4
 video/_check/
 video/soundtrack.wav
+
+# smoke-test runs (README quick start) must not overwrite the real baseline
+results/*_smoke*
+results/BASELINE_smoke.md

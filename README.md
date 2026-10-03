@@ -12,9 +12,16 @@ context, and `PLAN.md` for the week-by-week plan.
 ## Quick start
 
 ```bash
-pip install -r requirements.txt            # CPU-only; torch only for Week 6
-python src/run_baseline.py --docs 120 --pairs 250    # smoke test (~80s)
+pip install torch --index-url https://download.pytorch.org/whl/cpu   # CPU torch is enough
+pip install -r requirements.txt
+python src/run_baseline.py --docs 120 --pairs 250 --out BASELINE_smoke   # smoke test (~2 min)
+python -m pytest tests
 ```
+
+Everything except one marked extra runs on a CPU. Optional extras:
+`requirements-gpu.txt` (Mistral-7B QLoRA on an NVIDIA GPU, separate venv with
+CUDA torch) and `requirements-video.txt` (the explainer video; also needs
+Google Chrome and ffmpeg). Use a venv outside OneDrive or Dropbox folders.
 
 ## Pipeline
 
@@ -41,7 +48,25 @@ python src/run_baseline.py --docs 120 --pairs 250    # smoke test (~80s)
 | Qwen2.5 retrofit (regex fix + Thai slots) | `python src/retrofit.py --target Qwen2.5-Instruct --hf-repo Qwen/Qwen2.5-0.5B-Instruct --mark-aware --k 1000 3000 5000 8000` | `tokenizers/qwen2-5-instruct-ma-th*` |
 | Train both arms (same data, same LoRA) | `python src/qwen_adapt.py --arm control`; `python src/qwen_adapt.py --arm retrofit --tokenizer tokenizers/qwen2-5-instruct-ma-th3000` | `models/`, `results/qwen_adapt_*.json` |
 | Side-by-side answers | `python src/qwen_showcase.py --retrofit models/qwen2.5-0.5b-instruct-retrofit-qwen2-5-instruct-ma-th3000` | `showcase/data.json` |
-| Browser tokenizers | `python src/export_web_tokenizers.py` then `node tests/web_bpe.test.mjs` (must print all identical) | `showcase/tok/` |
+| Browser tokenizers | `python src/export_web_tokenizers.py` then `node tests/web_bpe.test.mjs` (must print all identical) | `showcase/tok/` (gitignored, regenerate) |
+| Reading comprehension | `python src/belebele_eval.py --kind qwen --cpu --model models/<folder> --name <label>` | `results/belebele_*.json` |
+
+## Optional GPU extra (Mistral-7B, laptop GPU)
+
+| Step | Command | Output |
+| --- | --- | --- |
+| Two-arm QLoRA, 1,000 steps | `python src/mistral_adapt_gpu.py --arm control --steps 1000 --english-windows 3 --tag _s1000`; same with `--arm retrofit` | `results/mistral_adapt_*.json` |
+| Character-balanced retrofit | add `--thai-windows 2 --tag _s1000_charbal` (same Thai *text* per step as the control) | `results/mistral_adapt_*_charbal.json` |
+| Belebele on Mistral | `python src/belebele_eval.py --kind mistral --adapter models/<folder> --name <label>` | `results/belebele_mistral_*.json` |
+| Where English drift comes from | `python src/drift_probe.py control_s1000` (one arm per process) | `results/drift_probe_mistral-7b.json` |
+| Qwen arms on the GPU | `python src/qwen_adapt.py --arm control --device cuda --steps 2000 --tag _gpu2000` (evaluation stays on the CPU, so numbers match the CPU runs) | `results/qwen_adapt_*_gpu2000.json` |
+
+**Loading a retrofitted Qwen tokenizer from a model folder:** use
+`hf_tok.load_tokenizer(path)`, not `AutoTokenizer.from_pretrained`. Given a
+folder with a Qwen2 `config.json`, AutoTokenizer rebuilds Qwen's default
+pre-tokenizer pattern and silently drops the mark-aware one the retrofit
+saved. `load_tokenizer` loads the saved pipeline and checks it against the
+`tokenizers` library.
 
 `showcase/index.html` is the Token Meter page: `bpe.js` runs all seven
 tokenizers in the browser (checked id-for-id against the originals), and the
@@ -70,8 +95,22 @@ src/evaluate.py          Week 5 before/after
 src/robustness.py        Week 6 segmenter, register, row accounting, collateral
 src/embed_adapt.py       Week 6 embedding re-initialisation + row-only tuning
 src/qwen_unreachable.py  Qwen2.5's untrained Thai rows
-tokenizers/              retrofitted tokenizers (AutoTokenizer.from_pretrained)
+src/qwen_repair.py       re-train those rows (row-only)
+src/mistral_rows.py      Mistral-7B swapped rows on the CPU (bf16)
+src/qwen_adapt.py        two-arm LoRA training, Qwen2.5-0.5B (CPU or --device cuda)
+src/qwen_showcase.py     side-by-side answers for the Token Meter
+src/mistral_adapt_gpu.py two-arm QLoRA training, Mistral-7B (GPU extra)
+src/belebele_eval.py     Belebele reading comprehension (Thai, English)
+src/drift_probe.py       how much English drift the swapped output rows cause
+src/hf_tok.py            load a saved tokenizer exactly (see the Qwen note above)
+src/export_web_tokenizers.py   tokenizers for the in-browser Token Meter
+src/dashboard_data.py, build_dashboard.py, build_report_page.py   the pages
+src/video_data.py, build_video.py, video_audio.py                 the video
+tokenizers/              retrofitted tokenizers (BLOOM and Qwen ones gitignored)
+showcase/                Thai Token Meter page + bpe.js
+video/                   explainer video page, storyboard, soundtrack (MP4s gitignored)
 results/                 every number in the report
+archive/                 the original Week 1 upload, kept as received
 ```
 
 ## Data

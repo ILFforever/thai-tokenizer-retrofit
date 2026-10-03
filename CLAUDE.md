@@ -162,7 +162,7 @@ documents. Learned merges are cached in `~/.cache/thaitok/merges_*.json`.
 
 ```bash
 pip install -r requirements.txt
-python src/run_baseline.py --docs 120 --pairs 250     # smoke test, ~80s
+python src/run_baseline.py --docs 120 --pairs 250 --out BASELINE_smoke  # smoke test, ~2 min
 python src/retrofit.py --target Mistral-7B --k 500 1000 2000 3219   # ~10 min first time
 ```
 

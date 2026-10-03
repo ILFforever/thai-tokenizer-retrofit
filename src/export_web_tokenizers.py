@@ -110,8 +110,12 @@ def samples() -> dict:
 
 
 def main() -> None:
-    from transformers import AutoTokenizer
+    from hf_tok import load_tokenizer
 
+    # local retrofits must exist before export (otherwise the path is read as a hub id)
+    for k, (_, path) in TOKENIZERS.items():
+        if (path.startswith(("tokenizers/", "tokenizers\\")) or Path(path).is_absolute()) and not Path(path).exists():
+            sys.exit(f"missing {path} - build it first (see README: python src/retrofit.py ...)")
     OUT.mkdir(parents=True, exist_ok=True)
     import tiktoken
 
@@ -120,7 +124,7 @@ def main() -> None:
     s = samples()
     # expected ids from the real (Rust) tokenizers
     for k, (_, path) in TOKENIZERS.items():
-        hf = AutoTokenizer.from_pretrained(path)
+        hf = load_tokenizer(path)
         s[k] = [hf.encode(t, add_special_tokens=False) for t in s["texts"]]
     for k, (_, name) in TIKTOKEN.items():
         enc = tiktoken.get_encoding(name)
