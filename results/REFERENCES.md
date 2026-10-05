@@ -377,6 +377,31 @@ before treating it as a pre-tokenization measure for them.
   "Boundless Byte Pair Encoding: Breaking the Pre-tokenization Barrier". It
   lets BPE merge across pre-token boundaries ("superwords"). I checked only
   the abstract. It is optional background.
+- **Regmi, Pudasaini & Pun (2026), arXiv:2608.26449** (added 5 Oct 2026; the
+  mid-term proposal cited it, the first check missed it). "Vowel Signs Are
+  Not Letters: A Pre-tokenization Ceiling on Multilingual Tokenizer
+  Fertility". Checked from the arXiv v1 PDF:
+  - Abstract: the GPT-2 word class `\p{L}+` "splits each word at every vowel
+    sign" in abugidas; across 26 languages "ranging from 1.47x (Tibetan) to
+    9.02x (Thai)"; o200k's mark-aware class makes "the repair itself prior
+    art".
+  - Table 4 caption: "Shatter ratio is pre-tokens under \p{L}+ over
+    pre-tokens under [\p{L}\p{M}]+", on FLORES-200 devtest.
+  - Table 6 (appendix A), Thai row: 9.02x; 37.4 vs 4.1 **pre-tokens** per 100
+    characters. These are a floor on the token count (their Proposition 1),
+    not token counts.
+  - They build a Nepali-English tokenizer and train 268M models; they do not
+    decompose existing tokenizers' vocabularies or study Thai beyond the
+    bound.
+  - **Consequence:** the `\p{L}+` / `\p{M}` diagnosis is theirs first. This
+    project's decomposition confirms it for Thai on real tokenizers and adds
+    the vocabulary share and the Qwen2.5 unreachable entries.
+- **MEGA (Ahuja et al., 2023, EMNLP)** and **"Measuring the Tokenization
+  Premium" (Roy, Roy & Patel, 2026, arXiv:2608.09046)**, both cited in the
+  proposal: checked from their arXiv abstracts. MEGA benchmarks generative
+  models across 70 languages and does not isolate tokenizer cost; the
+  premium paper covers Bengali, Hindi, Arabic, Tamil and Yoruba, not Thai.
+  Neither is used in the report.
 
 ---
 

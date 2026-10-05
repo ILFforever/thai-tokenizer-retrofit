@@ -59,7 +59,9 @@ Google Chrome and ffmpeg). Use a venv outside OneDrive or Dropbox folders.
 | Character-balanced retrofit | add `--thai-windows 2 --tag _s1000_charbal` (same Thai *text* per step as the control) | `results/mistral_adapt_*_charbal.json` |
 | Belebele on Mistral | `python src/belebele_eval.py --kind mistral --adapter models/<folder> --name <label>` | `results/belebele_mistral_*.json` |
 | Where English drift comes from | `python src/drift_probe.py control_s1000` (one arm per process) | `results/drift_probe_mistral-7b.json` |
+| Retrofit with an English KL penalty | add `--kl-english 1.0 --tag _s1000_kl1` to the retrofit command (English windows anchored to the untrained model) | `results/mistral_adapt_*_kl1.json` |
 | Qwen arms on the GPU | `python src/qwen_adapt.py --arm control --device cuda --steps 2000 --tag _gpu2000` (evaluation stays on the CPU, so numbers match the CPU runs) | `results/qwen_adapt_*_gpu2000.json` |
+| Qwen2.5-3B (same tokenizer, 4-bit) | add `--base Qwen/Qwen2.5-3B-Instruct --quant4` to the line above; Belebele: `python src/belebele_eval.py --kind qwen --base Qwen/Qwen2.5-3B-Instruct --adapter models/<folder> --name <label>` | `results/qwen3b_adapt_*.json` |
 
 **Loading a retrofitted Qwen tokenizer from a model folder:** use
 `hf_tok.load_tokenizer(path)`, not `AutoTokenizer.from_pretrained`. Given a

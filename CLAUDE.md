@@ -17,8 +17,8 @@ Mid-term proposal was presented 26 Sep. Final delivery: November 2026.
 **Weeks 2-6 of `PLAN.md` are built, run and committed; the Week 7 report is
 written** (`results/REPORT.md`, also published as a page with a results
 dashboard; see README). Every number comes from `results/`. Branch `week2`.
-Remaining: map the report onto the proposal's ten components, final polish,
-Week 8 buffer.
+Proposal mapping done (`results/PROPOSAL_MAP.md`, from the mid-term slides).
+Remaining: final polish, Week 8 buffer.
 
 ## The core idea, and how it differs from prior work
 
@@ -113,6 +113,10 @@ Chinese +13%, Japanese +10%, Python +0.1%.
 - "Every tokenizer costs more on social than news" is false for Mistral,
   BLOOM and GPT-4.
 - "Untested on a non-delimited script" is false (Csaki et al. 2023).
+- The `\p{L}+`-excludes-marks diagnosis is not ours first: Regmi et al.
+  (2026, arXiv:2608.26449) published it, Thai worst at 9.02x. Their 37.4 vs
+  4.1 per 100 chars are pre-token floors, not token counts. Our decomposition
+  confirms it on real tokenizers (`results/PROPOSAL_MAP.md`, component 05).
 
 ## Known limits of the claim
 

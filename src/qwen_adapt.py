@@ -19,6 +19,16 @@ ability to follow instructions is trained away. Evaluation is bits per
 character on held-out text, which does not depend on the tokenizer.
 
 The adapted model is merged and saved to models/ (bfloat16).
+
+Larger Qwen2.5 models (same tokenizer, so the same retrofit) on a laptop GPU:
+
+    python src/qwen_adapt.py --arm control --base Qwen/Qwen2.5-3B-Instruct --quant4 --device cuda --steps 2000 --tag _gpu2000
+
+--quant4 loads the model in 4-bit NF4 (QLoRA, as mistral_adapt_gpu.py); the
+embedding stays in bfloat16 and the learned rows are optimised as float32
+master copies. Evaluation then runs on the GPU under the same 4-bit weights
+for every condition, the LoRA adapter and learned rows are saved instead of a
+merged model, and results go to qwen3b_adapt_<tag>.json (size from --base).
 """
 
 from __future__ import annotations
@@ -65,8 +75,24 @@ def instruction_texts(tok, n: int, split: str = "train") -> list[str]:
     return out
 
 
+def _hidden(model, x, chunk: int | None):
+    """Final hidden states for x, optionally computed `chunk` positions at a
+    time with a KV cache: the same values, but attention memory stays flat on
+    the longest (5,800-token) instruction texts."""
+    dec = model.get_decoder()
+    if not chunk or x.shape[1] <= chunk:
+        return dec(input_ids=x).last_hidden_state[0]
+    out, cache = [], None
+    for s in range(0, x.shape[1], chunk):
+        o = dec(input_ids=x[:, s:s + chunk], past_key_values=cache, use_cache=True)
+        cache = o.past_key_values
+        out.append(o.last_hidden_state[0])
+    return torch.cat(out)
+
+
 @torch.no_grad()
-def bpc(model, tok, texts: list[str], prefix: int, dev=torch.device("cpu")) -> tuple[float, float]:
+def bpc(model, tok, texts: list[str], prefix: int, dev=torch.device("cpu"),
+        chunk: int | None = None) -> tuple[float, float]:
     bits, chars, ntok = 0.0, 0, 0
     model.eval()
     for t in texts:
@@ -75,7 +101,7 @@ def bpc(model, tok, texts: list[str], prefix: int, dev=torch.device("cpu")) -> t
         tgt = torch.tensor(ids, device=dev)
         # project to the 152k vocabulary in slices of 256 positions: full-passage
         # logits alone are ~2 GB in float32, more than an 8 GB laptop GPU has free
-        hidden = model.get_decoder()(input_ids=x).last_hidden_state[0, :-1]
+        hidden = _hidden(model, x, chunk)[:-1]
         head = model.get_output_embeddings()
         for i in range(0, len(ids), 256):
             lp = torch.log_softmax(head(hidden[i:i + 256]).float(), -1)
@@ -132,7 +158,11 @@ def main() -> None:
     ap.add_argument("--threads", type=int, default=16)
     ap.add_argument("--device", default="cpu", help="cpu (default, the reproducible path) or cuda")
     ap.add_argument("--tag", default="", help="suffix for a variant run (keeps earlier results)")
+    ap.add_argument("--base", default=BASE, help="any Qwen2.5 model sharing the 0.5B tokenizer")
+    ap.add_argument("--quant4", action="store_true", help="4-bit QLoRA on the GPU (models too big for float32)")
     args = ap.parse_args()
+    if args.quant4:
+        assert args.device == "cuda", "--quant4 needs --device cuda"
     torch.set_num_threads(args.threads)
     dev = torch.device(args.device)
     torch.manual_seed(0)
@@ -141,7 +171,7 @@ def main() -> None:
     from peft import LoraConfig, get_peft_model
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    shipped = AutoTokenizer.from_pretrained(BASE)
+    shipped = AutoTokenizer.from_pretrained(args.base)
     tok = shipped if args.arm == "control" else load_tokenizer(ROOT / args.tokenizer)
     prefix = shipped.convert_tokens_to_ids("<|endoftext|>")
     tag = (args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}") + args.tag
@@ -176,7 +206,17 @@ def main() -> None:
           f"({time.time() - t0:.0f}s)", flush=True)
 
     # --- model --------------------------------------------------------------
-    model = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float32).to(dev)
+    if args.quant4:
+        from transformers import BitsAndBytesConfig
+
+        model = AutoModelForCausalLM.from_pretrained(
+            args.base, device_map={"": 0}, dtype=torch.bfloat16,
+            quantization_config=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                                   bnb_4bit_compute_dtype=torch.bfloat16,
+                                                   bnb_4bit_use_double_quant=True))
+        print(f"  loaded 4-bit: {torch.cuda.memory_allocated() / 1e9:.1f} GB on GPU ({time.time() - t0:.0f}s)", flush=True)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(args.base, dtype=torch.float32).to(dev)
     emb = model.get_input_embeddings().weight
     tied = emb.data_ptr() == model.get_output_embeddings().weight.data_ptr()
 
@@ -185,15 +225,16 @@ def main() -> None:
         # more attention memory in float32 than an 8 GB laptop GPU has, and the
         # CPU gives numbers directly comparable with the CPU-only runs.
         # Module.to() keeps the same Parameter objects, so the optimizer is unaffected.
-        cpu = torch.device("cpu")
-        if dev.type == "cuda":
+        # A 4-bit model cannot move, so it is evaluated where it is.
+        cpu = dev if args.quant4 else torch.device("cpu")
+        if dev.type == "cuda" and not args.quant4:
             model.to(cpu)
             torch.cuda.empty_cache()
         r = {}
         for k, texts in ev.items():
-            b, tpc = bpc(model, tok, texts, prefix, cpu)
+            b, tpc = bpc(model, tok, texts, prefix, cpu, chunk=1024 if args.quant4 else None)
             r[f"{k}_bpc"], r[f"{k}_tok100"] = round(b, 4), round(tpc, 2)
-        if dev.type == "cuda":
+        if dev.type == "cuda" and not args.quant4:
             model.to(dev)
         print(f"  {label}: " + ", ".join(f"{k} {r[f'{k}_bpc']:.3f}" for k in ev), flush=True)
         return r
@@ -207,13 +248,28 @@ def main() -> None:
         with torch.no_grad():
             for i, t in zip(rows, texts):
                 parts = shipped.encode(t, add_special_tokens=False)
-                emb[i] = emb[parts].mean(0)
+                emb[i] = emb[parts].float().mean(0).to(emb.dtype)
+                if not tied:
+                    head = model.get_output_embeddings().weight
+                    head[i] = head[parts].float().mean(0).to(head.dtype)
         results["mean_init"] = evaluate("retrofit, mean-initialised rows, no training")
 
+    if args.quant4:  # as mistral_adapt_gpu.py: no prepare_model_for_kbit_training (float32 copies)
+        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+        model.enable_input_require_grads()
     model = get_peft_model(model, LoraConfig(r=args.rank, lora_alpha=2 * args.rank, lora_dropout=0.0,
                                              target_modules=LORA_TARGETS, task_type="CAUSAL_LM"))
     groups = [{"params": [p for n, p in model.named_parameters() if "lora_" in n], "lr": args.lr_lora}]
-    if rows:
+    masters, mats = [], []
+    if rows and args.quant4:
+        # bf16 matrices: train float32 master copies of the learned rows only
+        idx = torch.tensor(rows, device=dev)
+        mats = [model.get_input_embeddings().weight] + ([] if tied else [model.get_output_embeddings().weight])
+        for p in mats:
+            p.requires_grad_(True)
+        masters = [p.detach()[idx].float().clone().requires_grad_(True) for p in mats]
+        groups.append({"params": masters, "lr": args.lr_rows})
+    elif rows:
         e = model.get_input_embeddings().weight
         e.requires_grad_(True)
         mask = torch.zeros(e.shape[0], 1, device=dev)
@@ -238,33 +294,50 @@ def main() -> None:
             loss = model(input_ids=x, labels=x).loss * len(x) / len(wins)
             loss.backward()
             total += loss.item()
+        for m, p in zip(masters, mats):
+            m.grad = p.grad[idx].float()
+            p.grad = None
         torch.nn.utils.clip_grad_norm_([p for g in groups for p in g["params"]], 1.0)
         opt.step()
+        if masters:
+            with torch.no_grad():
+                for m, p in zip(masters, mats):
+                    p[idx] = m.to(p.dtype)
         if step % 25 == 0 or step == 1:
             log.append({"step": step, "loss": round(total, 4), "seconds": round(time.time() - t0, 1)})
             print(f"    step {step}: loss {total:.3f} ({time.time() - t0:.0f}s)", flush=True)
     model.eval()
-    model = model.merge_and_unload()
+    if not args.quant4:
+        model = model.merge_and_unload()
     results["trained"] = evaluate(f"{args.arm} after {args.steps} steps")
 
-    if rows:
-        base_emb = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float32).get_input_embeddings().weight
+    if rows and not args.quant4:
+        base_emb = AutoModelForCausalLM.from_pretrained(args.base, dtype=torch.float32).get_input_embeddings().weight
         with torch.no_grad():
             moved = (model.get_input_embeddings().weight.cpu() != base_emb).any(1).nonzero().flatten().tolist()
         results["trained"]["rows_changed"] = len(moved)
         results["trained"]["rows_changed_outside_learned"] = len(set(moved) - set(rows))
 
     MODELS.mkdir(exist_ok=True)
-    out = MODELS / f"qwen2.5-0.5b-instruct-{tag}"
-    model.to(torch.bfloat16).save_pretrained(str(out))
+    out = MODELS / f"{Path(args.base).name.lower()}-{tag}"
+    if args.quant4:  # LoRA adapter + learned rows (a 4-bit model cannot be merged losslessly)
+        model.save_pretrained(str(out))
+        if rows:
+            torch.save({"ids": rows, "embed": mats[0].detach()[idx].cpu(),
+                        "head": (mats[0] if tied else mats[1]).detach()[idx].cpu(), "tied": tied},
+                       out / "swapped_rows.pt")
+    else:
+        model.to(torch.bfloat16).save_pretrained(str(out))
     tok.save_pretrained(str(out))
-    meta = {"base": BASE, "arm": args.arm, "device": args.device, "tag": args.tag, "tokenizer": args.tokenizer or BASE, "tied_embeddings": tied,
+    meta = {"base": args.base, "quantization": "4-bit NF4, double quant, bf16 compute" if args.quant4 else "none", "arm": args.arm, "device": args.device, "tag": args.tag, "tokenizer": args.tokenizer or args.base, "tied_embeddings": tied,
             "steps": args.steps, "batch": args.batch, "seq": args.seq, "mix_thai_english_instr": args.mix,
             "train_tokens_seen": args.steps * args.batch * args.seq, "lora_rank": args.rank,
             "lr_lora": args.lr_lora, "lr_rows": args.lr_rows, "rows_learned": len(rows),
             "eval_passages": {k: len(v) for k, v in ev.items()}, "saved_to": str(out.relative_to(ROOT)),
             "log": log, "seconds": round(time.time() - t0, 1)}
-    (RESULTS / f"qwen_adapt_{tag}.json").write_text(json.dumps({"meta": meta, "results": results}, indent=2),
+    # results/qwen_adapt_*.json is the 0.5B study; other sizes get their own prefix
+    size = "" if args.base == BASE else Path(args.base).name.split("-")[1].lower()  # "3b"
+    (RESULTS / f"qwen{size}_adapt_{tag}.json").write_text(json.dumps({"meta": meta, "results": results}, indent=2),
                                                    encoding="utf-8")
     print(f"done in {time.time() - t0:.0f}s -> {out}")
 

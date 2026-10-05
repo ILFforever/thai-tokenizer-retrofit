@@ -4,6 +4,7 @@
     python src/belebele_eval.py --kind mistral --adapter models/mistral-7b-qlora-control_s1000
     python src/belebele_eval.py --kind mistral --adapter models/mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000
     python src/belebele_eval.py --kind qwen --model models/qwen2.5-0.5b-instruct-control
+    python src/belebele_eval.py --kind qwen --base Qwen/Qwen2.5-3B-Instruct --adapter models/qwen2.5-3b-instruct-control_gpu2000
 
 Belebele (Bandarkar et al., 2024; CC BY-SA 4.0) gives a FLORES passage, a
 question and four answers, in parallel across languages. Each answer is
@@ -49,32 +50,37 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return c - h, c + h
 
 
-def load(kind: str, model_path: str | None, adapter: str | None, dev):
+def load(kind: str, model_path: str | None, adapter: str | None, dev, base: str | None = None):
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    if kind == "mistral":
+    if kind == "mistral" or base:  # 4-bit base + optional LoRA adapter (+ learned rows)
         from transformers import BitsAndBytesConfig
 
+        from hf_tok import load_tokenizer
+
+        name = base or MISTRAL
         model = AutoModelForCausalLM.from_pretrained(
-            MISTRAL, device_map={"": 0}, dtype=torch.bfloat16,
+            name, device_map={"": 0}, dtype=torch.bfloat16,
             quantization_config=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                                                    bnb_4bit_compute_dtype=torch.bfloat16,
                                                    bnb_4bit_use_double_quant=True))
-        tok = AutoTokenizer.from_pretrained(MISTRAL)
+        # Qwen: hf_tok, because AutoTokenizer would drop a retrofit's saved regex
+        tok = AutoTokenizer.from_pretrained(name) if kind == "mistral" else load_tokenizer(name)
         if adapter:
             ad = ROOT / adapter
             rows = ad / "swapped_rows.pt"
             if rows.exists():  # retrofit arm: its tokenizer and trained rows
-                tok = AutoTokenizer.from_pretrained(str(ad))
+                tok = AutoTokenizer.from_pretrained(str(ad)) if kind == "mistral" else load_tokenizer(ad)
                 r = torch.load(rows)
                 idx = torch.tensor(r["ids"], device=dev)
                 with torch.no_grad():
                     model.get_input_embeddings().weight[idx] = r["embed"].to(dev, torch.bfloat16)
-                    model.get_output_embeddings().weight[idx] = r["head"].to(dev, torch.bfloat16)
+                    if not r.get("tied"):
+                        model.get_output_embeddings().weight[idx] = r["head"].to(dev, torch.bfloat16)
             from peft import PeftModel
 
             model = PeftModel.from_pretrained(model, str(ad))
-        bos = tok.bos_token_id
+        bos = tok.bos_token_id if kind == "mistral" else tok.convert_tokens_to_ids("<|endoftext|>")
     else:
         path = str(ROOT / model_path) if model_path else QWEN
         from hf_tok import load_tokenizer  # AutoTokenizer would drop a retrofit's saved regex
@@ -107,7 +113,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--kind", choices=["mistral", "qwen"], required=True)
     ap.add_argument("--model", default=None, help="qwen: local model folder (default: the original)")
-    ap.add_argument("--adapter", default=None, help="mistral: LoRA folder from mistral_adapt_gpu.py")
+    ap.add_argument("--adapter", default=None, help="LoRA folder from mistral_adapt_gpu.py, or qwen_adapt.py --quant4")
+    ap.add_argument("--base", default=None, help="qwen: a larger Qwen2.5, loaded in 4-bit (e.g. Qwen/Qwen2.5-3B-Instruct)")
     ap.add_argument("--langs", nargs="+", default=["tha_Thai", "eng_Latn"])
     ap.add_argument("--n", type=int, default=900)
     ap.add_argument("--name", required=True, help="label for the results file")
@@ -120,8 +127,8 @@ def main() -> None:
 
     from datasets import load_dataset
 
-    model, tok, bos = load(args.kind, args.model, args.adapter, dev)
-    out = {"name": args.name, "kind": args.kind, "model": args.model, "adapter": args.adapter,
+    model, tok, bos = load(args.kind, args.model, args.adapter, dev, args.base)
+    out = {"name": args.name, "kind": args.kind, "model": args.model, "base": args.base, "adapter": args.adapter,
            "device": str(dev), "langs": {}}
     for lang in args.langs:
         ds = load_dataset("facebook/belebele", lang, split="test")

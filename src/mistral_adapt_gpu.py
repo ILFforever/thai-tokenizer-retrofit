@@ -19,6 +19,11 @@ and output head stay in bfloat16 and the swapped rows are optimised as
 float32 master copies. Every batch is 6 Thai windows (three domains) and 2
 English windows. Quality is bits per character on held-out text, measured
 under the same 4-bit weights for every condition.
+
+--kl-english W adds W x KL(original || adapted) per token on the English
+windows: the teacher is the same model with the LoRA switched off and the
+swapped rows put back to their original values, i.e. the untrained Mistral.
+It tests whether anchoring English output stops the English drift.
 """
 
 from __future__ import annotations
@@ -74,6 +79,8 @@ def main() -> None:
     ap.add_argument("--english-windows", type=int, default=2)
     ap.add_argument("--thai-windows", type=int, default=None,
                     help="Thai windows per step (default: batch - english); fewer gives a retrofit the same Thai *text* per step as the control")
+    ap.add_argument("--kl-english", type=float, default=0.0,
+                    help="weight of a KL penalty to the original model on the English windows (0 = off)")
     ap.add_argument("--n-eval", type=int, default=40)
     ap.add_argument("--size", type=int, default=400)
     ap.add_argument("--tag", default="", help="suffix for a variant run (keeps earlier results)")
@@ -133,6 +140,7 @@ def main() -> None:
 
     results: dict[str, dict] = {}
     rows: list[int] = []
+    orig_rows = None  # the swapped rows as shipped, for the KL teacher
     if args.arm == "control":
         results["original"] = evaluate("original (shipped tokenizer, no training)")
     else:
@@ -142,6 +150,7 @@ def main() -> None:
                 rows.append(int(r["id"]))
                 texts.append(r["text"])
         with torch.no_grad():
+            orig_rows = [emb[rows].clone(), head[rows].clone()]
             for i, t in zip(rows, texts):
                 parts = shipped.encode(t, add_special_tokens=False)
                 emb[i] = emb[parts].float().mean(0).to(emb.dtype)
@@ -175,10 +184,26 @@ def main() -> None:
     for step in range(1, args.steps + 1):
         wins = [th[w * args.seq:(w + 1) * args.seq] for w in rng.integers(0, len(th) // args.seq, n_th)]
         wins += [en[w * args.seq:(w + 1) * args.seq] for w in rng.integers(0, len(en) // args.seq, args.english_windows)]
-        total = 0.0
-        for w in wins:  # one window per pass keeps memory low
+        total, kl_total = 0.0, 0.0
+        for j, w in enumerate(wins):  # one window per pass keeps memory low
             x = torch.tensor([w], device=dev)
-            loss = model(input_ids=x, labels=x).loss / args.batch
+            if args.kl_english and j >= n_th:  # an English window: anchor it to the original model
+                with torch.no_grad(), model.disable_adapter():
+                    if rows:
+                        for p, o in zip(mats, orig_rows):
+                            p[idx] = o
+                    teacher = torch.log_softmax(model(input_ids=x).logits[0, :-1].float(), -1)
+                    if rows:
+                        for m, p in zip(masters, mats):
+                            p[idx] = m.to(p.dtype)
+                out = model(input_ids=x, labels=x)
+                student = torch.log_softmax(out.logits[0, :-1].float(), -1)
+                kl = torch.nn.functional.kl_div(student, teacher, log_target=True, reduction="sum") / student.shape[0]
+                loss = (out.loss + args.kl_english * kl) / args.batch
+                kl_total += kl.item() / args.english_windows
+                del teacher, student
+            else:
+                loss = model(input_ids=x, labels=x).loss / args.batch
             loss.backward()
             total += loss.item()
         for m, p in zip(masters, mats):
@@ -191,9 +216,9 @@ def main() -> None:
             for m, p in zip(masters, mats):
                 p[idx] = m.to(p.dtype)
         if step % 25 == 0 or step == 1:
-            log.append({"step": step, "loss": round(total, 4), "seconds": round(time.time() - t0, 1),
+            log.append({"step": step, "loss": round(total, 4), "kl_english": round(kl_total, 4), "seconds": round(time.time() - t0, 1),
                         "gpu_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)})
-            print(f"    step {step}: loss {total:.3f} ({time.time() - t0:.0f}s, "
+            print(f"    step {step}: loss {total:.3f}, English KL {kl_total:.4f} ({time.time() - t0:.0f}s, "
                   f"peak {torch.cuda.max_memory_allocated() / 1e9:.1f} GB)", flush=True)
     model.eval()
     results["trained"] = evaluate(f"{args.arm} after {args.steps} steps")
@@ -208,7 +233,7 @@ def main() -> None:
     meta = {"base": BASE, "quantization": "4-bit NF4, double quant, bf16 compute", "arm": args.arm,
             "tokenizer": args.tokenizer if rows else BASE, "steps": args.steps, "batch": args.batch,
             "seq": args.seq, "english_windows_per_batch": args.english_windows,
-            "thai_windows_per_step": n_th, "train_tokens_seen": args.steps * (n_th + args.english_windows) * args.seq, "lora_rank": args.rank,
+            "thai_windows_per_step": n_th, "kl_english": args.kl_english, "train_tokens_seen": args.steps * (n_th + args.english_windows) * args.seq, "lora_rank": args.rank,
             "lr_lora": args.lr_lora, "lr_rows": args.lr_rows, "rows_learned": len(rows),
             "gpu": torch.cuda.get_device_name(0), "log": log, "saved_to": str(out.relative_to(ROOT)),
             "seconds": round(time.time() - t0, 1)}

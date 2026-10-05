@@ -42,8 +42,9 @@ draft generated 28 September 2026 from the numbers in `results/`
   rows must be re-set and trained.
 - **Several earlier claims did not survive checking** and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
-  costs more on social text", and the novelty of fixed-size replacement for
-  Thai (Csaki et al. did it in 2023).
+  costs more on social text", the novelty of fixed-size replacement for
+  Thai (Csaki et al. did it in 2023), and of the regex diagnosis (Regmi et
+  al. published it in 2026; this project confirms it on real tokenizers).
 
 ---
 
@@ -122,13 +123,22 @@ aligned or auxiliary embedding spaces.
 **Pre-tokenization.** Dagan et al. (2024) and Velayuthan & Sarveswaran (2025)
 show the pre-tokenizer regex bounds what a vocabulary can do; the latter show
 GPT-4-style regexes breaking Tamil, Sinhala and Hindi words at vowel signs.
+**Regmi et al. (2026) name the cause this report also finds**: the `\p{L}+`
+word class excludes combining marks, so it splits abugida words at every
+vowel sign. Across 26 languages on FLORES-200, Thai is the worst case - 9.02x
+as many pre-tokens under `\p{L}+` as under `[\p{L}\p{M}]+` (37.4 vs 4.1 per
+100 characters, a floor on the token count, not the count) - and they note
+o200k already uses the mark-aware class. Their study builds and trains a
+Nepali tokenizer from scratch; it does not decompose existing tokenizers or
+look at Thai vocabularies.
 
 **What this project adds**, relative to that work:
 
 1. A per-tokenizer **decomposition** of the Thai penalty into
-   pre-tokenization and vocabulary shares across nine tokenizers, with the
-   specific cause named: `\p{L}+` in the cl100k and Qwen2.5 regexes excludes
-   Thai combining marks (`\p{M}`).
+   pre-tokenization and vocabulary shares across nine tokenizers, measured
+   with their real vocabularies. The cause it finds for cl100k and Qwen2.5
+   (`\p{L}+` excludes Thai combining marks, `\p{M}`) confirms Regmi et al.
+   (2026); what is new is how much of each tokenizer's excess it explains.
 2. The finding that **Qwen2.5 already contains 1,578 Thai vocabulary entries
    its own pre-tokenizer can never emit**, that all of them are untrained, and
    what it takes to make them usable.
@@ -911,9 +921,9 @@ deployment can check it against its own traffic.
 **Scale of the model experiments.** Everything except one clearly marked
 extra ran on a CPU. The full initialisation-and-tuning comparison used small
 models (BLOOM-560m, Qwen2.5-0.5B); Mistral-7B was evaluated on 40 passages per
-domain, tuned for 160 steps on the CPU, and - the extra - trained for 400
-QLoRA steps in 4-bit on a laptop GPU (§8.5), so its trained numbers are for
-4-bit weights. Bits per character is the only quality measure.
+domain, tuned for 160 steps on the CPU, and - the extra - trained for up to
+1,000 QLoRA steps in 4-bit on a laptop GPU (§8.5), so its trained numbers are
+for 4-bit weights. Bits per character is the only quality measure.
 These results show the direction and rough size of the effect, not the
 downstream task quality of a properly tuned 7B model.
 
@@ -993,6 +1003,16 @@ vocabulary's training data.
 - Make the cluster-aware variant the default if downstream tools need token
   boundaries that respect Thai clusters; it costs about one point of
   reduction.
+
+## Appendix: the proposal's ten components
+
+`PROPOSAL_MAP.md` maps each component of the mid-term proposal (objectives,
+scope, related work, approach, data, metrics, responsible AI, plan) to the
+section of this report that answers it, with every target, what was
+delivered, and every change from the plan and why. In short: all five
+numeric targets are met; the base tokenizer, the third domain and the
+training-data volume changed; and the proposal's stated research gap was
+narrowed after checking the sources (§3).
 
 ## Appendix: reproducing every number
 
@@ -1088,6 +1108,10 @@ Pipatanakul, K., Jirabovonvisut, P., Manakul, P., Sripaisarnmongkol, S.,
 Patomwong, R., Chokchainant, P., & Tharnpipitchai, K. (2023). *Typhoon: Thai
 large language models* (arXiv:2312.13951). arXiv.
 https://doi.org/10.48550/arXiv.2312.13951
+
+Regmi, S., Pudasaini, S., & Pun, C. P. (2026). *Vowel signs are not letters:
+A pre-tokenization ceiling on multilingual tokenizer fertility*
+(arXiv:2608.26449). arXiv. https://doi.org/10.48550/arXiv.2608.26449
 
 Rust, P., Pfeiffer, J., Vulić, I., Ruder, S., & Gurevych, I. (2021). How good
 is your tokenizer? On the monolingual performance of multilingual language
