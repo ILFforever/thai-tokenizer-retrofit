@@ -6389,6 +6389,339 @@
      "english_tok100": 25.1
     }
    }
+  },
+  "retrofit-mistral-7b-th2483_s1000_kl1": {
+   "meta": {
+    "base": "mistralai/Mistral-7B-v0.1",
+    "quantization": "4-bit NF4, double quant, bf16 compute",
+    "arm": "retrofit",
+    "tokenizer": "tokenizers/mistral-7b-th2483",
+    "steps": 1000,
+    "batch": 8,
+    "seq": 512,
+    "english_windows_per_batch": 3,
+    "thai_windows_per_step": 5,
+    "kl_english": 1.0,
+    "train_tokens_seen": 4096000,
+    "lora_rank": 16,
+    "lr_lora": 0.0002,
+    "lr_rows": 0.0002,
+    "rows_learned": 2483,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "log": [
+     {
+      "step": 1,
+      "loss": 5.2055,
+      "kl_english": 0.0019,
+      "seconds": 99.4,
+      "gpu_gb": 5.7
+     },
+     {
+      "step": 25,
+      "loss": 4.5418,
+      "kl_english": 0.0215,
+      "seconds": 394.8,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 50,
+      "loss": 3.8015,
+      "kl_english": 0.0368,
+      "seconds": 705.6,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 75,
+      "loss": 3.9356,
+      "kl_english": 0.0289,
+      "seconds": 1017.5,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 100,
+      "loss": 3.6676,
+      "kl_english": 0.0265,
+      "seconds": 1329.5,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 125,
+      "loss": 3.6137,
+      "kl_english": 0.0266,
+      "seconds": 1641.8,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 150,
+      "loss": 3.0882,
+      "kl_english": 0.0416,
+      "seconds": 1954.4,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 175,
+      "loss": 3.1039,
+      "kl_english": 0.0506,
+      "seconds": 2266.8,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 200,
+      "loss": 3.18,
+      "kl_english": 0.0535,
+      "seconds": 2579.6,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 225,
+      "loss": 3.4192,
+      "kl_english": 0.0466,
+      "seconds": 2892.4,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 250,
+      "loss": 2.8318,
+      "kl_english": 0.1275,
+      "seconds": 3205.3,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 275,
+      "loss": 3.2014,
+      "kl_english": 0.0438,
+      "seconds": 3518.5,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 300,
+      "loss": 2.8782,
+      "kl_english": 0.0519,
+      "seconds": 3855.7,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 325,
+      "loss": 2.7533,
+      "kl_english": 0.06,
+      "seconds": 4172.9,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 350,
+      "loss": 3.2121,
+      "kl_english": 0.0576,
+      "seconds": 4486.1,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 375,
+      "loss": 3.2709,
+      "kl_english": 0.061,
+      "seconds": 4799.0,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 400,
+      "loss": 2.8152,
+      "kl_english": 0.0602,
+      "seconds": 5111.8,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 425,
+      "loss": 3.0907,
+      "kl_english": 0.0675,
+      "seconds": 5424.8,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 450,
+      "loss": 3.1659,
+      "kl_english": 0.0848,
+      "seconds": 5738.0,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 475,
+      "loss": 2.8619,
+      "kl_english": 0.0588,
+      "seconds": 6051.1,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 500,
+      "loss": 2.8626,
+      "kl_english": 0.2116,
+      "seconds": 6364.5,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 525,
+      "loss": 2.7026,
+      "kl_english": 0.1126,
+      "seconds": 6677.7,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 550,
+      "loss": 2.9697,
+      "kl_english": 0.1014,
+      "seconds": 6990.9,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 575,
+      "loss": 2.6424,
+      "kl_english": 0.1313,
+      "seconds": 7304.2,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 600,
+      "loss": 2.4116,
+      "kl_english": 0.1299,
+      "seconds": 7617.6,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 625,
+      "loss": 2.7443,
+      "kl_english": 0.1192,
+      "seconds": 7931.1,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 650,
+      "loss": 2.5341,
+      "kl_english": 0.119,
+      "seconds": 8244.6,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 675,
+      "loss": 2.7871,
+      "kl_english": 0.0887,
+      "seconds": 8557.9,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 700,
+      "loss": 2.73,
+      "kl_english": 0.1022,
+      "seconds": 8871.2,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 725,
+      "loss": 2.7058,
+      "kl_english": 0.2504,
+      "seconds": 9209.9,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 750,
+      "loss": 2.4488,
+      "kl_english": 0.1031,
+      "seconds": 9523.3,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 775,
+      "loss": 2.3534,
+      "kl_english": 0.114,
+      "seconds": 9837.0,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 800,
+      "loss": 2.3949,
+      "kl_english": 0.1352,
+      "seconds": 10150.5,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 825,
+      "loss": 2.4367,
+      "kl_english": 0.1591,
+      "seconds": 10464.0,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 850,
+      "loss": 2.5874,
+      "kl_english": 0.1587,
+      "seconds": 10777.7,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 875,
+      "loss": 2.4112,
+      "kl_english": 0.1387,
+      "seconds": 11091.7,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 900,
+      "loss": 2.4467,
+      "kl_english": 0.1433,
+      "seconds": 11405.3,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 925,
+      "loss": 2.8951,
+      "kl_english": 0.1331,
+      "seconds": 11719.1,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 950,
+      "loss": 2.273,
+      "kl_english": 0.162,
+      "seconds": 12032.9,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 975,
+      "loss": 2.5369,
+      "kl_english": 0.1649,
+      "seconds": 12347.2,
+      "gpu_gb": 6.2
+     },
+     {
+      "step": 1000,
+      "loss": 2.8158,
+      "kl_english": 0.1958,
+      "seconds": 12660.8,
+      "gpu_gb": 6.2
+     }
+    ],
+    "saved_to": "models\\mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000_kl1",
+    "seconds": 12690.8
+   },
+   "results": {
+    "mean_init": {
+     "wikipedia_bpc": 3.5139,
+     "wikipedia_tok100": 32.11,
+     "news_bpc": 4.0437,
+     "news_tok100": 37.01,
+     "social_bpc": 3.9131,
+     "social_tok100": 37.26,
+     "english_bpc": 0.7227,
+     "english_tok100": 25.1
+    },
+    "trained": {
+     "wikipedia_bpc": 1.4629,
+     "wikipedia_tok100": 32.11,
+     "news_bpc": 1.8253,
+     "news_tok100": 37.01,
+     "social_bpc": 2.0962,
+     "social_tok100": 37.26,
+     "english_bpc": 0.7895,
+     "english_tok100": 25.1
+    }
+   }
   }
  },
  "mistral_adapt": {
@@ -9225,6 +9558,130 @@
     }
    },
    "seconds": 1611.0
+  },
+  "mistral_retrofit_s1000_kl1": {
+   "name": "mistral_retrofit_s1000_kl1",
+   "kind": "mistral",
+   "model": null,
+   "base": null,
+   "adapter": "models/mistral-7b-qlora-retrofit-mistral-7b-th2483_s1000_kl1",
+   "device": "cuda",
+   "langs": {
+    "tha_Thai": {
+     "n": 900,
+     "correct": 326,
+     "accuracy": 0.3622222222222222,
+     "ci95": [
+      0.33146717154554584,
+      0.3941484673009068
+     ],
+     "passage_tok100": 31.61270831067445
+    },
+    "eng_Latn": {
+     "n": 900,
+     "correct": 485,
+     "accuracy": 0.5388888888888889,
+     "ci95": [
+      0.5062247538275869,
+      0.5712224448851079
+     ],
+     "passage_tok100": 22.683307839255
+    }
+   },
+   "seconds": 1591.5
+  },
+  "qwen3b_control_gpu2000": {
+   "name": "qwen3b_control_gpu2000",
+   "kind": "qwen",
+   "model": null,
+   "base": "Qwen/Qwen2.5-3B-Instruct",
+   "adapter": "models/qwen2.5-3b-instruct-control_gpu2000",
+   "device": "cuda",
+   "langs": {
+    "tha_Thai": {
+     "n": 900,
+     "correct": 368,
+     "accuracy": 0.4088888888888889,
+     "ci95": [
+      0.37722239046709516,
+      0.4413298868345913
+     ],
+     "passage_tok100": 55.71789387182927
+    },
+    "eng_Latn": {
+     "n": 900,
+     "correct": 429,
+     "accuracy": 0.4766666666666667,
+     "ci95": [
+      0.4442040322621141,
+      0.5093276485102689
+     ],
+     "passage_tok100": 20.802471571588068
+    }
+   },
+   "seconds": 1318.0
+  },
+  "qwen3b_original": {
+   "name": "qwen3b_original",
+   "kind": "qwen",
+   "model": null,
+   "base": "Qwen/Qwen2.5-3B-Instruct",
+   "adapter": null,
+   "device": "cuda",
+   "langs": {
+    "tha_Thai": {
+     "n": 900,
+     "correct": 409,
+     "accuracy": 0.45444444444444443,
+     "ci95": [
+      0.4221759010689663,
+      0.4871002375818768
+     ],
+     "passage_tok100": 55.71789387182927
+    },
+    "eng_Latn": {
+     "n": 900,
+     "correct": 470,
+     "accuracy": 0.5222222222222223,
+     "ci95": [
+      0.48956267359951355,
+      0.5546928685220265
+     ],
+     "passage_tok100": 20.802471571588068
+    }
+   },
+   "seconds": 859.1
+  },
+  "qwen3b_retrofit_gpu2000": {
+   "name": "qwen3b_retrofit_gpu2000",
+   "kind": "qwen",
+   "model": null,
+   "base": "Qwen/Qwen2.5-3B-Instruct",
+   "adapter": "models/qwen2.5-3b-instruct-retrofit-qwen2-5-instruct-ma-th3000_gpu2000",
+   "device": "cuda",
+   "langs": {
+    "tha_Thai": {
+     "n": 900,
+     "correct": 337,
+     "accuracy": 0.37444444444444447,
+     "ci95": [
+      0.3434208797008832,
+      0.4065353073124164
+     ],
+     "passage_tok100": 26.252160146950416
+    },
+    "eng_Latn": {
+     "n": 900,
+     "correct": 458,
+     "accuracy": 0.5088888888888888,
+     "ci95": [
+      0.47625906695173603,
+      0.5414431498968798
+     ],
+     "passage_tok100": 20.802471571588068
+    }
+   },
+   "seconds": 1276.2
   },
   "qwen_control": {
    "name": "qwen_control",

@@ -47,13 +47,13 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent))
 
 from hf_tok import load_tokenizer  # noqa: E402
+from paths import MODELS  # noqa: E402
 
 from corpora import load_parallel, load_thai_domain  # noqa: E402
 from embed_adapt import passages  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
 RESULTS = ROOT / "results"
-MODELS = ROOT / "models"
 DOMAINS = ["wikipedia", "news", "social"]
 BASE = "Qwen/Qwen2.5-0.5B-Instruct"
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
@@ -318,7 +318,7 @@ def main() -> None:
         results["trained"]["rows_changed"] = len(moved)
         results["trained"]["rows_changed_outside_learned"] = len(set(moved) - set(rows))
 
-    MODELS.mkdir(exist_ok=True)
+    MODELS.mkdir(parents=True, exist_ok=True)
     out = MODELS / f"{Path(args.base).name.lower()}-{tag}"
     if args.quant4:  # LoRA adapter + learned rows (a 4-bit model cannot be merged losslessly)
         model.save_pretrained(str(out))
@@ -333,7 +333,7 @@ def main() -> None:
             "steps": args.steps, "batch": args.batch, "seq": args.seq, "mix_thai_english_instr": args.mix,
             "train_tokens_seen": args.steps * args.batch * args.seq, "lora_rank": args.rank,
             "lr_lora": args.lr_lora, "lr_rows": args.lr_rows, "rows_learned": len(rows),
-            "eval_passages": {k: len(v) for k, v in ev.items()}, "saved_to": str(out.relative_to(ROOT)),
+            "eval_passages": {k: len(v) for k, v in ev.items()}, "saved_to": f"models/{out.name}",
             "log": log, "seconds": round(time.time() - t0, 1)}
     # results/qwen_adapt_*.json is the 0.5B study; other sizes get their own prefix
     size = "" if args.base == BASE else Path(args.base).name.split("-")[1].lower()  # "3b"

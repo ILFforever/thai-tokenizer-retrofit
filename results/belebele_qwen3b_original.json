@@ -1,0 +1,31 @@
+{
+  "name": "qwen3b_original",
+  "kind": "qwen",
+  "model": null,
+  "base": "Qwen/Qwen2.5-3B-Instruct",
+  "adapter": null,
+  "device": "cuda",
+  "langs": {
+    "tha_Thai": {
+      "n": 900,
+      "correct": 409,
+      "accuracy": 0.45444444444444443,
+      "ci95": [
+        0.4221759010689663,
+        0.4871002375818768
+      ],
+      "passage_tok100": 55.71789387182927
+    },
+    "eng_Latn": {
+      "n": 900,
+      "correct": 470,
+      "accuracy": 0.5222222222222223,
+      "ci95": [
+        0.48956267359951355,
+        0.5546928685220265
+      ],
+      "passage_tok100": 20.802471571588068
+    }
+  },
+  "seconds": 859.1
+}

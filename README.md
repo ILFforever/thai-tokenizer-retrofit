@@ -53,6 +53,11 @@ Google Chrome and ffmpeg). Use a venv outside OneDrive or Dropbox folders.
 
 ## Optional GPU extra (Mistral-7B, laptop GPU)
 
+Trained models are written to `~/thaitok_models` (set `THAITOK_MODELS` to
+change it), outside the project folder because they are large and can be
+rebuilt. Commands and results still call them `models/<folder>`;
+`src/paths.py` maps that name to the real location.
+
 | Step | Command | Output |
 | --- | --- | --- |
 | Two-arm QLoRA, 1,000 steps | `python src/mistral_adapt_gpu.py --arm control --steps 1000 --english-windows 3 --tag _s1000`; same with `--arm retrofit` | `results/mistral_adapt_*.json` |

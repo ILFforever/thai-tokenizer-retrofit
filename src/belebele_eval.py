@@ -67,7 +67,9 @@ def load(kind: str, model_path: str | None, adapter: str | None, dev, base: str 
         # Qwen: hf_tok, because AutoTokenizer would drop a retrofit's saved regex
         tok = AutoTokenizer.from_pretrained(name) if kind == "mistral" else load_tokenizer(name)
         if adapter:
-            ad = ROOT / adapter
+            from paths import model_dir
+
+            ad = model_dir(adapter)
             rows = ad / "swapped_rows.pt"
             if rows.exists():  # retrofit arm: its tokenizer and trained rows
                 tok = AutoTokenizer.from_pretrained(str(ad)) if kind == "mistral" else load_tokenizer(ad)
@@ -82,7 +84,9 @@ def load(kind: str, model_path: str | None, adapter: str | None, dev, base: str 
             model = PeftModel.from_pretrained(model, str(ad))
         bos = tok.bos_token_id if kind == "mistral" else tok.convert_tokens_to_ids("<|endoftext|>")
     else:
-        path = str(ROOT / model_path) if model_path else QWEN
+        from paths import model_dir
+
+        path = str(model_dir(model_path)) if model_path else QWEN
         from hf_tok import load_tokenizer  # AutoTokenizer would drop a retrofit's saved regex
 
         tok = load_tokenizer(path)

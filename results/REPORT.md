@@ -23,23 +23,26 @@ draft generated 28 September 2026 from the numbers in `results/`
   (spread 1.11, the same as Typhoon; 1.21 if the vocabulary is learned from
   formal text only), and the freed slots come from other languages - Korean
   text costs 39% more tokens, Russian 18%, Chinese 13%, Japanese 10%.
-- **The swapped embedding rows must be re-set, but that is cheap.** On
-  BLOOM-560m, leaving them as they were nearly doubles Thai bits per
-  character and random re-initialisation quadruples it; setting each row to
-  the mean of the pieces it replaces recovers most of the loss with no
-  training, and 200 steps training only those rows ends *better* than the
-  original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
-  at a third of the tokens, with English unchanged. **On the target model,
-  Mistral-7B, a CPU-sized pass is not enough** - it already reads Thai well -
-  but QLoRA on a laptop GPU closes most of the gap: after 1,000 steps the
-  retrofitted Mistral-7B beats an equally trained control on news (−4%) and
-  is 7-8% behind on Wikipedia and social, at a third of the Thai tokens -
-  though its English bits/char drift 7% more than the control's (§8.5). On a
-  reading-comprehension benchmark (Belebele, Thai and English) neither
-  Mistral-7B nor Qwen2.5-0.5B shows a measurable loss against its control
-  (Thai −2.4 and −2.8 points, p ≥ 0.2; English unchanged). "No retraining" is
-  narrowed to: no expansion and no pretraining from scratch, but the swapped
-  rows must be re-set and trained.
+- **The swapped embedding rows must be re-set; for a weak-Thai model that is
+  cheap, for a strong one it is the real cost.** On BLOOM-560m, leaving them
+  as they were nearly doubles Thai bits per character and random
+  re-initialisation quadruples it; setting each row to the mean of the
+  pieces it replaces recovers most of the loss with no training, and 200
+  steps training only those rows ends *better* than the original on Thai (-9
+  to -14% bits per character, with the caveat in §7.6) at a third of the
+  tokens, with English unchanged. Qwen2.5-0.5B with LoRA is level with an
+  equally trained control after 2,000 steps. **Models that already read Thai
+  well take longer:** after 1,000 QLoRA steps on a laptop GPU the retrofitted
+  Mistral-7B beats its control on news (−4%) and is 5-8% behind on Wikipedia
+  and social, at a third of the Thai tokens; Qwen2.5-3B is 11-12% behind
+  after 2,000 steps, at half (§8.5). Training the retrofit drifts English
+  7% more than the control, and **a KL penalty to the original model on the
+  English text removes half of that at no Thai cost**. On Belebele reading
+  comprehension no retrofit trained on the token-balanced mix is measurably
+  worse than its control (Thai −0.1
+  to −3.4 points, p ≥ 0.13; English unchanged). "No retraining" is narrowed
+  to: no expansion and no pretraining from scratch, but the swapped rows
+  must be re-set and trained.
 - **Several earlier claims did not survive checking** and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
   costs more on social text", the novelty of fixed-size replacement for
@@ -798,7 +801,7 @@ and social, at a third of the Thai tokens, and it is better than the untrained
 original on every register (−5% / −22% / −8%).
 
 **English drifts in both arms, more in the retrofit.** Against the untrained
-model the control's English bits/char rise 5.8% and the retrofit's 13.1%,
+model the control's English bits/char rise 5.9% and the retrofit's 13.2%,
 despite the extra English windows. The tokenizer cannot cause this (English
 text is tokenized identically in both arms), so it comes from training: about
 half is what a Thai fine-tune of this size does to any Mistral-7B, and the
@@ -826,6 +829,7 @@ per-window loss weight; `--thai-windows 2`,
 | control | 1.381 | 1.904 | 1.996 | 0.765 | 36.3% | 53.3% |
 | retrofit, token-balanced mix | 1.485 | 1.831 | 2.128 | 0.818 | 33.9% | 52.8% |
 | retrofit, character-balanced mix | 1.744 | 2.214 | 2.359 | 0.806 | 29.9% | 54.2% |
+| **retrofit + English KL penalty** | **1.463** | **1.825** | **2.096** | **0.790** | **36.2%** | **53.9%** |
 
 Balancing by characters closes only **24% of the English gap** (0.818 → 0.806)
 and costs a great deal of Thai: 11-21% worse bits/char than the token-balanced
@@ -835,11 +839,25 @@ rows get 2.5 times fewer Thai updates. It is not a fix. Between them the two
 tests account for roughly a third of the extra English drift (output rows ~11%,
 Thai dose ~24%); the rest most plausibly reflects the cost of re-learning
 2,483 token representations through the shared weights, which no training-mix
-change removes. The token-balanced mix stays the recommended recipe; ways to
-protect English directly (a KL penalty to the original model on English text,
-or LoRA on fewer layers) are untested. Note that none of the English
-bits/char drift shows up as lost English reading comprehension on Belebele.
-A deployment should re-check English after any longer tuning.
+change removes. The token-balanced mix stays the recommended recipe.
+
+*Anchoring English to the original model does help* (`--kl-english 1.0`,
+`mistral_adapt_retrofit-mistral-7b-th2483_s1000_kl1.json`). A fourth
+retrofit run kept the token-balanced mix and added, on each English window,
+the per-token KL divergence from the untrained Mistral-7B (the LoRA switched
+off and the swapped rows put back to their shipped values) at weight 1.0,
+for ~15% more training time. English drift against the untrained model falls
+from +13.2% to +9.3% (the control's is +5.9%): **the penalty removes 54% of
+the retrofit's extra English drift**, more than twice what character
+balancing did, and it **costs no Thai** - bits/char are 0.3-1.5% *better*
+than the plain retrofit on every register (+5.9% / −4.2% / +5.0% against the
+control), and Belebele Thai is level with the control (36.2% vs 36.3%,
+p = 0.96). Caveats: one run at one weight, and the control did not get the
+same penalty, so part of the gain may be a general fine-tuning effect that
+would help the control too. **It is the recommended recipe when English
+matters.** LoRA on fewer layers is untested. None of the English bits/char
+drift, in any run, shows up as lost English reading comprehension on
+Belebele; a deployment should still re-check English after longer tuning.
 
 **Reading comprehension (Belebele, Thai and English, 900 questions each).**
 Scored by per-character log-likelihood of the four answers
@@ -871,12 +889,46 @@ control its Thai accuracy is 2.4 points lower (p = 0.28) and its English 0.6
 points lower (p = 0.81). The +7% English bits/char drift of §8.5 does not show
 up as lost English comprehension.
 
-**Both models tell the same story:** no measurable loss of reading
+**Both small-budget comparisons tell the same story** (Qwen2.5-3B, below,
+is less clear-cut): no measurable loss of reading
 comprehension in either language, at half (Qwen) to a third (Mistral) of the
 Thai tokens. Both Thai point estimates lean slightly against the retrofit
 (−2.4 and −2.8 points), and 900 questions can only detect differences of about
 4 points, so a small real cost cannot be ruled out; a larger model or a
 longer benchmark would be needed to settle it.
+
+**A larger, stronger Qwen: Qwen2.5-3B-Instruct (GPU extra).** Qwen2.5-3B
+uses the identical tokenizer (same `tokenizer.json`), so the same
+3,000-slot retrofit applies. The 0.5B two-arm design was rerun for 2,000
+steps in 4-bit NF4 (`qwen_adapt.py --base Qwen/Qwen2.5-3B-Instruct --quant4`,
+`qwen3b_adapt_*.json`); every condition is evaluated under the same 4-bit
+weights on the GPU, so compare within this table only. 4,578 rows are
+learned (3,000 added + 1,578 previously unreachable).
+
+| Qwen2.5-3B-Instruct, 4-bit | Wikipedia | News | Social | Thai chat | English | Belebele Thai | Belebele English |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| original (no training) | 1.173 | 1.449 | 1.719 | 0.942 | 0.817 | 45.4% | 52.2% |
+| control: 2,000 steps | 1.080 | 1.327 | 1.533 | 0.784 | 0.803 | 40.9% | 47.7% |
+| retrofit, rows mean-initialised, untrained | 2.813 | 3.345 | 3.267 | 2.368 | 0.817 | | |
+| **retrofit: 2,000 steps** | **1.203** | **1.483** | **1.714** | **0.863** | **0.799** | **37.4%** | **50.9%** |
+| **retrofit vs control** | **+11.4%** | **+11.7%** | **+11.8%** | **+10.1%** | **−0.6%** | −3.4 pts (p = 0.13) | +3.2 pts (p = 0.17) |
+
+**Unlike 0.5B, the 3B retrofit does not catch up in 2,000 steps.** It ends
+11-12% behind the equally trained control on every Thai register - about
+where the untrained original started (+2.6% / +2.3% / −0.3%) - while reading
+Thai in half the tokens; English is unchanged. On Belebele, Thai is 3.4
+points below the control (not significant, p = 0.13) and 8 points below the
+untrained original (p = 0.001). Training on this mix also costs the
+*control* 4.5 points of Belebele Thai and English (p ≈ 0.05), so the fairest
+comparison is with the control.
+
+This fits the pattern of §7.6: **the better a model already reads Thai, the
+more a retrofit costs it and the longer the swapped rows take to train
+back.** Qwen2.5-0.5B (Belebele near chance) is level after 2,000 steps; the
+3B model and Mistral-7B, which read Thai well, are still behind their
+controls after 1,000-2,000 steps (3B by 11-12% everywhere; Mistral by 7-8%
+on Wikipedia and social, though ahead on news). The tokenizer saving is real at every size;
+for a strong model the training budget is the open cost.
 
 *A bug caught while running this (fixed):* `transformers.AutoTokenizer`, given
 the saved Qwen *model* folder, rebuilds a `Qwen2Tokenizer` with Qwen's default
@@ -988,15 +1040,23 @@ vocabulary's training data.
    a weak-Thai model; for a strong one the rows need a real training budget -
    and 4.1M tokens of QLoRA on a laptop GPU brought Mistral-7B within
    −4..+8% of an equally trained control at a third of the Thai tokens, with
-   English drifting 7% more than the control's (§8.5).
+   English drifting 7% more than the control's - half of which a KL penalty
+   to the original model removes at no Thai cost. Qwen2.5-3B, also strong in
+   Thai, is still 11-12% behind its control after 2,000 steps, while
+   Qwen2.5-0.5B is level (§8.5).
 
 **What to do next.**
 
 - Run the embedding repair at the target scale: mean-initialise Mistral-7B's
   swapped rows and tune only those rows on a GPU for a few thousand steps,
   then measure downstream Thai tasks, not only bits per character.
+- Train strong models longer: the retrofit arms' training loss was still
+  falling when the Qwen2.5-3B and Mistral-7B runs ended (Qwen2.5-3B's control
+  had levelled off). Use the English KL penalty by default, and
+  test it on the control arm too, to separate its effect from general
+  fine-tuning.
 - For Qwen2.5, test the cheapest fix of all - the regex change plus repair of
-  the 1,578 untrained rows - on a larger checkpoint.
+  the 1,578 untrained rows, without adding Thai merges - on 3B.
 - Build the prune list from a deployment's real traffic (including any
   Korean, Chinese, Japanese or Russian it serves), and replace greedy
   allocation with an integer program.

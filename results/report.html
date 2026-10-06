@@ -62,7 +62,7 @@ td[style*="right"], th[style*="right"] { font-variant-numeric: tabular-nums; }
 }
 </style>
 <div class="layout">
-  <aside aria-label="Contents"><div class="eyebrow">Contents</div><ol><li><a href="#tldr">TL;DR</a></li><li><a href="#1-problem">1. Problem</a></li><li><a href="#2-research-questions">2. Research questions</a></li><li><a href="#3-prior-work-and-what-is-new-here">3. Prior work, and what is new here</a></li><li><a href="#4-data">4. Data</a></li><li><a href="#5-metrics">5. Metrics</a></li><li><a href="#6-method">6. Method</a></li><li class="sub"><ol><li><a href="#61-decomposing-the-penalty-week-2">6.1 Decomposing the penalty (Week 2)</a></li><li><a href="#62-candidates-week-3">6.2 Candidates (Week 3)</a></li><li><a href="#63-the-retrofit-week-4">6.3 The retrofit (Week 4)</a></li><li><a href="#64-evaluation-week-5">6.4 Evaluation (Week 5)</a></li><li><a href="#65-embedding-adaptation-week-6">6.5 Embedding adaptation (Week 6)</a></li></ol></li><li><a href="#7-results">7. Results</a></li><li class="sub"><ol><li><a href="#71-the-baseline-reproduces-one-of-its-diagnostics-did-not">7.1 The baseline reproduces; one of its diagnostics did not</a></li><li><a href="#72-where-the-penalty-comes-from">7.2 Where the penalty comes from</a></li><li><a href="#73-what-the-candidates-promise">7.3 What the candidates promise</a></li><li><a href="#74-the-retrofit">7.4 The retrofit</a></li><li><a href="#75-qwen25s-thai-vocabulary-it-cannot-use">7.5 Qwen2.5's Thai vocabulary it cannot use</a></li><li><a href="#76-what-the-swapped-rows-need">7.6 What the swapped rows need</a></li></ol></li><li><a href="#8-robustness-fairness-and-cost">8. Robustness, fairness and cost</a></li><li class="sub"><ol><li><a href="#81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</a></li><li><a href="#82-register-the-retrofit-widens-the-formalinformal-gap-like-every-thai-capable-tokenizer">8.2 Register: the retrofit widens the formal/informal gap, like every Thai-capable tokenizer</a></li><li><a href="#83-embedding-row-accounting">8.3 Embedding-row accounting</a></li><li><a href="#84-who-pays-for-the-freed-slots">8.4 Who pays for the freed slots</a></li></ol></li><li><a href="#85-showcase-the-retrofit-in-a-working-model">8.5 Showcase: the retrofit in a working model</a></li><li><a href="#9-limitations-and-ethics">9. Limitations and ethics</a></li><li><a href="#10-conclusion-and-next-steps">10. Conclusion and next steps</a></li><li><a href="#appendix-reproducing-every-number">Appendix: reproducing every number</a></li><li><a href="#references">References</a></li></ol><a class="dash" href="https://claude.ai/artifact/2AQJGmJ8gcX2JqMcPPKruJ">Open the results dashboard →</a><br><a class="dash" href="https://claude.ai/artifact/AYE74dz6n21h5tJt856RUJ">Try the live Thai Token Meter →</a></aside>
+  <aside aria-label="Contents"><div class="eyebrow">Contents</div><ol><li><a href="#tldr">TL;DR</a></li><li><a href="#1-problem">1. Problem</a></li><li><a href="#2-research-questions">2. Research questions</a></li><li><a href="#3-prior-work-and-what-is-new-here">3. Prior work, and what is new here</a></li><li><a href="#4-data">4. Data</a></li><li><a href="#5-metrics">5. Metrics</a></li><li><a href="#6-method">6. Method</a></li><li class="sub"><ol><li><a href="#61-decomposing-the-penalty-week-2">6.1 Decomposing the penalty (Week 2)</a></li><li><a href="#62-candidates-week-3">6.2 Candidates (Week 3)</a></li><li><a href="#63-the-retrofit-week-4">6.3 The retrofit (Week 4)</a></li><li><a href="#64-evaluation-week-5">6.4 Evaluation (Week 5)</a></li><li><a href="#65-embedding-adaptation-week-6">6.5 Embedding adaptation (Week 6)</a></li></ol></li><li><a href="#7-results">7. Results</a></li><li class="sub"><ol><li><a href="#71-the-baseline-reproduces-one-of-its-diagnostics-did-not">7.1 The baseline reproduces; one of its diagnostics did not</a></li><li><a href="#72-where-the-penalty-comes-from">7.2 Where the penalty comes from</a></li><li><a href="#73-what-the-candidates-promise">7.3 What the candidates promise</a></li><li><a href="#74-the-retrofit">7.4 The retrofit</a></li><li><a href="#75-qwen25s-thai-vocabulary-it-cannot-use">7.5 Qwen2.5's Thai vocabulary it cannot use</a></li><li><a href="#76-what-the-swapped-rows-need">7.6 What the swapped rows need</a></li></ol></li><li><a href="#8-robustness-fairness-and-cost">8. Robustness, fairness and cost</a></li><li class="sub"><ol><li><a href="#81-the-word-segmenter-does-not-drive-any-conclusion">8.1 The word segmenter does not drive any conclusion</a></li><li><a href="#82-register-the-retrofit-widens-the-formalinformal-gap-like-every-thai-capable-tokenizer">8.2 Register: the retrofit widens the formal/informal gap, like every Thai-capable tokenizer</a></li><li><a href="#83-embedding-row-accounting">8.3 Embedding-row accounting</a></li><li><a href="#84-who-pays-for-the-freed-slots">8.4 Who pays for the freed slots</a></li></ol></li><li><a href="#85-showcase-the-retrofit-in-a-working-model">8.5 Showcase: the retrofit in a working model</a></li><li><a href="#9-limitations-and-ethics">9. Limitations and ethics</a></li><li><a href="#10-conclusion-and-next-steps">10. Conclusion and next steps</a></li><li><a href="#appendix-the-proposals-ten-components">Appendix: the proposal's ten components</a></li><li><a href="#appendix-reproducing-every-number">Appendix: reproducing every number</a></li><li><a href="#references">References</a></li></ol><a class="dash" href="https://claude.ai/artifact/2AQJGmJ8gcX2JqMcPPKruJ">Open the results dashboard →</a><br><a class="dash" href="https://claude.ai/artifact/AYE74dz6n21h5tJt856RUJ">Try the live Thai Token Meter →</a></aside>
   <main><h1 id="retrofitting-thai-into-an-open-weight-tokenizer-at-fixed-vocabulary-size">Retrofitting Thai into an open-weight tokenizer at fixed vocabulary size</h1>
 <p>Tanabodhi Mukura (Dean) · CEDT, Chulalongkorn University · AI course project ·
 draft generated 28 September 2026 from the numbers in <code>results/</code></p>
@@ -86,27 +86,31 @@ draft generated 28 September 2026 from the numbers in <code>results/</code></p>
   (spread 1.11, the same as Typhoon; 1.21 if the vocabulary is learned from
   formal text only), and the freed slots come from other languages - Korean
   text costs 39% more tokens, Russian 18%, Chinese 13%, Japanese 10%.</li>
-<li><strong>The swapped embedding rows must be re-set, but that is cheap.</strong> On
-  BLOOM-560m, leaving them as they were nearly doubles Thai bits per
-  character and random re-initialisation quadruples it; setting each row to
-  the mean of the pieces it replaces recovers most of the loss with no
-  training, and 200 steps training only those rows ends <em>better</em> than the
-  original on Thai (-9 to -14% bits per character, with the caveat in §7.6)
-  at a third of the tokens, with English unchanged. <strong>On the target model,
-  Mistral-7B, a CPU-sized pass is not enough</strong> - it already reads Thai well -
-  but QLoRA on a laptop GPU closes most of the gap: after 1,000 steps the
-  retrofitted Mistral-7B beats an equally trained control on news (−4%) and
-  is 7-8% behind on Wikipedia and social, at a third of the Thai tokens -
-  though its English bits/char drift 7% more than the control's (§8.5). On a
-  reading-comprehension benchmark (Belebele, Thai and English) neither
-  Mistral-7B nor Qwen2.5-0.5B shows a measurable loss against its control
-  (Thai −2.4 and −2.8 points, p ≥ 0.2; English unchanged). "No retraining" is
-  narrowed to: no expansion and no pretraining from scratch, but the swapped
-  rows must be re-set and trained.</li>
+<li><strong>The swapped embedding rows must be re-set; for a weak-Thai model that is
+  cheap, for a strong one it is the real cost.</strong> On BLOOM-560m, leaving them
+  as they were nearly doubles Thai bits per character and random
+  re-initialisation quadruples it; setting each row to the mean of the
+  pieces it replaces recovers most of the loss with no training, and 200
+  steps training only those rows ends <em>better</em> than the original on Thai (-9
+  to -14% bits per character, with the caveat in §7.6) at a third of the
+  tokens, with English unchanged. Qwen2.5-0.5B with LoRA is level with an
+  equally trained control after 2,000 steps. <strong>Models that already read Thai
+  well take longer:</strong> after 1,000 QLoRA steps on a laptop GPU the retrofitted
+  Mistral-7B beats its control on news (−4%) and is 5-8% behind on Wikipedia
+  and social, at a third of the Thai tokens; Qwen2.5-3B is 11-12% behind
+  after 2,000 steps, at half (§8.5). Training the retrofit drifts English
+  7% more than the control, and <strong>a KL penalty to the original model on the
+  English text removes half of that at no Thai cost</strong>. On Belebele reading
+  comprehension no retrofit trained on the token-balanced mix is measurably
+  worse than its control (Thai −0.1
+  to −3.4 points, p ≥ 0.13; English unchanged). "No retraining" is narrowed
+  to: no expansion and no pretraining from scratch, but the swapped rows
+  must be re-set and trained.</li>
 <li><strong>Several earlier claims did not survive checking</strong> and are corrected here:
   the Week 1 mark-split metric, the cl100k recommendation, "every tokenizer
-  costs more on social text", and the novelty of fixed-size replacement for
-  Thai (Csaki et al. did it in 2023).</li>
+  costs more on social text", the novelty of fixed-size replacement for
+  Thai (Csaki et al. did it in 2023), and of the regex diagnosis (Regmi et
+  al. published it in 2026; this project confirms it on real tokenizers).</li>
 </ul>
 </div><hr />
 <h2 id="1-problem">1. Problem</h2>
@@ -173,13 +177,22 @@ WECHSEL (Minixhofer et al., 2022) and FOCUS (Dobler &amp; de Melo, 2023) use
 aligned or auxiliary embedding spaces.</p>
 <p><strong>Pre-tokenization.</strong> Dagan et al. (2024) and Velayuthan &amp; Sarveswaran (2025)
 show the pre-tokenizer regex bounds what a vocabulary can do; the latter show
-GPT-4-style regexes breaking Tamil, Sinhala and Hindi words at vowel signs.</p>
+GPT-4-style regexes breaking Tamil, Sinhala and Hindi words at vowel signs.
+<strong>Regmi et al. (2026) name the cause this report also finds</strong>: the <code>\p{L}+</code>
+word class excludes combining marks, so it splits abugida words at every
+vowel sign. Across 26 languages on FLORES-200, Thai is the worst case - 9.02x
+as many pre-tokens under <code>\p{L}+</code> as under <code>[\p{L}\p{M}]+</code> (37.4 vs 4.1 per
+100 characters, a floor on the token count, not the count) - and they note
+o200k already uses the mark-aware class. Their study builds and trains a
+Nepali tokenizer from scratch; it does not decompose existing tokenizers or
+look at Thai vocabularies.</p>
 <p><strong>What this project adds</strong>, relative to that work:</p>
 <ol>
 <li>A per-tokenizer <strong>decomposition</strong> of the Thai penalty into
-   pre-tokenization and vocabulary shares across nine tokenizers, with the
-   specific cause named: <code>\p{L}+</code> in the cl100k and Qwen2.5 regexes excludes
-   Thai combining marks (<code>\p{M}</code>).</li>
+   pre-tokenization and vocabulary shares across nine tokenizers, measured
+   with their real vocabularies. The cause it finds for cl100k and Qwen2.5
+   (<code>\p{L}+</code> excludes Thai combining marks, <code>\p{M}</code>) confirms Regmi et al.
+   (2026); what is new is how much of each tokenizer's excess it explains.</li>
 <li>The finding that <strong>Qwen2.5 already contains 1,578 Thai vocabulary entries
    its own pre-tokenizer can never emit</strong>, that all of them are untrained, and
    what it takes to make them usable.</li>
@@ -1386,7 +1399,7 @@ tokens; <code>mistral_adapt_*_s1000.json</code>), same design otherwise.</p>
 and social, at a third of the Thai tokens, and it is better than the untrained
 original on every register (−5% / −22% / −8%).</p>
 <p><strong>English drifts in both arms, more in the retrofit.</strong> Against the untrained
-model the control's English bits/char rise 5.8% and the retrofit's 13.1%,
+model the control's English bits/char rise 5.9% and the retrofit's 13.2%,
 despite the extra English windows. The tokenizer cannot cause this (English
 text is tokenized identically in both arms), so it comes from training: about
 half is what a Thai fine-tune of this size does to any Mistral-7B, and the
@@ -1446,6 +1459,15 @@ per-window loss weight; <code>--thai-windows 2</code>,
 <td style="text-align: right;">29.9%</td>
 <td style="text-align: right;">54.2%</td>
 </tr>
+<tr>
+<td><strong>retrofit + English KL penalty</strong></td>
+<td style="text-align: right;"><strong>1.463</strong></td>
+<td style="text-align: right;"><strong>1.825</strong></td>
+<td style="text-align: right;"><strong>2.096</strong></td>
+<td style="text-align: right;"><strong>0.790</strong></td>
+<td style="text-align: right;"><strong>36.2%</strong></td>
+<td style="text-align: right;"><strong>53.9%</strong></td>
+</tr>
 </tbody>
 </table></div>
 <p>Balancing by characters closes only <strong>24% of the English gap</strong> (0.818 → 0.806)
@@ -1456,11 +1478,24 @@ rows get 2.5 times fewer Thai updates. It is not a fix. Between them the two
 tests account for roughly a third of the extra English drift (output rows ~11%,
 Thai dose ~24%); the rest most plausibly reflects the cost of re-learning
 2,483 token representations through the shared weights, which no training-mix
-change removes. The token-balanced mix stays the recommended recipe; ways to
-protect English directly (a KL penalty to the original model on English text,
-or LoRA on fewer layers) are untested. Note that none of the English
-bits/char drift shows up as lost English reading comprehension on Belebele.
-A deployment should re-check English after any longer tuning.</p>
+change removes. The token-balanced mix stays the recommended recipe.</p>
+<p><em>Anchoring English to the original model does help</em> (<code>--kl-english 1.0</code>,
+<code>mistral_adapt_retrofit-mistral-7b-th2483_s1000_kl1.json</code>). A fourth
+retrofit run kept the token-balanced mix and added, on each English window,
+the per-token KL divergence from the untrained Mistral-7B (the LoRA switched
+off and the swapped rows put back to their shipped values) at weight 1.0,
+for ~15% more training time. English drift against the untrained model falls
+from +13.2% to +9.3% (the control's is +5.9%): <strong>the penalty removes 54% of
+the retrofit's extra English drift</strong>, more than twice what character
+balancing did, and it <strong>costs no Thai</strong> - bits/char are 0.3-1.5% <em>better</em>
+than the plain retrofit on every register (+5.9% / −4.2% / +5.0% against the
+control), and Belebele Thai is level with the control (36.2% vs 36.3%,
+p = 0.96). Caveats: one run at one weight, and the control did not get the
+same penalty, so part of the gain may be a general fine-tuning effect that
+would help the control too. <strong>It is the recommended recipe when English
+matters.</strong> LoRA on fewer layers is untested. None of the English bits/char
+drift, in any run, shows up as lost English reading comprehension on
+Belebele; a deployment should still re-check English after longer tuning.</p>
 <p><strong>Reading comprehension (Belebele, Thai and English, 900 questions each).</strong>
 Scored by per-character log-likelihood of the four answers
 (<code>src/belebele_eval.py</code>, 95% Wilson intervals). Qwen2.5-0.5B-Instruct is small
@@ -1535,12 +1570,101 @@ on the GPU):</p>
 control its Thai accuracy is 2.4 points lower (p = 0.28) and its English 0.6
 points lower (p = 0.81). The +7% English bits/char drift of §8.5 does not show
 up as lost English comprehension.</p>
-<p><strong>Both models tell the same story:</strong> no measurable loss of reading
+<p><strong>Both small-budget comparisons tell the same story</strong> (Qwen2.5-3B, below,
+is less clear-cut): no measurable loss of reading
 comprehension in either language, at half (Qwen) to a third (Mistral) of the
 Thai tokens. Both Thai point estimates lean slightly against the retrofit
 (−2.4 and −2.8 points), and 900 questions can only detect differences of about
 4 points, so a small real cost cannot be ruled out; a larger model or a
 longer benchmark would be needed to settle it.</p>
+<p><strong>A larger, stronger Qwen: Qwen2.5-3B-Instruct (GPU extra).</strong> Qwen2.5-3B
+uses the identical tokenizer (same <code>tokenizer.json</code>), so the same
+3,000-slot retrofit applies. The 0.5B two-arm design was rerun for 2,000
+steps in 4-bit NF4 (<code>qwen_adapt.py --base Qwen/Qwen2.5-3B-Instruct --quant4</code>,
+<code>qwen3b_adapt_*.json</code>); every condition is evaluated under the same 4-bit
+weights on the GPU, so compare within this table only. 4,578 rows are
+learned (3,000 added + 1,578 previously unreachable).</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Qwen2.5-3B-Instruct, 4-bit</th>
+<th style="text-align: right;">Wikipedia</th>
+<th style="text-align: right;">News</th>
+<th style="text-align: right;">Social</th>
+<th style="text-align: right;">Thai chat</th>
+<th style="text-align: right;">English</th>
+<th style="text-align: right;">Belebele Thai</th>
+<th style="text-align: right;">Belebele English</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>original (no training)</td>
+<td style="text-align: right;">1.173</td>
+<td style="text-align: right;">1.449</td>
+<td style="text-align: right;">1.719</td>
+<td style="text-align: right;">0.942</td>
+<td style="text-align: right;">0.817</td>
+<td style="text-align: right;">45.4%</td>
+<td style="text-align: right;">52.2%</td>
+</tr>
+<tr>
+<td>control: 2,000 steps</td>
+<td style="text-align: right;">1.080</td>
+<td style="text-align: right;">1.327</td>
+<td style="text-align: right;">1.533</td>
+<td style="text-align: right;">0.784</td>
+<td style="text-align: right;">0.803</td>
+<td style="text-align: right;">40.9%</td>
+<td style="text-align: right;">47.7%</td>
+</tr>
+<tr>
+<td>retrofit, rows mean-initialised, untrained</td>
+<td style="text-align: right;">2.813</td>
+<td style="text-align: right;">3.345</td>
+<td style="text-align: right;">3.267</td>
+<td style="text-align: right;">2.368</td>
+<td style="text-align: right;">0.817</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td><strong>retrofit: 2,000 steps</strong></td>
+<td style="text-align: right;"><strong>1.203</strong></td>
+<td style="text-align: right;"><strong>1.483</strong></td>
+<td style="text-align: right;"><strong>1.714</strong></td>
+<td style="text-align: right;"><strong>0.863</strong></td>
+<td style="text-align: right;"><strong>0.799</strong></td>
+<td style="text-align: right;"><strong>37.4%</strong></td>
+<td style="text-align: right;"><strong>50.9%</strong></td>
+</tr>
+<tr>
+<td><strong>retrofit vs control</strong></td>
+<td style="text-align: right;"><strong>+11.4%</strong></td>
+<td style="text-align: right;"><strong>+11.7%</strong></td>
+<td style="text-align: right;"><strong>+11.8%</strong></td>
+<td style="text-align: right;"><strong>+10.1%</strong></td>
+<td style="text-align: right;"><strong>−0.6%</strong></td>
+<td style="text-align: right;">−3.4 pts (p = 0.13)</td>
+<td style="text-align: right;">+3.2 pts (p = 0.17)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Unlike 0.5B, the 3B retrofit does not catch up in 2,000 steps.</strong> It ends
+11-12% behind the equally trained control on every Thai register - about
+where the untrained original started (+2.6% / +2.3% / −0.3%) - while reading
+Thai in half the tokens; English is unchanged. On Belebele, Thai is 3.4
+points below the control (not significant, p = 0.13) and 8 points below the
+untrained original (p = 0.001). Training on this mix also costs the
+<em>control</em> 4.5 points of Belebele Thai and English (p ≈ 0.05), so the fairest
+comparison is with the control.</p>
+<p>This fits the pattern of §7.6: <strong>the better a model already reads Thai, the
+more a retrofit costs it and the longer the swapped rows take to train
+back.</strong> Qwen2.5-0.5B (Belebele near chance) is level after 2,000 steps; the
+3B model and Mistral-7B, which read Thai well, are still behind their
+controls after 1,000-2,000 steps (3B by 11-12% everywhere; Mistral by 7-8%
+on Wikipedia and social, though ahead on news). The tokenizer saving is real at every size;
+for a strong model the training budget is the open cost.</p>
 <p><em>A bug caught while running this (fixed):</em> <code>transformers.AutoTokenizer</code>, given
 the saved Qwen <em>model</em> folder, rebuilds a <code>Qwen2Tokenizer</code> with Qwen's default
 <code>\p{L}+</code> pattern and ignores the mark-aware pattern stored in tokenizer.json
@@ -1578,9 +1702,9 @@ deployment can check it against its own traffic.</p>
 <p><strong>Scale of the model experiments.</strong> Everything except one clearly marked
 extra ran on a CPU. The full initialisation-and-tuning comparison used small
 models (BLOOM-560m, Qwen2.5-0.5B); Mistral-7B was evaluated on 40 passages per
-domain, tuned for 160 steps on the CPU, and - the extra - trained for 400
-QLoRA steps in 4-bit on a laptop GPU (§8.5), so its trained numbers are for
-4-bit weights. Bits per character is the only quality measure.
+domain, tuned for 160 steps on the CPU, and - the extra - trained for up to
+1,000 QLoRA steps in 4-bit on a laptop GPU (§8.5), so its trained numbers are
+for 4-bit weights. Bits per character is the only quality measure.
 These results show the direction and rough size of the effect, not the
 downstream task quality of a properly tuned 7B model.</p>
 <p><strong>Data.</strong> The social domain is small (189k evaluation characters) and comes
@@ -1640,15 +1764,23 @@ vocabulary's training data.</p>
    a weak-Thai model; for a strong one the rows need a real training budget -
    and 4.1M tokens of QLoRA on a laptop GPU brought Mistral-7B within
    −4..+8% of an equally trained control at a third of the Thai tokens, with
-   English drifting 7% more than the control's (§8.5).</li>
+   English drifting 7% more than the control's - half of which a KL penalty
+   to the original model removes at no Thai cost. Qwen2.5-3B, also strong in
+   Thai, is still 11-12% behind its control after 2,000 steps, while
+   Qwen2.5-0.5B is level (§8.5).</li>
 </ol>
 <p><strong>What to do next.</strong></p>
 <ul>
 <li>Run the embedding repair at the target scale: mean-initialise Mistral-7B's
   swapped rows and tune only those rows on a GPU for a few thousand steps,
   then measure downstream Thai tasks, not only bits per character.</li>
+<li>Train strong models longer: the retrofit arms' training loss was still
+  falling when the Qwen2.5-3B and Mistral-7B runs ended (Qwen2.5-3B's control
+  had levelled off). Use the English KL penalty by default, and
+  test it on the control arm too, to separate its effect from general
+  fine-tuning.</li>
 <li>For Qwen2.5, test the cheapest fix of all - the regex change plus repair of
-  the 1,578 untrained rows - on a larger checkpoint.</li>
+  the 1,578 untrained rows, without adding Thai merges - on 3B.</li>
 <li>Build the prune list from a deployment's real traffic (including any
   Korean, Chinese, Japanese or Russian it serves), and replace greedy
   allocation with an integer program.</li>
@@ -1656,6 +1788,14 @@ vocabulary's training data.</p>
   boundaries that respect Thai clusters; it costs about one point of
   reduction.</li>
 </ul>
+<h2 id="appendix-the-proposals-ten-components">Appendix: the proposal's ten components</h2>
+<p><code>PROPOSAL_MAP.md</code> maps each component of the mid-term proposal (objectives,
+scope, related work, approach, data, metrics, responsible AI, plan) to the
+section of this report that answers it, with every target, what was
+delivered, and every change from the plan and why. In short: all five
+numeric targets are met; the base tokenizer, the third domain and the
+training-data volume changed; and the proposal's stated research gap was
+narrowed after checking the sources (§3).</p>
 <h2 id="appendix-reproducing-every-number">Appendix: reproducing every number</h2>
 <p>All scripts are in <code>src/</code>, all outputs in <code>results/</code>; CPU only, public data
 only. Corpora download on first use and are cached in <code>~/.cache/thaitok</code>.</p>
@@ -1793,6 +1933,9 @@ Linguistics. https://doi.org/10.18653/v1/2023.nlposs-1.4</p>
 Patomwong, R., Chokchainant, P., &amp; Tharnpipitchai, K. (2023). <em>Typhoon: Thai
 large language models</em> (arXiv:2312.13951). arXiv.
 https://doi.org/10.48550/arXiv.2312.13951</p>
+<p>Regmi, S., Pudasaini, S., &amp; Pun, C. P. (2026). <em>Vowel signs are not letters:
+A pre-tokenization ceiling on multilingual tokenizer fertility</em>
+(arXiv:2608.26449). arXiv. https://doi.org/10.48550/arXiv.2608.26449</p>
 <p>Rust, P., Pfeiffer, J., Vulić, I., Ruder, S., &amp; Gurevych, I. (2021). How good
 is your tokenizer? On the monolingual performance of multilingual language
 models. In C. Zong, F. Xia, W. Li, &amp; R. Navigli (Eds.), <em>Proceedings of the

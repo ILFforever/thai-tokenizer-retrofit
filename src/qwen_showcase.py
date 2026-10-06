@@ -23,6 +23,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent))
 
 from hf_tok import load_tokenizer  # noqa: E402
+from paths import model_dir  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
 RESULTS = ROOT / "results"
@@ -94,8 +95,8 @@ def main() -> None:
 
     arms = [
         ("original", BASE, BASE, False),
-        ("control", str(ROOT / args.control), BASE, False),
-        ("retrofit", str(ROOT / args.retrofit), str(ROOT / args.retrofit), True),
+        ("control", str(model_dir(args.control)), BASE, False),
+        ("retrofit", str(model_dir(args.retrofit)), str(model_dir(args.retrofit)), True),
     ]
     ps = prompts(args.n)
     ps.append({"label": "English", "prompt": "In two sentences, why do some languages cost more tokens than English?",

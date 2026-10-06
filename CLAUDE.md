@@ -86,16 +86,27 @@ CPU runs). Mistral-7B
 two-arm QLoRA on the laptop GPU (optional extra, `src/mistral_adapt_gpu.py`,
 venv `~/.venvs/thaitok-gpu`): retrofit within 1-10% of control at ~1/3 of the
 Thai tokens (400 steps). Paired 1,000 steps: retrofit vs control +7.5% / -3.8% /
-+6.6% (wiki/news/social); English drifts +5.8% (control) vs +13.1% (retrofit)
++6.6% (wiki/news/social); English drifts +5.9% (control) vs +13.2% (retrofit)
 against the untrained model - half general fine-tune drift, ~7% retrofit extra.
 NOT mainly the output-head rows: masking the swapped ids recovers only ~11% of
 it (src/drift_probe.py). Character-balancing the mix (--thai-windows 2) closes only
 ~24% and costs a lot of Thai (Belebele Thai 29.9% vs 36.3%, p = 0.004) - not a fix;
-the rest is most plausibly the cost of re-learning 2,483 tokens. Keep the token mix. Belebele
+the rest is most plausibly the cost of re-learning 2,483 tokens. Keep the token mix.
+A KL penalty to the untrained model on the English windows (--kl-english 1.0,
+--english-windows 3, _s1000_kl1) removes 54% of the extra drift (English +9.3%)
+at no Thai cost (+5.9% / -4.2% / +5.0% vs control; Belebele Thai 36.2% vs 36.3%)
+- the recommended recipe; one run, control not given the same penalty.
+Qwen2.5-3B-Instruct (same tokenizer, 4-bit, `qwen_adapt.py --quant4`, 2,000
+steps, results/qwen3b_adapt_*.json): retrofit 11-12% behind control on Thai,
+about level with the untrained original; Belebele Thai 37.4 vs control 40.9
+(p = 0.13) vs original 45.4. The stronger the model in Thai, the longer the
+swapped rows take. Belebele
 (Qwen2.5-0.5B, near chance): original 36.2 / control 34.7 / retrofit 31.9% Thai,
 not separable (p = 0.21), English unchanged; showcase: retrofit ~1.8x Thai
 chars/s. Load retrofitted Qwen tokenizers with `src/hf_tok.py` - AutoTokenizer
-on a Qwen model folder silently restores the default `\p{L}+` regex. Live page: Thai Token Meter (`showcase/`, JS BPE verified
+on a Qwen model folder silently restores the default `\p{L}+` regex. Trained
+models live in ~/thaitok_models (outside OneDrive; `src/paths.py`), still
+named `models/<folder>` in commands and results. Live page: Thai Token Meter (`showcase/`, JS BPE verified
 id-for-id against 7 real tokenizers by `node tests/web_bpe.test.mjs`).
 Typhoon-7B is SCB 10X's model (vocabulary expanded), only used for comparison.
 

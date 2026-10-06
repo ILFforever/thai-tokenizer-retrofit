@@ -1,0 +1,31 @@
+{
+  "name": "qwen3b_retrofit_gpu2000",
+  "kind": "qwen",
+  "model": null,
+  "base": "Qwen/Qwen2.5-3B-Instruct",
+  "adapter": "models/qwen2.5-3b-instruct-retrofit-qwen2-5-instruct-ma-th3000_gpu2000",
+  "device": "cuda",
+  "langs": {
+    "tha_Thai": {
+      "n": 900,
+      "correct": 337,
+      "accuracy": 0.37444444444444447,
+      "ci95": [
+        0.3434208797008832,
+        0.4065353073124164
+      ],
+      "passage_tok100": 26.252160146950416
+    },
+    "eng_Latn": {
+      "n": 900,
+      "correct": 458,
+      "accuracy": 0.5088888888888888,
+      "ci95": [
+        0.47625906695173603,
+        0.5414431498968798
+      ],
+      "passage_tok100": 20.802471571588068
+    }
+  },
+  "seconds": 1276.2
+}

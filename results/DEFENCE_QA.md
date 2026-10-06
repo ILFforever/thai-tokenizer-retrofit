@@ -97,17 +97,28 @@ control 36.3%, retrofit 33.9%, p = 0.28 - not a measurable difference.
 English unchanged. Qwen2.5-0.5B is the same story (p = 0.21). *(§8.5)*
 
 **Q: Qwen2.5-0.5B on Belebele is near chance (25%). Isn't that meaningless?**
-For Qwen, largely yes - it is a weak test, and I say so. Mistral-7B is well
-above chance and is the stronger evidence. *(Qwen2.5-3B result: see the end
-of this file.)*
+For 0.5B, largely yes, and I say so. That is why I also ran Qwen2.5-3B
+(45% Thai) and Mistral-7B (37%). At 3B the retrofit is 3.4 points below its
+control - not significant (p = 0.13) - but it is the largest gap, and I
+report it. *(§8.5)*
+
+**Q: Does it work on a stronger model?**
+Less easily. Qwen2.5-3B uses the same tokenizer, so the same retrofit
+applies. After 2,000 steps it is 11-12% behind an equally trained control on
+Thai bits per character - about where the untrained model started - at half
+the Thai tokens. Qwen2.5-0.5B was level after the same training. The pattern
+across all three models: the better a model already reads Thai, the longer
+the swapped rows take to train back. *(§8.5)*
 
 **Q: English got worse after training. Why?**
-Any fine-tune drifts: the control's English bits per character rose 5.8%,
-the retrofit's 13.1%. I tested two explanations for the extra ~7%. Masking
-the swapped output rows explains only ~11% of it. Feeding the retrofit the
-same amount of Thai *text* as the control closes only 24%, and costs a lot of
-Thai (Belebele Thai 29.9%, p = 0.004). The most likely cause is the cost of
-re-learning 2,483 tokens. *(§8.5, `drift_probe_mistral-7b.json`)*
+Any fine-tune drifts: the control's English bits per character rose 5.9%,
+the retrofit's 13.2%. Masking the swapped output rows explains only ~11% of
+the extra; feeding the same Thai *text* as the control closes 24% but costs
+a lot of Thai. **What works: a KL penalty that keeps English predictions
+close to the original model.** It removes 54% of the extra drift (English
++9.3%), costs no Thai, and Belebele Thai is level with the control (36.2% vs
+36.3%). One run, one weight - but it is now the recommended recipe.
+*(§8.5)*
 
 **Q: Is 13% English drift a problem in practice?**
 On Belebele English it does not show: 52.8% vs 53.3% for the control. It is
@@ -208,9 +219,10 @@ pass, the smoke test passes, and the browser tokenizers match the real ones
 on 2,114 of 2,114 test strings. *(README, appendix)*
 
 **Q: What would you do next?**
-Train the swapped rows at real scale on Mistral-7B and test downstream Thai
-tasks; build the prune list from real deployment traffic; try an integer
-program for slot allocation. *(§10)*
+Train strong models longer (their retrofit loss was still falling), with the
+English KL penalty on by default and also on the control; test downstream
+Thai tasks; build the prune list from real deployment traffic; try an
+integer program for slot allocation. *(§10)*
 
 **Q: Did you use AI tools?** Have your answer ready in line with the course
 policy - which parts you designed and checked yourself, and how the tools
@@ -218,11 +230,11 @@ were used.
 
 ---
 
-## Results arriving overnight (5-6 Oct)
+## Results added 6 Oct (overnight GPU runs)
 
-Two runs are on the GPU queue. Their answers go here when they finish:
-
-- **Qwen2.5-3B, control vs retrofit, 2,000 steps + Belebele** - does the
-  Qwen result hold on a model that is well above chance?
-- **Mistral-7B retrofit with an English KL penalty, 1,000 steps** - does
-  anchoring English to the original model remove the extra English drift?
+- **Qwen2.5-3B, 2,000 steps:** retrofit 11-12% behind its control on Thai,
+  English unchanged; Belebele Thai 37.4% vs control 40.9% (p = 0.13) vs
+  untrained 45.4%. Training on this mix cost the control 4.5 points too.
+- **Mistral-7B retrofit + English KL penalty, 1,000 steps:** removes 54% of
+  the extra English drift at no Thai cost; Belebele Thai 36.2% (control
+  36.3%), English 53.9% (control 53.3%).

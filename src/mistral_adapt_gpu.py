@@ -43,10 +43,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from corpora import load_parallel, load_thai_domain  # noqa: E402
 from embed_adapt import passages  # noqa: E402
+from paths import MODELS  # noqa: E402
 
 ROOT = Path(__file__).parent.parent
 RESULTS = ROOT / "results"
-MODELS = ROOT / "models"
 DOMAINS = ["wikipedia", "news", "social"]
 BASE = "mistralai/Mistral-7B-v0.1"
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
@@ -223,7 +223,7 @@ def main() -> None:
     model.eval()
     results["trained"] = evaluate(f"{args.arm} after {args.steps} steps")
 
-    MODELS.mkdir(exist_ok=True)
+    MODELS.mkdir(parents=True, exist_ok=True)
     out = MODELS / f"mistral-7b-qlora-{tag}"
     model.save_pretrained(str(out))  # LoRA adapter
     if rows:
@@ -235,7 +235,7 @@ def main() -> None:
             "seq": args.seq, "english_windows_per_batch": args.english_windows,
             "thai_windows_per_step": n_th, "kl_english": args.kl_english, "train_tokens_seen": args.steps * (n_th + args.english_windows) * args.seq, "lora_rank": args.rank,
             "lr_lora": args.lr_lora, "lr_rows": args.lr_rows, "rows_learned": len(rows),
-            "gpu": torch.cuda.get_device_name(0), "log": log, "saved_to": str(out.relative_to(ROOT)),
+            "gpu": torch.cuda.get_device_name(0), "log": log, "saved_to": f"models/{out.name}",
             "seconds": round(time.time() - t0, 1)}
     (RESULTS / f"mistral_adapt_{tag}.json").write_text(json.dumps({"meta": meta, "results": results}, indent=2),
                                                       encoding="utf-8")
