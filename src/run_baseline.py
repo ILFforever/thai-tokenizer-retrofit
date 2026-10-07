@@ -15,6 +15,8 @@ import sys
 import time
 from pathlib import Path
 
+import tiktoken
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from corpora import describe, load_parallel, load_thai_domain  # noqa: E402
@@ -25,6 +27,7 @@ from metrics import (  # noqa: E402
     to_rows,
 )
 from registry import load_all  # noqa: E402
+from versions import REVISIONS  # noqa: E402
 
 DOMAINS = ["wikipedia", "news", "social"]
 RESULTS = Path(__file__).parent.parent / "results"
@@ -206,6 +209,8 @@ def main() -> None:
                 "parallel_pairs": args.pairs,
                 "segmenter": SEGMENTER_NAME,
                 "tokenizers": [t.label for t in toks],
+                "hub_revisions": REVISIONS,
+                "tiktoken": tiktoken.__version__,
                 "skipped": skipped,
                 "seconds": round(time.time() - t0, 1),
             },

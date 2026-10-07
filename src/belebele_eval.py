@@ -19,6 +19,8 @@ Accuracy carries a 95% Wilson interval; chance is 25%.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import json
 import math
@@ -63,9 +65,9 @@ def load(kind: str, model_path: str | None, adapter: str | None, dev, base: str 
             name, device_map={"": 0}, dtype=torch.bfloat16,
             quantization_config=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                                                    bnb_4bit_compute_dtype=torch.bfloat16,
-                                                   bnb_4bit_use_double_quant=True))
+                                                   bnb_4bit_use_double_quant=True), revision=rev(name))
         # Qwen: hf_tok, because AutoTokenizer would drop a retrofit's saved regex
-        tok = AutoTokenizer.from_pretrained(name) if kind == "mistral" else load_tokenizer(name)
+        tok = AutoTokenizer.from_pretrained(name, revision=rev(name)) if kind == "mistral" else load_tokenizer(name)
         if adapter:
             from paths import model_dir
 
@@ -90,7 +92,7 @@ def load(kind: str, model_path: str | None, adapter: str | None, dev, base: str 
         from hf_tok import load_tokenizer  # AutoTokenizer would drop a retrofit's saved regex
 
         tok = load_tokenizer(path)
-        model = AutoModelForCausalLM.from_pretrained(path, dtype=torch.bfloat16 if dev.type == "cuda" else torch.float32)
+        model = AutoModelForCausalLM.from_pretrained(path, dtype=torch.bfloat16 if dev.type == "cuda" else torch.float32, revision=rev(path))
         model.to(dev)
         bos = tok.convert_tokens_to_ids("<|endoftext|>")
     model.eval()
@@ -135,7 +137,7 @@ def main() -> None:
     out = {"name": args.name, "kind": args.kind, "model": args.model, "base": args.base, "adapter": args.adapter,
            "device": str(dev), "langs": {}}
     for lang in args.langs:
-        ds = load_dataset("facebook/belebele", lang, split="test")
+        ds = load_dataset("facebook/belebele", lang, split="test", revision=rev("facebook/belebele"))
         n = min(args.n, len(ds))
         right, ntok, nchar = 0, 0, 0
         for i in range(n):

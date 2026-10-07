@@ -16,6 +16,8 @@ unrelated English text would measure the topics, not the tokenizers.
 
 from __future__ import annotations
 
+from versions import rev
+
 import json
 import os
 import re
@@ -98,15 +100,15 @@ def _stream_domain(domain: str):
     min_chars, min_thai = 120, 0.55
     if domain == "wikipedia":
         ds = load_dataset(
-            "wikimedia/wikipedia", "20231101.th", split="train", streaming=True
+            "wikimedia/wikipedia", "20231101.th", split="train", streaming=True, revision=rev("wikimedia/wikipedia")
         )
         field_of = lambda r: r["text"]
     elif domain == "news":
-        ds = load_dataset("pythainlp/thaisum", split="train", streaming=True)
+        ds = load_dataset("pythainlp/thaisum", split="train", streaming=True, revision=rev("pythainlp/thaisum"))
         field_of = lambda r: r["body"]
     elif domain == "social":
         ds = load_dataset(
-            "pythainlp/wisesight_sentiment", split="train", streaming=True
+            "pythainlp/wisesight_sentiment", split="train", streaming=True, revision=rev("pythainlp/wisesight_sentiment")
         )
         field_of = lambda r: r["texts"]
         min_chars = 40  # social posts are legitimately short
@@ -116,7 +118,7 @@ def _stream_domain(domain: str):
         # later, disjoint slice. `english_raw` keeps line breaks and runs of
         # spaces, as real text has them, so whitespace tokens are counted.
         ds = load_dataset(
-            "wikimedia/wikipedia", "20231101.en", split="train", streaming=True
+            "wikimedia/wikipedia", "20231101.en", split="train", streaming=True, revision=rev("wikimedia/wikipedia")
         )
         field_of = lambda r: r["text"]
     elif domain == "code":
@@ -124,7 +126,7 @@ def _stream_domain(domain: str):
         # deployment still needs. Train split here; the collateral check in
         # robustness.py uses the separate validation split.
         ds = load_dataset(
-            "codeparrot/codeparrot-clean", split="train", streaming=True
+            "codeparrot/codeparrot-clean", split="train", streaming=True, revision=rev("codeparrot/codeparrot-clean")
         )
         field_of = lambda r: r["content"]
     else:
@@ -212,7 +214,7 @@ def load_parallel(n_pairs: int = 4000, min_chars: int = 40) -> ParallelCorpus:
     figures are dominated by rounding.
     """
     ds = load_dataset(
-        "Helsinki-NLP/opus-100", "en-th", split="train", streaming=True
+        "Helsinki-NLP/opus-100", "en-th", split="train", streaming=True, revision=rev("Helsinki-NLP/opus-100")
     )
     thai: list[str] = []
     english: list[str] = []

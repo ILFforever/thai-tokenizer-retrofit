@@ -33,6 +33,8 @@ merged model, and results go to qwen3b_adapt_<tag>.json (size from --base).
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import csv
 import json
@@ -64,7 +66,7 @@ def instruction_texts(tok, n: int, split: str = "train") -> list[str]:
     the model's own chat template."""
     from datasets import load_dataset
 
-    ds = load_dataset("airesearch/WangchanThaiInstruct", split=split, streaming=True)
+    ds = load_dataset("airesearch/WangchanThaiInstruct", split=split, streaming=True, revision=rev("airesearch/WangchanThaiInstruct"))
     out = []
     for r in ds:
         user = r["Instruction"] if r["Input"] in (None, "", "None") else f"{r['Instruction']}\n\n{r['Input']}"
@@ -171,7 +173,7 @@ def main() -> None:
     from peft import LoraConfig, get_peft_model
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    shipped = AutoTokenizer.from_pretrained(args.base)
+    shipped = AutoTokenizer.from_pretrained(args.base, revision=rev(args.base))
     tok = shipped if args.arm == "control" else load_tokenizer(ROOT / args.tokenizer)
     prefix = shipped.convert_tokens_to_ids("<|endoftext|>")
     tag = (args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}") + args.tag
@@ -213,10 +215,10 @@ def main() -> None:
             args.base, device_map={"": 0}, dtype=torch.bfloat16,
             quantization_config=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                                                    bnb_4bit_compute_dtype=torch.bfloat16,
-                                                   bnb_4bit_use_double_quant=True))
+                                                   bnb_4bit_use_double_quant=True), revision=rev(args.base))
         print(f"  loaded 4-bit: {torch.cuda.memory_allocated() / 1e9:.1f} GB on GPU ({time.time() - t0:.0f}s)", flush=True)
     else:
-        model = AutoModelForCausalLM.from_pretrained(args.base, dtype=torch.float32).to(dev)
+        model = AutoModelForCausalLM.from_pretrained(args.base, dtype=torch.float32, revision=rev(args.base)).to(dev)
     emb = model.get_input_embeddings().weight
     tied = emb.data_ptr() == model.get_output_embeddings().weight.data_ptr()
 
@@ -312,7 +314,7 @@ def main() -> None:
     results["trained"] = evaluate(f"{args.arm} after {args.steps} steps")
 
     if rows and not args.quant4:
-        base_emb = AutoModelForCausalLM.from_pretrained(args.base, dtype=torch.float32).get_input_embeddings().weight
+        base_emb = AutoModelForCausalLM.from_pretrained(args.base, dtype=torch.float32, revision=rev(args.base)).get_input_embeddings().weight
         with torch.no_grad():
             moved = (model.get_input_embeddings().weight.cpu() != base_emb).any(1).nonzero().flatten().tolist()
         results["trained"]["rows_changed"] = len(moved)

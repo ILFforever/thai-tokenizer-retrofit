@@ -7,6 +7,8 @@ the models is unavailable.
 
 from __future__ import annotations
 
+from versions import rev
+
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -128,7 +130,7 @@ def load_all(
         if not want(label):
             continue
         try:
-            hf = AutoTokenizer.from_pretrained(repo)
+            hf = AutoTokenizer.from_pretrained(repo, revision=rev(repo))
             toks.append(
                 Tok(
                     label=label,

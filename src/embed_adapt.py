@@ -27,6 +27,8 @@ compete in the output softmax and could, in principle, disturb English.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import csv
 import json
@@ -181,7 +183,7 @@ def main() -> None:
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    base_tok = AutoTokenizer.from_pretrained(MODEL)
+    base_tok = AutoTokenizer.from_pretrained(MODEL, revision=rev(MODEL))
     new_tok = AutoTokenizer.from_pretrained(str(ROOT / args.tokenizer))
     name = Path(args.tokenizer).name
     rows, toks = swapped_rows(name)
@@ -203,7 +205,7 @@ def main() -> None:
                 break
 
     def load_model():
-        m = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.float32)
+        m = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.float32, revision=rev(MODEL))
         m.eval()
         return m
 

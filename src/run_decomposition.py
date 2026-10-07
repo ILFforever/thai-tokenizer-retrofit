@@ -22,6 +22,8 @@ however good, recovers it - and T_act - T_vocab is recoverable by vocabulary.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import csv
 import json
@@ -52,7 +54,7 @@ def _ref_counter():
     from tokenizers import Tokenizer, pre_tokenizers
     from transformers import AutoTokenizer
 
-    hf = AutoTokenizer.from_pretrained(REF_REPO)
+    hf = AutoTokenizer.from_pretrained(REF_REPO, revision=rev(REF_REPO))
     ref = Tokenizer.from_str(hf.backend_tokenizer.to_str())
     ref.pre_tokenizer = pre_tokenizers.Metaspace(
         replacement="▁", prepend_scheme="never", split=True

@@ -107,8 +107,10 @@ Less easily. Qwen2.5-3B uses the same tokenizer, so the same retrofit
 applies. After 2,000 steps it is 11-12% behind an equally trained control on
 Thai bits per character - about where the untrained model started - at half
 the Thai tokens. Qwen2.5-0.5B was level after the same training. The pattern
-across all three models: the better a model already reads Thai, the longer
-the swapped rows take to train back. *(§8.5)*
+within Qwen - same tokenizer, same recipe - is that the stronger model needs
+longer. I don't claim it as a general rule: Mistral reads Thai no better than
+Qwen-0.5B on Belebele, but differs in too many other ways to compare.
+*(§8.5)*
 
 **Q: English got worse after training. Why?**
 Any fine-tune drifts: the control's English bits per character rose 5.9%,

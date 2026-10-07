@@ -28,6 +28,8 @@ It tests whether anchoring English output stops the English drift.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import csv
 import json
@@ -92,7 +94,7 @@ def main() -> None:
     from peft import LoraConfig, get_peft_model
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-    shipped = AutoTokenizer.from_pretrained(BASE)
+    shipped = AutoTokenizer.from_pretrained(BASE, revision=rev(BASE))
     tok = shipped if args.arm == "control" else AutoTokenizer.from_pretrained(str(ROOT / args.tokenizer))
     bos = shipped.bos_token_id
     tag = (args.arm if args.arm == "control" else f"retrofit-{Path(args.tokenizer).name}") + args.tag
@@ -125,7 +127,7 @@ def main() -> None:
     model = AutoModelForCausalLM.from_pretrained(
         BASE, device_map={"": 0}, dtype=torch.bfloat16,
         quantization_config=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                                               bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True))
+                                               bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True), revision=rev(BASE))
     print(f"  loaded 4-bit: {torch.cuda.memory_allocated() / 1e9:.1f} GB on GPU ({time.time() - t0:.0f}s)", flush=True)
     emb = model.get_input_embeddings().weight
     head = model.get_output_embeddings().weight

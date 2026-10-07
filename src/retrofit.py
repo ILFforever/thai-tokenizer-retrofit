@@ -31,6 +31,8 @@ segmented exactly as before.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import csv
 import heapq
@@ -405,7 +407,7 @@ def main() -> None:
 
         from registry import Tok
 
-        hf = AutoTokenizer.from_pretrained(args.hf_repo)
+        hf = AutoTokenizer.from_pretrained(args.hf_repo, revision=rev(args.hf_repo))
         tok = Tok(args.target, "open-weight", lambda s, _t=hf: _t.encode(s, add_special_tokens=False),
                   hf.decode, len(hf), raw=hf, kind="hf")
     else:

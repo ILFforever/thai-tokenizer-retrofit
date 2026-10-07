@@ -21,6 +21,8 @@ the independent unit.
 
 from __future__ import annotations
 
+from versions import rev
+
 import csv
 import json
 import sys
@@ -61,7 +63,7 @@ def tokenizer_set() -> list[tuple[str, str, object, str]]:
     """(label, kind, tokenizer, note) - base first, then retrofits, Typhoon."""
     from transformers import AutoTokenizer
 
-    out = [("Mistral-7B (base)", "base", AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1"),
+    out = [("Mistral-7B (base)", "base", AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1", revision=rev("mistralai/Mistral-7B-v0.1")),
             "32,000 entries")]
     def parse(p: Path) -> tuple[int, str]:
         rest = p.name.split("-th", 1)[1]
@@ -72,7 +74,7 @@ def tokenizer_set() -> list[tuple[str, str, object, str]]:
         k, suffix = parse(d)
         out.append((f"Mistral-7B +TH{k}{suffix}", "retrofit", AutoTokenizer.from_pretrained(str(d)),
                     f"{k:,} slots swapped, 32,000 entries"))
-    out.append(("Typhoon-7B", "expansion", AutoTokenizer.from_pretrained("scb10x/typhoon-7b"),
+    out.append(("Typhoon-7B", "expansion", AutoTokenizer.from_pretrained("scb10x/typhoon-7b", revision=rev("scb10x/typhoon-7b")),
                 "3,219 entries added, 35,219 entries"))
     return out
 

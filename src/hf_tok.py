@@ -12,6 +12,8 @@ ever disagree.
 
 from __future__ import annotations
 
+from versions import rev
+
 from pathlib import Path
 
 PROBE = "การประมวลผลสัญญาณเสียง เป็นกระบวนการเกี่ยวกับ วิทยาการคอมพิวเตอร์ Hello world, the government said."
@@ -22,7 +24,7 @@ def load_tokenizer(path: str | Path):
 
     p = Path(path)
     if not (p / "tokenizer.json").exists():  # a hub name or a slow-only folder
-        return AutoTokenizer.from_pretrained(str(path))
+        return AutoTokenizer.from_pretrained(str(path), revision=rev(str(path)))
     from tokenizers import Tokenizer
     from transformers import TokenizersBackend
 

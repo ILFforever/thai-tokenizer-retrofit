@@ -23,6 +23,8 @@ Writes results/ROBUSTNESS.md and results/robustness.json.
 
 from __future__ import annotations
 
+from versions import rev
+
 import csv
 import json
 import sys
@@ -74,10 +76,10 @@ def other_language_texts(lang: str, n: int = 200) -> list[str]:
         return json.loads(path.read_text(encoding="utf-8"))
     if lang == "code":
         # Code keeps its whitespace: indentation is part of what a tokenizer pays for.
-        ds = load_dataset("codeparrot/codeparrot-clean-valid", split="train", streaming=True)
+        ds = load_dataset("codeparrot/codeparrot-clean-valid", split="train", streaming=True, revision=rev("codeparrot/codeparrot-clean-valid"))
         rows = (r["content"][:3000] for r in ds)
     else:
-        ds = load_dataset("wikimedia/wikipedia", f"20231101.{lang}", split="train", streaming=True)
+        ds = load_dataset("wikimedia/wikipedia", f"20231101.{lang}", split="train", streaming=True, revision=rev("wikimedia/wikipedia"))
         rows = (_clean(r["text"])[:3000] for r in ds)
     out = []
     for t in rows:

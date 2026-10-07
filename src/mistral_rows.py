@@ -20,6 +20,8 @@ Bits per character is the metric: it does not depend on the tokenizer.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import csv
 import json
@@ -148,7 +150,7 @@ def main() -> None:
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    base_tok = AutoTokenizer.from_pretrained(MODEL)
+    base_tok = AutoTokenizer.from_pretrained(MODEL, revision=rev(MODEL))
     new_tok = AutoTokenizer.from_pretrained(str(ROOT / args.tokenizer))
     name = Path(args.tokenizer).name
     rows, toks = [], []
@@ -164,7 +166,7 @@ def main() -> None:
         passages(load_parallel(n_pairs=3000).english, args.n_eval // 2, args.size)
 
     print("loading model (bfloat16)", flush=True)
-    model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.bfloat16, low_cpu_mem_usage=True)
+    model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.bfloat16, low_cpu_mem_usage=True, revision=rev(MODEL))
     model.eval()
     print(f"  loaded in {time.time() - t0:.0f}s", flush=True)
 

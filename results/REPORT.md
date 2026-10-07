@@ -31,11 +31,10 @@ draft generated 28 September 2026 from the numbers in `results/`
   steps training only those rows ends *better* than the original on Thai (-9
   to -14% bits per character, with the caveat in §7.6) at a third of the
   tokens, with English unchanged. Qwen2.5-0.5B with LoRA is level with an
-  equally trained control after 2,000 steps. **Models that already read Thai
-  well take longer:** after 1,000 QLoRA steps on a laptop GPU the retrofitted
+  equally trained control after 2,000 steps, but **the stronger Qwen2.5-3B,
+  same recipe, is still 11-12% behind**; after 1,000 QLoRA steps on a laptop GPU the retrofitted
   Mistral-7B beats its control on news (−4%) and is 5-8% behind on Wikipedia
-  and social, at a third of the Thai tokens; Qwen2.5-3B is 11-12% behind
-  after 2,000 steps, at half (§8.5). Training the retrofit drifts English
+  and social, at a third of the Thai tokens (§8.5). Training the retrofit drifts English
   7% more than the control, and **a KL penalty to the original model on the
   English text removes half of that at no Thai cost**. On Belebele reading
   comprehension no retrofit trained on the token-balanced mix is measurably
@@ -922,13 +921,16 @@ untrained original (p = 0.001). Training on this mix also costs the
 *control* 4.5 points of Belebele Thai and English (p ≈ 0.05), so the fairest
 comparison is with the control.
 
-This fits the pattern of §7.6: **the better a model already reads Thai, the
-more a retrofit costs it and the longer the swapped rows take to train
-back.** Qwen2.5-0.5B (Belebele near chance) is level after 2,000 steps; the
-3B model and Mistral-7B, which read Thai well, are still behind their
-controls after 1,000-2,000 steps (3B by 11-12% everywhere; Mistral by 7-8%
-on Wikipedia and social, though ahead on news). The tokenizer saving is real at every size;
-for a strong model the training budget is the open cost.
+**Within Qwen2.5 the comparison is clean** - same tokenizer, same retrofit,
+same recipe and steps - and the stronger model lags: the 0.5B (Belebele Thai
+36%, near chance) is level with its control after 2,000 steps, while the 3B
+(45%) is still 11-12% behind. This should not be stretched into a rule
+across families: untrained Mistral-7B scores 36.8% on Belebele Thai, no
+better than Qwen2.5-0.5B, yet after 1,000 steps it is 7-8% behind on
+Wikipedia and social (ahead on news), and its runs differ in steps,
+quantization and an untied output head. What holds at every size is the
+tokenizer saving; the training budget a given model needs to use it is the
+open cost.
 
 *A bug caught while running this (fixed):* `transformers.AutoTokenizer`, given
 the saved Qwen *model* folder, rebuilds a `Qwen2Tokenizer` with Qwen's default

@@ -99,8 +99,9 @@ at no Thai cost (+5.9% / -4.2% / +5.0% vs control; Belebele Thai 36.2% vs 36.3%)
 Qwen2.5-3B-Instruct (same tokenizer, 4-bit, `qwen_adapt.py --quant4`, 2,000
 steps, results/qwen3b_adapt_*.json): retrofit 11-12% behind control on Thai,
 about level with the untrained original; Belebele Thai 37.4 vs control 40.9
-(p = 0.13) vs original 45.4. The stronger the model in Thai, the longer the
-swapped rows take. Belebele
+(p = 0.13) vs original 45.4. Within Qwen (same recipe) the stronger 3B lags
+where 0.5B is level; NOT a cross-family rule (Mistral's Belebele Thai 36.8%
+equals Qwen-0.5B's). Belebele
 (Qwen2.5-0.5B, near chance): original 36.2 / control 34.7 / retrofit 31.9% Thai,
 not separable (p = 0.21), English unchanged; showcase: retrofit ~1.8x Thai
 chars/s. Load retrofitted Qwen tokenizers with `src/hf_tok.py` - AutoTokenizer

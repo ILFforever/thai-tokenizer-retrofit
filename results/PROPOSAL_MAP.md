@@ -34,7 +34,7 @@ Maps the ten components of the mid-term proposal (slides presented 26 Sep
 | 04 | Scope, users and stakeholders | Met inside scope; extras beyond it are labelled | §9, §8.5 |
 | 05 | Related work and the gap | Delivered; **gap restated** after checking sources | §3, `REFERENCES.md` |
 | 06 | Approach | Delivered; base tokenizer changed | §6, §7.4 |
-| 07 | Data | Delivered; volume and domains changed, versions only partly pinned | §4 |
+| 07 | Data | Delivered; volume and domains changed | §4 |
 | 08 | Success metrics | All five targets met | §5, §7.4, `EVALUATION.md` |
 | 09 | Responsible AI | Delivered; PII screen done after the fact | §8, §9 |
 | 10 | Plan, outcomes, references | M1, M2 done; M3 (final report) in Week 8 | `PLAN.md`, References |
@@ -139,7 +139,7 @@ collateral cost; and what the swapped rows need, up to 7B scale.
 | Disjoint train / in-domain held-out / out-of-domain | First 1,200 documents per domain are evaluation only; learning uses later ones; the wikipedia+news vocabulary scores social text unseen | Met |
 | No labels; one fixed segmenter with its error profile | No labels; two segmenters compared | Error profile not reported |
 | Deduplicated, script-filtered, domain balance reported | Dedup on first 200 chars; ≥55% Thai characters per document; sizes per domain in §4 | Met |
-| Corpora and tokenizer versions pinned | Wikipedia dump pinned (20231101); tokenizers named in `run_meta.json` but their hub revisions are not pinned | Partly met |
+| Corpora and tokenizer versions pinned | Every model, tokenizer and dataset is loaded at a pinned Hub commit (`src/versions.py`, 17 repos; added 7 Oct, the commits the results were produced with); `run_meta.json` records them | Met |
 
 ## 08 Success metrics
 

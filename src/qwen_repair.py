@@ -36,6 +36,8 @@ the model is compared bit-for-bit with the checkpoint afterwards.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import json
 import sys
@@ -198,7 +200,7 @@ def verify_untouched(model, dead: np.ndarray) -> dict:
     from safetensors import safe_open
 
     state = model.state_dict()
-    path = hf_hub_download(MODEL, "model.safetensors")
+    path = hf_hub_download(MODEL, "model.safetensors", revision=rev(MODEL))
     other_tensors, other_changed = 0, []
     with safe_open(path, "pt") as fh:
         for k in fh.keys():
@@ -413,7 +415,7 @@ def main() -> None:
 
     from transformers import AutoModelForCausalLM
 
-    model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).eval()
+    model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32, revision=rev(MODEL)).eval()
     for p in model.parameters():
         p.requires_grad_(False)
     W = model.get_input_embeddings().weight

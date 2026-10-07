@@ -12,6 +12,8 @@ from results/qwen_adapt_*.json.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import json
 import sys
@@ -36,7 +38,7 @@ def prompts(n: int) -> list[dict]:
     to read on a page."""
     from datasets import load_dataset
 
-    ds = load_dataset("airesearch/WangchanThaiInstruct", split="test", streaming=True)
+    ds = load_dataset("airesearch/WangchanThaiInstruct", split="test", streaming=True, revision=rev("airesearch/WangchanThaiInstruct"))
     # the split is sorted by domain: take one prompt per domain, preferring a
     # task type not used yet
     by_domain: dict[str, list[dict]] = {}

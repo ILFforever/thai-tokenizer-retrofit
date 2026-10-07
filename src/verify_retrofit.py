@@ -18,6 +18,8 @@ the new merges were learned from.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import csv
 import json
@@ -75,7 +77,7 @@ def main() -> None:
     if args.base_repo:
         from registry import Tok
 
-        base = AutoTokenizer.from_pretrained(args.base_repo)
+        base = AutoTokenizer.from_pretrained(args.base_repo, revision=rev(args.base_repo))
         if args.mark_aware:
             from pretok import with_mark_aware_pretok
 

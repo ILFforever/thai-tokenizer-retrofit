@@ -38,6 +38,8 @@ Results are reported per domain, never pooled.
 
 from __future__ import annotations
 
+from versions import rev
+
 import argparse
 import json
 import math
@@ -491,7 +493,7 @@ def main() -> None:
 
     tok = load_all(verbose=False, only=["Qwen2.5"])[0][0]
     fixed = with_mark_aware_pretok(tok)
-    model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).eval()
+    model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32, revision=rev(MODEL)).eval()
     W = model.get_input_embeddings().weight.detach()
     tied = model.get_output_embeddings().weight.data_ptr() == W.data_ptr()
     n_rows = W.shape[0]
