@@ -1,13 +1,79 @@
-# Thai-Optimized Tokenizer
+# Thai Tokenizer Retrofit
 
-Reducing the token cost of Thai text by retrofitting Thai subwords into an
-existing open-weight tokenizer at **fixed vocabulary size**: prune entries
-the deployment never uses, put Thai units in the freed slots. No vocabulary
-expansion, so the embedding matrix keeps its shape; only the swapped rows
-need adapting.
+**Cut the token cost of Thai text without growing the vocabulary.**
+Prune the tokenizer entries a deployment never uses, and put Thai subwords
+in the freed slots. The vocabulary keeps its size, so the embedding matrix
+keeps its shape; only the swapped rows need re-setting.
 
-See `results/REPORT.md` for the full write-up, `CLAUDE.md` for project
-context, and `PLAN.md` for the week-by-week plan.
+[![Live demo](https://img.shields.io/badge/demo-Thai%20Token%20Meter-2ea44f)](https://ilfforever.github.io/thai-tokenizer-retrofit/)
+[![Report](https://img.shields.io/badge/read-full%20report-blue)](https://ilfforever.github.io/thai-tokenizer-retrofit/report.html)
+[![Dashboard](https://img.shields.io/badge/results-dashboard-orange)](https://ilfforever.github.io/thai-tokenizer-retrofit/dashboard.html)
+[![Video](https://img.shields.io/badge/watch-explainer-red)](https://ilfforever.github.io/thai-tokenizer-retrofit/video/)
+
+Chulalongkorn University, CEDT, AI course project, 2026. Tanabodhi Mukura.
+
+## Try it
+
+| | |
+| --- | --- |
+| **[Thai Token Meter](https://ilfforever.github.io/thai-tokenizer-retrofit/)** | Type or paste Thai and see what 7 tokenizers charge for it, live in the browser: Mistral-7B, Qwen2.5, GPT-4, GPT-4o, Typhoon, and this project's two retrofits. Every token id matches the real tokenizer (`node tests/web_bpe.test.mjs`). |
+| **[Report](https://ilfforever.github.io/thai-tokenizer-retrofit/report.html)** | The full write-up (source: [`results/REPORT.md`](results/REPORT.md)). |
+| **[Dashboard](https://ilfforever.github.io/thai-tokenizer-retrofit/dashboard.html)** | Every result as charts, per domain. |
+| **[Explainer video](https://ilfforever.github.io/thai-tokenizer-retrofit/video/)** | The idea in a few minutes. |
+
+## The problem
+
+Thai has no spaces between words and little weight in tokenizer training
+data, so the same meaning costs far more tokens in Thai than in English.
+More tokens means higher cost, less usable context and slower generation.
+
+| Tokenizer | Thai tokens per English token (same content) |
+| --- | ---: |
+| BLOOM | 4.25x |
+| GPT-4 (cl100k) | 3.94x |
+| **Mistral-7B** | **3.92x** |
+| Qwen2.5 | 2.38x |
+| GPT-4o (o200k) | 1.92x |
+| Typhoon-7B (vocabulary expanded) | 1.26x |
+
+## Headline result (Mistral-7B, vocabulary stays at 32,000)
+
+Swapping **2,483 entries** (7.8%: every entry that English, Python code and
+Thai never use) for Thai pieces:
+
+| | Wikipedia | News | Social | Thai penalty | English |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Thai tokens per 100 chars, before | 96.8 | 99.9 | 96.9 | 3.92x | |
+| **After the retrofit** | **34.5 (−64%)** | **33.4 (−67%)** | **37.7 (−61%)** | **1.33x** | **+0.01%** |
+| Typhoon-7B (adds 3,219 entries) | 34.0 (−65%) | 32.6 (−67%) | 37.2 (−62%) | 1.26x | +0.06% |
+
+At Typhoon's own budget (3,219 slots) the fixed-size retrofit beats Typhoon's
+vocabulary expansion on all three domains. Held-out text, 95% intervals and
+the full sweep are in the [report, §7.4](results/REPORT.md).
+
+## What else we found
+
+- **Some tokenizers cannot be fixed by vocabulary alone.** GPT-4's cl100k
+  and Qwen2.5 split letters with `\p{L}+`, which leaves out Thai vowel and
+  tone marks, so every mark is cut off its consonant before the vocabulary
+  is used. Mistral's and BLOOM's problem is 100% vocabulary.
+- **Qwen2.5 holds 1,578 Thai tokens it can never produce.** All of them are
+  untrained, so fixing only the regex makes Qwen2.5-0.5B 2–3x *worse* at Thai.
+- **The trained model keeps up.** With the swapped rows re-set (mean of the
+  pieces they replace) and lightly tuned, Qwen2.5-0.5B is level with an
+  equally trained control at about half the Thai tokens. On Belebele reading
+  comprehension, no retrofit is measurably worse than its control.
+- **The cost is stated, not hidden.** The freed slots come from other
+  languages (Korean +39% tokens, Russian +18%, Chinese +13%, Japanese +10%,
+  Python +0.1%). Stronger models need more tuning (Qwen2.5-3B is still
+  11–12% behind its control). Hosted API models cannot use this; it is for
+  self-hosted open-weight models.
+
+Metric: **tokens per 100 characters**, because Thai has no spaces to count
+words by. Model quality is compared in **bits per character**, which does not
+depend on the tokenizer. Results are always reported per domain, never pooled.
+
+`CLAUDE.md` has the project context and `PLAN.md` the week-by-week plan.
 
 ## Quick start
 
