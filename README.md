@@ -10,7 +10,7 @@ keeps its shape; only the swapped rows need re-setting.
 [![Dashboard](https://img.shields.io/badge/results-dashboard-orange)](https://ilfforever.github.io/thai-tokenizer-retrofit/dashboard.html)
 [![Video](https://img.shields.io/badge/watch-explainer-red)](https://ilfforever.github.io/thai-tokenizer-retrofit/video/)
 
-Chulalongkorn University, CEDT, AI course project, 2026. Tanabodhi Mukura.
+Chulalongkorn University, CEDT, course project for *AI and Ls*, 2026. Tanabodhi Mukura.
 
 ## Try it
 
