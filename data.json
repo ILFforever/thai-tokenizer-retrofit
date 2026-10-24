@@ -1,0 +1,359 @@
+{
+ "title": "The retrofit in a working model: Qwen2.5-0.5B-Instruct",
+ "lede": "Two copies of the model got identical training on a laptop CPU - same data, same steps, same LoRA - one with the original tokenizer, one with this project's retrofit. Quality is bits per character on held-out text (lower is better); it does not depend on how the text is split.",
+ "quality_columns": [
+  {
+   "key": "wikipedia",
+   "label": "Wikipedia bits/char"
+  },
+  {
+   "key": "news",
+   "label": "News bits/char"
+  },
+  {
+   "key": "social",
+   "label": "Social bits/char"
+  },
+  {
+   "key": "instructions",
+   "label": "Thai chat bits/char"
+  },
+  {
+   "key": "english",
+   "label": "English bits/char"
+  },
+  {
+   "key": "tok",
+   "label": "Thai tokens per 100 chars"
+  }
+ ],
+ "quality": [
+  {
+   "name": "Original Qwen2.5-0.5B-Instruct",
+   "wikipedia": "1.470",
+   "news": "1.858",
+   "social": "2.072",
+   "instructions": "1.095",
+   "english": "0.993",
+   "tok": "56 / 60 / 57"
+  },
+  {
+   "name": "Control: same training, original tokenizer",
+   "wikipedia": "1.441",
+   "news": "1.788",
+   "social": "1.951",
+   "instructions": "1.022",
+   "english": "0.990",
+   "tok": "56 / 60 / 57"
+  },
+  {
+   "name": "Retrofit, rows mean-initialised, untrained",
+   "wikipedia": "2.981",
+   "news": "3.453",
+   "social": "3.449",
+   "instructions": "2.445",
+   "english": "0.993",
+   "tok": "26 / 31 / 30"
+  },
+  {
+   "name": "Retrofit: same training, retrofitted tokenizer",
+   "me": true,
+   "wikipedia": "1.647",
+   "news": "2.042",
+   "social": "2.112",
+   "instructions": "1.171",
+   "english": "0.988",
+   "tok": "26 / 31 / 30"
+  }
+ ],
+ "speed": {
+  "original": {
+   "chars_per_s": 12.3,
+   "tokens_per_s": 5.9
+  },
+  "control": {
+   "chars_per_s": 10.9,
+   "tokens_per_s": 5.8
+  },
+  "retrofit": {
+   "chars_per_s": 22.2,
+   "tokens_per_s": 6.0
+  }
+ },
+ "note": "<b>Thai text per second on this CPU:</b> original 12.3, control 10.9, retrofit 22.2 characters per second at about the same tokens per second (5.9 / 5.8 / 6.0) - each retrofit token carries more Thai. Answers are greedy and capped at 160 new tokens; prompts come from the WangchanThaiInstruct test split (CC BY-SA 4.0), which no model here was trained on. <b>Read the answers as a demo of tokens, not of quality</b>: a 0.5B model answers roughly in any form, and quality is the bits-per-character table above.",
+ "prompts": [
+  {
+   "label": "Finance · Open QA",
+   "prompt": "อะไรคือปัจจัยหลักที่นักการตลาดควรพิจารณาในการวัดผลประสิทธิภาพของแคมเปญทางการตลาดบนโซเชียลมีเดีย",
+   "answers": [
+    {
+     "model": "original",
+     "me": false,
+     "text": "ในการวัดผลประสิทธิภาพของแคมเปญทางการตลาดบนโซเชียลมีเดีย นักการตลาดควรพิจารณาหลายปัจจัยหลักดังต่อไปนี้:\n\n1. **目标受众分析**:\n   - 识别目标受众的特征、需求和偏好。\n   - วิเคราะห์ความสนใจและความคาดหวังของผู้ใช้บริการ.\n\n2. **SEO (Search Engine Optimization)**:\n   - ตรวจสอบและปรับปรุงเวอร์ชันของเว็บไซต์เพื่อให้มีประสิทธิภาพในการค้นหา.\n   - ตรวจสอบและปรับปรุงข้อมูลส่วนบุ",
+     "tokens": 160,
+     "prompt_tokens": 76,
+     "seconds": 23.59,
+     "chars": 346,
+     "chars_per_s": 14.67,
+     "tokens_per_s": 6.78
+    },
+    {
+     "model": "control",
+     "me": false,
+     "text": "ปัจจัยหลักที่นักการตลาดควรพิจารณาในการวัดผลประสิทธิภาพของแคมเปญทางการตลาดบนโซเชียลมีเดีย ได้แก่\n\n1. ผู้ชม: ผู้ชมเป็นส่วนสำคัญของการวัดผลประสิทธิภาพของแคมเปญ เพราะพวกเขาเป็นผู้ใช้งานโซเชียลมีเดียและมีความสนใจในการเข้าถึงข้อมูลและเนื้อหาของเว็บไซต์หรือแอปพลิเคชันที่กำลังพูดถึง\n\n2. โพสต์: โพสต์เป็นส่วนหน",
+     "tokens": 160,
+     "prompt_tokens": 76,
+     "seconds": 22.98,
+     "chars": 302,
+     "chars_per_s": 13.14,
+     "tokens_per_s": 6.96
+    },
+    {
+     "model": "retrofit",
+     "me": true,
+     "text": "1. ปริมาณการสื่อสาร: การสื่อสารมวลชน (Social Media) เป็นแหล่งความเชื่อมั่นและความเข้าใจของผู้ใช้บริการมากยิ่งขึ้น โดยสามารถส่งข้อมูลและข่าวสารไปยังลูกค้าได้เร็วที่สุด\n\n2. ความสะดวกสบายในการเข้าถึง: ผู้บริโภคในโซเชียลมีเดียมีความสะดวกสบายในการเข้าถึงสินค้าและบริการ โดยสามารถเลือกสินค้าและบริการตามความต้องการได้ง่าย\n\n3. ความรวดเร็วในการตอบสนอง需求: ผู้บริโภคในโซเชียลมีเดียมีความต้องการตอบสนองความรวดเร็วในการตอบสนอง需求 โดยสามารถรับสินค้าและบริการผ่านช่องทางออนไลน์ได้ง่าย\n\n4. ความมั่นคงทางการเงิน: ผู้บริโภคในโซเชียลมีเดียมีความมั่นคงทางการเงิน โดยสามารถซื้อสินค้าและบริการผ่านช่องทางออนไลน์ได้ทุกวัน\n\n5. ความปลอดภัยในการใช้งาน: ผู้บริโภคในโซเชียลมีเดียมีความปลอดภัยในการใช้งาน",
+     "tokens": 160,
+     "prompt_tokens": 54,
+     "seconds": 23.33,
+     "chars": 675,
+     "chars_per_s": 28.93,
+     "tokens_per_s": 6.86
+    }
+   ]
+  },
+  {
+   "label": "Legal · Classification",
+   "prompt": "การยื่นคำร้องตามมาตรา 38 ให้ผู้เสียหายเนื่องจากการฝ่าฝืนมาตรา 35 หรือมาตรา 37 มีสิทธิยื่นคำร้องได้ภายในสามสิบวันนับแต่วันที่ได้รับความเสียหาย ใช่หรือไม่",
+   "answers": [
+    {
+     "model": "original",
+     "me": false,
+     "text": "สำหรับคำถามของคุณเกี่ยวกับการยื่นคำร้องตามมาตรา 38 ให้ผู้เสียหายเนื่องจากการฝ่าฝืนมาตรา 35 หรือมาตรา 37 ในประเทศไทย, คำตอบเป็น:\n\nใช่\n\nถ้าผู้เสียหายได้รับความเสียหายโดยหลังจากมีการฝ่าฝืนมาตรา 35 หรือมาตรา 37 และต้องยื่นคำร้องในภายหลัง, ทางผู้เสียหายสามารถยื่นคำร้องได้ภายในสามสิบวัน (14 วัน) นับแต่วันที่ได้ร",
+     "tokens": 160,
+     "prompt_tokens": 114,
+     "seconds": 29.57,
+     "chars": 307,
+     "chars_per_s": 10.38,
+     "tokens_per_s": 5.41
+    },
+    {
+     "model": "control",
+     "me": false,
+     "text": "ใช่",
+     "tokens": 3,
+     "prompt_tokens": 114,
+     "seconds": 0.67,
+     "chars": 3,
+     "chars_per_s": 4.49,
+     "tokens_per_s": 4.49
+    },
+    {
+     "model": "retrofit",
+     "me": true,
+     "text": "ไม่ เหตุผล:\n\n1. การยื่นคำร้องตามมาตรา 38 ให้ผู้เสียหายเนื่องจากความผิดพลาดหรือความผันผวนของกฎหมายโดยไม่มีสิทธิ์ใด ๆ ที่สามารถแก้ไขได้\n\n2. การยื่นคำร้องตามมาตรา 38 ได้แค่ในกรณีที่ผู้ฟ้องไม่ได้เป็นผู้ที่ถูกฟ้องตามมาตรา 35 หรือตรา 37 เพราะหากมีการยื่นคำร้องตามมาตรา 38 จะทำให้ผู้ฟ้องไม่สามารถดำเนินการตามมาตรา 35 หรือ ตรา 37 และอาจทำให้เกิดปัญหาทางกฎหมายและกระบวนการยื่นคำร้องจะหายไป\n\n3. การยื่นคำร้องตามมาตรา 38 นั้นมีสิทธิในการยื่นคำร้องให้ผู้เสียหายเนื่องจากความผิดพลาดหรือความผันผวนของกฎหมายโดยไม่มีสิทธิ์ใด",
+     "tokens": 160,
+     "prompt_tokens": 72,
+     "seconds": 29.37,
+     "chars": 508,
+     "chars_per_s": 17.3,
+     "tokens_per_s": 5.45
+    }
+   ]
+  },
+  {
+   "label": "Medical · Open QA",
+   "prompt": "การเปลี่ยนสีของเล็บสามารถบ่งบอกถึงโรคอะไรได้บ้าง?",
+   "answers": [
+    {
+     "model": "original",
+     "me": false,
+     "text": "การเปลี่ยนสีของเล็บเป็นวิธีที่ใช่ในการตรวจจับและ识别โรคหลายประเภท แต่ไม่มีการยอมรับว่าการเปลี่ยนสีของเล็บสามารถบ่งบอกถึงโรคได้อย่างแน่นอน ดังนั้น การตรวจสอบและประเมินพฤติกรรมทางชีวิตอื่น ๆ รวมถึงการตรวจเชิงลึกในระยะยาวอาจมีประโยชน์มากกว่าการเปลี่ยนสีของเล็บเอง\n\n1. โรคทางเดินหายใจ: โรคทางเดินหายใจอาจทำให้เล็บเปลี่ยนสีหรือเปลี่ยนแปลงไป",
+     "tokens": 160,
+     "prompt_tokens": 52,
+     "seconds": 29.59,
+     "chars": 333,
+     "chars_per_s": 11.25,
+     "tokens_per_s": 5.41
+    },
+    {
+     "model": "control",
+     "me": false,
+     "text": "การเปลี่ยนสีของเล็บเป็นวิธีที่ใช้เพื่อประเมินความเสี่ยงต่อโรคมะเร็ง โรคหัวใจ และโรคหลอดเลือด แต่ก็ไม่ใช่แค่นั้น เพราะมันยังสามารถบ่งบอกถึงโรคอื่น ๆ อีกด้วย เช่น โรคผิวหนัง โรคปอด โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรคหัวใจ โรค",
+     "tokens": 160,
+     "prompt_tokens": 52,
+     "seconds": 29.26,
+     "chars": 290,
+     "chars_per_s": 9.91,
+     "tokens_per_s": 5.47
+    },
+    {
+     "model": "retrofit",
+     "me": true,
+     "text": "ไม่เหมือนว่าเราสามารถบ่งบอกโรคได้ เพราะสีของเล็บเป็นสีที่มาจากสารสกัดจากเลือด สาเหตุของการเปลี่ยนแปลงสีของเล็บมีหลายสาเหตุ เช่น การกินอาหารที่เข้มแข็ง มีสารสกัดจากไข่ปรุงหรือผลไม้ ที่อาจทำให้น้ำตาลในเล็บมันสูงมากเกินไป และอาจทำให้เล็บมันอ่อนเยาว์ หรืออาจจะเป็นโรคทางเดินน้ำใจ (โรคเลือด) ซึ่งจะส่งผลต่อเล็บเป็นสีเขียวหรือนุ่มขาว\n\nแต่ถ้าเราลองดูแล้ว จะพบได้ว่าสีของเล็บมีความแตกต่างไปจากสีของผงหรือสีของวัสดุ แต่ยังแตกต่างกันไปอย่างไร ก็ต้องลองดูกันเองค่ะ\n\n1. สีของเล็บ: สีของเล็บคือสีที่มาจากสาร",
+     "tokens": 160,
+     "prompt_tokens": 45,
+     "seconds": 29.08,
+     "chars": 494,
+     "chars_per_s": 16.99,
+     "tokens_per_s": 5.5
+    }
+   ]
+  },
+  {
+   "label": "Retail · Creative writing",
+   "prompt": "แต่งเรื่องสั้น \"อนาคตร้านค้าปลีกจะอยู่รอดได้ต้องมีการปรับตัว\"",
+   "answers": [
+    {
+     "model": "original",
+     "me": false,
+     "text": "เรื่องนี้เป็นเรื่องที่เกี่ยวข้องกับธุรกิจและตลาดในอนาคต ซึ่งอาจมีความคาดหวังว่าธุรกิจจะสามารถแข็งแกร่งและยืดหยุ่นได้ แต่ก็อาจจะพบปัญหาหรือความยากลำบากในการดำเนินงาน ควรพิจารณาให้เข้าใจและเตรียมพร้อม应对各种挑战。",
+     "tokens": 108,
+     "prompt_tokens": 64,
+     "seconds": 15.67,
+     "chars": 205,
+     "chars_per_s": 13.08,
+     "tokens_per_s": 6.89
+    },
+    {
+     "model": "control",
+     "me": false,
+     "text": "ปัญหาของตลาด ที่เกิดขึ้นในช่วงปี 2021 ไม่ใช่แค่ปัญหาของตลาด แต่เป็นปัญหาที่เกิดขึ้นในหลาย ๆ ด้าน เช่น การเติบโตของอุตสาหกรรมการค้าปลีก ความผันผวนของราคาของสินค้า ความเสี่ยงจากสงครามโลกครั้งที่สอง และปัญหาเศรษฐกิจที่เกิดจากการระบาดของไวรัสโควิด-19 ซึ่งทำให้ตลาดเกิดความผันผวนมากขึ้น ปัญหาเหล่าน",
+     "tokens": 160,
+     "prompt_tokens": 64,
+     "seconds": 29.37,
+     "chars": 293,
+     "chars_per_s": 9.98,
+     "tokens_per_s": 5.45
+    },
+    {
+     "model": "retrofit",
+     "me": true,
+     "text": "“อนาคตบ้านค้าปลีกคงอยู่” แน่นอนว่า การลงทุนในหุ้นสินค้าเกษตรเป็นสิ่งสำคัญสำหรับคนที่มีเงิน surplus หรือมีรายได้จากการขายสินค้าเกษตร แต่หากเราคิดไปข้างหน้า เราอาจจะเห็นได้ว่า ถ้าเราไม่พัฒนาการเกษตรให้เติบโตเร็วๆ และยังขาดทุนจากสินค้าเกษตรเอง ก็อาจทำให้เราไม่สามารถหาจุดขายได้หรืออาจจะทำให้นักลงทุนหลายคนมองเราออกจากตลาด เพราะเราอาจจะถูกมองว่าเป็น “ผอม” ที่ไม่สามารถสร้างรายได้ให้กับตนเองและครอบครัวได้\n\nถ้าเราลองดูแล้ว จะเห็นว่าการเกษตรเป็นสิ่งที่ทุกคนจะต้องทำ เพราะมันช่วยให้เราสามารถรับผลตอบแทนจากการขายสินค้าเกษตรได้ทุกวัน โดยการเกษตรก็มีความเสี่ยงที่สูงมาก เนื่องจากเราอาจจะเจอปัญหาโรคหรือปัญหาอับฉิงของต้นไม้ และเรา",
+     "tokens": 160,
+     "prompt_tokens": 48,
+     "seconds": 22.76,
+     "chars": 619,
+     "chars_per_s": 27.2,
+     "tokens_per_s": 7.03
+    }
+   ]
+  },
+  {
+   "label": "Finance · Brainstorming",
+   "prompt": "ธนาคารแห่งประเทศไทยควรใช้กลยุทธ์ใดเพื่อจัดการกับค่าเงินบาทที่แข็งค่าต่อเนื่อง?",
+   "answers": [
+    {
+     "model": "original",
+     "me": false,
+     "text": "สำหรับธนาคารแห่งประเทศไทย (Bank of Thailand) ในการ应对ค่าเงินบาทที่แข็งค่าต่อเนื่อง, อาจมีกลยุทธ์ดังนี้:\n\n1. การปรับแผนการเงินสด: ธนาคารสามารถปรับแผนการเงินสดให้มีความเหมาะสมและมีประสิทธิภาพในช่วงเวลาที่ค่าเงินบาทแข็งค่ามากขึ้น.\n\n2. การปรับโครงสร้างการเงิน: ธนาคารอาจปรับโครงสร้างการเงินของตนให้มีความสมดุลและมีประสิทธิภาพในช่วงเวลาที่ค่าเงินบาทแข็ง",
+     "tokens": 160,
+     "prompt_tokens": 68,
+     "seconds": 29.63,
+     "chars": 347,
+     "chars_per_s": 11.71,
+     "tokens_per_s": 5.4
+    },
+    {
+     "model": "control",
+     "me": false,
+     "text": "ธนาคารแห่งประเทศไทย (TMB) ควรใช้กลยุทธ์ดังนี้:\n\n1. ปรับราคาสินเชื่อให้เหมาะสม: ธนาคารสามารถปรับราคาสินเชื่อให้เหมาะสมกับความเสี่ยงและความผันผวนของตลาด โดยไม่ต้องมีการลดราคาสินเชื่อลงมากเกินไป\n\n2. ปรับดอกเบี้ย: ธนาคารสามารถปรับดอกเบี้ยให้เหมาะสมกับความเสี่ยง และความผันผวนของตลาด โดยไม่ต้องมีการลดดอกเบี้ยลงมากเกินไป\n\n3. ปรับนโยบายการเงิน: ธนาคารสามารถปรับนโยบายการเง",
+     "tokens": 160,
+     "prompt_tokens": 68,
+     "seconds": 22.93,
+     "chars": 366,
+     "chars_per_s": 15.96,
+     "tokens_per_s": 6.98
+    },
+    {
+     "model": "retrofit",
+     "me": true,
+     "text": "ธนาคารแห่งประเทศไทยควรใช้กลยุทธ์การปรับราคาเงินบาทตามสถานการณ์ของตลาด โดยจะทำการปรับราคาเงินบาทตามอัตราแลกเปลี่ยนระหว่างตลาดหุ้นและตลาดการเงินสด (M-F) ที่เป็นผลมาจากอัตราแลกเปลี่ยนระหว่างตลาดหุ้นและตลาดการเงินสด ซึ่งอาจมีการขึ้นหรือลดลงตามภาวะเศรษฐกิจ และนโยบายภาครัฐ\n\n1. การปรับราคาเงินบาทตามอัตราแลกเปลี่ยนระหว่างตลาดหุ้นและตลาดการเงินสด:\n- อัตราแลกเปลี่ยนระหว่างตลาดหุ้นและตลาดการเงินสด จะมีความผันผวนสูง เพราะอัตราแลกเปลี่ยนระหว่างตลาดหุ้นและตลาดการเงินสด จะมีผลกระทบต่อราคาเงินบาทโดยตรง หรือไม่ได้\n- อัตราแลกเปลี่ยนระหวระหว่างตลาดหุ้นและตลาดการเงินสด จะมีความผันผวนสูง เพราะอัตราแลกเปลี่ยนระหวระหว่างตลาดหุ้นและตลาด",
+     "tokens": 160,
+     "prompt_tokens": 47,
+     "seconds": 29.12,
+     "chars": 620,
+     "chars_per_s": 21.29,
+     "tokens_per_s": 5.5
+    }
+   ]
+  },
+  {
+   "label": "Finance · Closed QA",
+   "prompt": "BitLicense คืออะไร\n\nBitLicense คือ ใบอนุญาตประกอบกิจการสำหรับบริษัทที่ดำเนินธุรกิจ หรือมีสินค้าและบริการที่เกี่ยวข้องกับ Cryptocurrency ใบอนุญาตนี้ออกให้โดย New York State Department of Financial Services (NYSDFS) ซึ่งเป็นหน่วยงานภาครัฐที่คอยควบคุมผลิตภัณฑ์และการบริการทางการเงินในนิวยอร์ก",
+   "answers": [
+    {
+     "model": "original",
+     "me": false,
+     "text": "BitLicense เป็นใบอนุญาตประกอบกิจการสำหรับบริษัทที่ดำเนินธุรกิจหรือมีสินค้าและบริการที่เกี่ยวข้องกับ Cryptocurrency โดยผู้ใช้งานสามารถตรวจสอบและรับรองความเหมาะสมของบริษัทที่ได้รับใบอนุญาตดังกล่าวได้จาก New York State Department of Financial Services (NYSDFS). \n\nNYSDFS ยืนยันว่าพวกเขาทำงานอย่างมีประสิทธิภาพในการควบคุมและตรวจสอบผลิตภัณฑ์และบริการทางการเงินที่ใช้ Cryptocurrency ซึ่งทำให",
+     "tokens": 160,
+     "prompt_tokens": 158,
+     "seconds": 30.58,
+     "chars": 385,
+     "chars_per_s": 12.59,
+     "tokens_per_s": 5.23
+    },
+    {
+     "model": "control",
+     "me": false,
+     "text": "BitLicense คือ ใบอนุญาตประกอบกิจการสำหรับบริษัทที่ดำเนินธุรกิจ หรือมีสินค้าและบริการที่เกี่ยวข้องกับ Cryptocurrency ใบอนุญาตนี้ออกให้โดย New York State Department of Financial Services (NYSDFS) ซึ่งเป็นหน่วยงานภาครัฐที่คอยควบคุมผลิตภัณฑ์และการบริการทางการเงินในนิวยอร์ก ผู้ประกอบการที่ได้รับ BitLicense จะต้องปฏิบัติตามข้อกำหนดและเงื่อนไขของ BitLicense และจะต้อง",
+     "tokens": 160,
+     "prompt_tokens": 158,
+     "seconds": 30.53,
+     "chars": 362,
+     "chars_per_s": 11.86,
+     "tokens_per_s": 5.24
+    },
+    {
+     "model": "retrofit",
+     "me": true,
+     "text": "BitLicense คือใบอนุกรมของบริษัทที่ทำการประกอบธุรกิจหรือมีการขายสินค้าและบริการที่เกี่ยวข้องกับ Cryptocurrency ที่สามารถขอใบอนุกรมผ่านช่องทางนี้ได้ โดยจะต้องมีบัตรประชาชนของผู้ที่ก่อตั้งบริษัท และเป็นเจ้าของบริษัทที่มีความรู้ความเชี่ยวชาญด้าน Crypto 100% ให้满足ทุกขีดจำกัดต่างๆ ของ NYSDFS ซึ่งจะกำหนดให้บริษัทจะต้องมีการตรวจสอบข้อมูลของบริษัทอย่างละเอียดก่อนนำใบอนุกรมมาขอรับด้วย\n\nการขอใบอนุกรม BitLicense จะดำเนินการตามขั้นตอนดังนี้:\n\n1. บริษัทจะแจ้งข้อมูลของบริษัทให้อยู่ NYSDFS\n2. NYSDFS จะทำการตรวจสอบข้อมูลของบริษัทอย่างละเอียด เพื่อ确保บริษัทมีประสบการณ์ในการประกอบธุรกิจหรือขายสินค้าและบริการที่เกี่ยวข้องกับ Cryptocurrency\n3. NYSDFS จะ",
+     "tokens": 160,
+     "prompt_tokens": 91,
+     "seconds": 29.5,
+     "chars": 639,
+     "chars_per_s": 21.66,
+     "tokens_per_s": 5.42
+    }
+   ]
+  },
+  {
+   "label": "English",
+   "prompt": "In two sentences, why do some languages cost more tokens than English?",
+   "answers": [
+    {
+     "model": "original",
+     "me": false,
+     "text": "Some languages may require more tokens to express certain concepts or grammatical structures due to their unique syntax and vocabulary, which can be challenging for AI systems to process efficiently.",
+     "tokens": 34,
+     "prompt_tokens": 43,
+     "seconds": 4.92,
+     "chars": 199,
+     "chars_per_s": 40.47,
+     "tokens_per_s": 6.91
+    },
+    {
+     "model": "control",
+     "me": false,
+     "text": "Languages with fewer vowels tend to be more difficult for computers to process and recognize.",
+     "tokens": 17,
+     "prompt_tokens": 43,
+     "seconds": 2.59,
+     "chars": 93,
+     "chars_per_s": 35.9,
+     "tokens_per_s": 6.56
+    },
+    {
+     "model": "retrofit",
+     "me": true,
+     "text": "Because they use different alphabets and have different grammar structures.\n\nSome languages use different alphabets such as the Latin alphabet used in English or the Cyrillic alphabet used in Russian. The difference is that the Latin alphabet has 26 letters while the Cyrillic alphabet has 31 letters. This means that there are fewer letters to represent every word in a language.\n\nAlso, some languages have different grammar structures compared to English. For example, English uses subject-verb-object (SVO) order, but many other languages use verb-object-subject (VOS). In addition, English has a Subject-Object-Verb (SOV) structure, while many other languages have a Subject-Verb-Object (SVO) structure.\n\nTherefore, it takes more tokens to represent every word in",
+     "tokens": 160,
+     "prompt_tokens": 43,
+     "seconds": 22.71,
+     "chars": 767,
+     "chars_per_s": 33.78,
+     "tokens_per_s": 7.05
+    }
+   ]
+  }
+ ]
+}
